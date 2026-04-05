@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-surface font-sans text-marinha-900">
       <header className="sticky top-0 z-50 border-b border-marinha-900/8 bg-surface-card/95 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link
             href="/"
             className="focus-ring shrink-0 rounded-btn font-serif text-lg font-bold text-marinha-900 sm:text-xl"
@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {menuOpen ? (
           <div
             id="mobile-menu"
-            className="border-t border-marinha-900/8 bg-surface-card px-4 py-4 md:hidden"
+            className="border-t border-marinha-900/8 bg-surface-card px-4 py-4 sm:px-6 lg:px-8 md:hidden"
           >
             <nav className="flex flex-col gap-1" aria-label="Principal mobile">
               {mainNav.map((item) => (
@@ -147,7 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ) : null}
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+      <main className="w-full flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {children}
       </main>
 

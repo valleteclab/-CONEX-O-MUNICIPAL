@@ -13,6 +13,7 @@
 
 ## Lessons
 - Rotas ERP (exceto `GET/POST /erp/businesses`) exigem header `X-Business-Id` e vínculo em `erp_business_users`.
+- Web: layout em largura total — sem `max-w-5xl` no shell; só `px-4 sm:px-6 lg:px-8` nas bordas.
 - `next/font` Google: `DM_Serif_Display` só expõe peso `400` — títulos usam negrito sintético ou peso único.
 - Banco já existente: aplicar DDL do bloco ERP em `infra/docker/init.sql` ou `TYPEORM_SYNC=true` só em dev.
 - Tokens JWT emitidos antes da claim `tid` deixam de ser válidos — novo login após deploy.

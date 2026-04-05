@@ -3,7 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-marinha-900/8 bg-surface-card/80">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+      <div className="flex w-full flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
         <div>
           <p className="font-serif text-lg font-bold text-marinha-900">Conexão Municipal</p>
           <p className="mt-1 text-sm text-marinha-500">
@@ -20,7 +20,7 @@ export function SiteFooter() {
           <span className="text-marinha-500">LGPD · Política de privacidade (em breve)</span>
         </nav>
       </div>
-      <div className="border-t border-marinha-900/6 py-4 text-center text-xs text-marinha-500">
+      <div className="border-t border-marinha-900/6 px-4 py-4 text-center text-xs text-marinha-500 sm:px-6 lg:px-8">
         © {new Date().getFullYear()} Conexão Municipal — protótipo de interface
       </div>
     </footer>

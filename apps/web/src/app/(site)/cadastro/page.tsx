@@ -16,7 +16,7 @@ export default function CadastroPage() {
         title="Criar conta"
         description="Cadastro para cidadãos, MEIs e empresas. Os dados serão tratados conforme a LGPD."
       />
-      <Card className="mx-auto max-w-md">
+      <Card className="w-full">
         <form className="space-y-4" action="#" method="post">
           <div>
             <label htmlFor="fullName" className="mb-1 block text-sm font-medium">

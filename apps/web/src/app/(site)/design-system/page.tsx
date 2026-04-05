@@ -21,7 +21,7 @@ export default function DesignSystemPage() {
         badge="SDD §10"
       />
       <nav
-        className="sticky top-14 z-30 -mx-4 mb-8 flex gap-1 overflow-x-auto border-b border-marinha-900/8 bg-surface/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+        className="sticky top-14 z-30 -mx-4 mb-8 flex gap-1 overflow-x-auto border-b border-marinha-900/8 bg-surface/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         aria-label="Seções do guia visual"
       >
         {sectionNav.map((item) => (

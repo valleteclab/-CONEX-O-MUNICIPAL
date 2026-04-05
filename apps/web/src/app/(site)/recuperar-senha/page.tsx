@@ -16,7 +16,7 @@ export default function RecuperarSenhaPage() {
         title="Recuperar senha"
         description="Informe seu e-mail. Quando a integração estiver ativa, enviaremos um link para redefinir a senha."
       />
-      <Card className="mx-auto max-w-md">
+      <Card className="w-full">
         <form className="space-y-4" action="#" method="post">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium">

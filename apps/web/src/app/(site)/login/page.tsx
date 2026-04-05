@@ -16,7 +16,7 @@ export default function LoginPage() {
         title="Entrar"
         description="Use seu e-mail e senha para acessar sua conta. Em breve integração com a API de autenticação."
       />
-      <Card className="mx-auto max-w-md">
+      <Card className="w-full">
         <form className="space-y-4" action="#" method="post">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium">

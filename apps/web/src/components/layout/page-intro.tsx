@@ -26,7 +26,7 @@ export function PageIntro({
         {title}
       </h1>
       {description ? (
-        <p className="mt-2 max-w-2xl text-base text-marinha-500">{description}</p>
+        <p className="mt-2 text-base text-marinha-500">{description}</p>
       ) : null}
       {children}
     </header>

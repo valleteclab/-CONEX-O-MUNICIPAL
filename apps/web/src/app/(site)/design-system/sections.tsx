@@ -45,7 +45,7 @@ export function DesignSystemSections() {
           <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-municipal-600/10" />
           <div className="relative">
             <h2 className="font-serif text-2xl">Como usar esta página</h2>
-            <p className="mt-2 max-w-2xl text-marinha-500">
+            <p className="mt-2 text-marinha-500">
               Cada bloco mostra um pedaço da interface: primeiro as{" "}
               <strong className="text-marinha-900">cores oficiais</strong>, depois
               textos, botões e formulários. Use o menu acima para pular direto ao
@@ -116,7 +116,7 @@ export function DesignSystemSections() {
             <p className="text-xs font-semibold uppercase text-marinha-500">
               Corpo
             </p>
-            <p className="max-w-prose text-base leading-relaxed text-marinha-900">
+            <p className="text-base leading-relaxed text-marinha-900">
               O portal reúne empresários, cidadãos e gestores num só lugar. Textos
               curtos, frases diretas e bom contraste ajudam qualquer pessoa a achar
               o que precisa sem esforço.
@@ -157,7 +157,7 @@ export function DesignSystemSections() {
         <p className="mt-1 text-marinha-500">
           Borda 2px; foco em verde-água (anel de foco).
         </p>
-        <Card className="mt-6 max-w-lg space-y-4">
+        <Card className="mt-6 w-full space-y-4">
           <div>
             <label htmlFor="nome" className="mb-1 block text-sm font-medium">
               Nome completo

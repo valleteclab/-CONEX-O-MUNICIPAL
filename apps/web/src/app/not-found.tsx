@@ -10,7 +10,7 @@ export default function NotFound() {
         title="Página não encontrada"
         description="O endereço pode ter sido digitado errado ou a página mudou de lugar."
       />
-      <Card className="max-w-md">
+      <Card className="w-full">
         <p className="text-sm text-marinha-500">
           Volte ao início ou use o menu acima para navegar entre os módulos do portal.
         </p>
