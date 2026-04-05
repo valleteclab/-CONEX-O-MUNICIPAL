@@ -52,31 +52,21 @@ export default async function DiretorioNegocioPage({ params }: Props) {
         <Card className="mb-6">
           <h2 className="font-serif text-lg font-bold text-marinha-900">Vitrine / catálogo</h2>
           <p className="mt-2 text-sm text-marinha-500">
-            O catálogo de produtos e preços será carregado a partir do ERP quando a integração estiver ativa
-            (SDD §6.2 / §6.7).
+            Em breve: exibição de produtos e preços integrada à operação do negócio.
           </p>
         </Card>
       ) : (
         <Card className="mb-6">
           <h2 className="font-serif text-lg font-bold text-marinha-900">Sobre o negócio</h2>
           <p className="mt-2 text-sm text-marinha-500">
-            Perfil público para divulgar serviços e contato. Galeria, avaliações e mapa conforme evolução do SDD
-            §6.2.
+            Perfil público para divulgar serviços e forma de contato.
           </p>
         </Card>
       )}
 
       <Card>
         <p className="text-sm text-marinha-600">
-          <strong className="text-marinha-900">ERP:</strong> orçamentos e pedidos feitos nesta vitrine entram no
-          módulo <strong>Pedidos de venda</strong> do ERP do negócio (origem portal), quando o fluxo estiver
-          ligado.
-        </p>
-        <p className="mt-3 text-sm text-marinha-500">
-          URL pública da vitrine:{" "}
-          <code className="rounded bg-marinha-900/5 px-1 font-mono text-marinha-900">
-            /diretorio/{data.slug}
-          </code>
+          Em breve: pedidos, orçamentos ou cotações diretamente por esta página.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button variant="primary" disabled>

@@ -26,7 +26,7 @@ export default async function AcademiaPage() {
     <>
       <PageIntro
         title="Academia"
-        description="Trilhas e cursos para empreendedores — alinhado ao SDD (catálogo público, matrícula e progresso com conta)."
+        description="Trilhas e cursos para empreendedores — catálogo público; com conta, matrícula e acompanhamento do progresso."
       />
       <p className="-mt-2 mb-6 text-sm text-marinha-600">
         <Link

@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateErpBusinessDto {
-  @ApiProperty({ example: 'Padaria Central' })
+  @ApiProperty({ example: 'Comércio Exemplo Ltda' })
   @IsString()
   @MinLength(2)
   @MaxLength(255)

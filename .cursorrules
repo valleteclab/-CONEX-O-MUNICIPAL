@@ -31,7 +31,7 @@
 - Regra detalhada para o agente: `.cursor/rules/responsive-web.mdc` (globs `apps/web/**`).
 
 ## Lessons
-- Academia (SDD): base `/api/v1/academy` — `GET courses/featured`, `GET courses/:slug` (detalhe+aulas), `GET courses`, `POST courses/:id/enroll`, `GET my-courses`, `PUT my-courses/:id/progress`, `POST .../complete`, certificado PDF ainda não (501). Entidades `academy_lessons`, `academy_enrollments`; curso com `slug` único por tenant.
+- Academia: base `/api/v1/academy` — leitura pública + matrícula/progresso com JWT; **sem POST de criação de curso** — conteúdo inserido via BD/migrations ou futuro painel gestor. Entidades `academy_lessons`, `academy_enrollments`; curso com `slug` único por tenant.
 - Painel (SDD §6.5): base `/api/v1/analytics` — KPIs reais por `tenantId` (JWT); `@Roles('manager','admin')` + `RolesGuard`; `/painel` no Next usa `GET /analytics/dashboard` (autenticado). Utilizador demo `mei@demo` é role `mei` — não vê o painel até promover a `manager`/`admin` na BD ou criar utilizador gestor.
 - Diretório na API: tabela `directory_listings` (não confundir com `erp/businesses`); rotas `/api/v1/businesses` (público) e POST/PATCH com JWT; vitrine MEI/Empresa.
 - Diretório: cada negócio tem modo `perfil` ou `loja`; a mesma rota `/diretorio/[slug]` renderiza a vitrine conforme o modo (até integrar API).

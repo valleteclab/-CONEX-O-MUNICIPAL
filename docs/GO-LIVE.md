@@ -19,7 +19,7 @@
 
 ## 2. Checklist de deploy e operação
 
-- [ ] **Base de dados:** migrations aplicadas (incl. moderação `directory_listings` / `erp_businesses` e utilizador super admin, se usar migration de plataforma).
+- [ ] **Base de dados:** migrations aplicadas (incl. moderação `directory_listings` / `erp_businesses`, super admin, e `RemoveDemoSeedContent` para remover dados de demo em bases antigas).
 - [ ] **API:** `JWT_*`, `DATABASE_URL`, `TYPEORM_MIGRATIONS_RUN=true` em produção, `TYPEORM_SYNC=false`.
 - [ ] **CORS:** `CORS_ORIGINS` com o origin exato do front (sem barra final), alinhado ao browser.
 - [ ] **Front:** `NEXT_PUBLIC_API_BASE_URL` apontando para a API pública no **build** do Next.
@@ -38,3 +38,14 @@ Fases sugeridas para alinhar o front à API já existente:
 4. **PDV:** carregar produtos via API, gravar venda conforme regras do backend (e fiscal quando existir).
 
 Cada fase pode ser entregue independentemente desde que o guard e o tenant continuem consistentes.
+
+---
+
+## 4. Gestão de conteúdo: quem cadastra o quê
+
+| Área | Onde se gere hoje | Quem |
+|------|-------------------|------|
+| **Vitrines do diretório** | Utilizador autenticado (MEI/Empresa) em `/dashboard/meu-negocio`; aprovação em `/dashboard/plataforma` (super admin). | Empresa + moderador plataforma |
+| **Cursos da Academia** | Não existe ecrã nem endpoint `POST /academy/courses` para gestores. Conteúdo = registos em `academy_courses` / `academy_lessons` (inserção via **SQL**, migration ou ferramenta interna). | Equipe municipal / TI com acesso à base de dados (ou evolução futura: API + painel para `manager`/`admin`) |
+
+Os dados de demonstração (três vitrines, uma cotação e três cursos de exemplo) foram **removidos** do baseline SQL e limpos em bases já existentes pela migration `RemoveDemoSeedContent1730000006000`.

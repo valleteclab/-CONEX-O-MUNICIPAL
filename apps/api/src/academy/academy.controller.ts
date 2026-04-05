@@ -30,7 +30,7 @@ export class AcademyController {
   constructor(private readonly academy: AcademyService) {}
 
   @Get('courses/featured')
-  @ApiOperation({ summary: 'Cursos em destaque (SDD §6.4)' })
+  @ApiOperation({ summary: 'Cursos em destaque' })
   async featured(
     @Query('tenant') tenantSlug: string | undefined,
     @Query('take') takeRaw?: string,

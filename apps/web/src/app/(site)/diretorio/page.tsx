@@ -185,8 +185,12 @@ export default async function DiretorioPage({ searchParams }: DiretorioPageProps
 
       {items.length === 0 ? (
         <p className="text-sm text-marinha-500">
-          Nenhum negócio publicado. Cadastre-se como MEI/Empresa e crie a vitrine na API{" "}
-          <code className="rounded bg-marinha-900/5 px-1 font-mono text-xs">POST /businesses</code>.
+          Nenhum negócio publicado ainda. Cadastre-se como MEI ou Empresa e crie a sua vitrine em{" "}
+          <Link href="/dashboard/meu-negocio" className="font-medium text-municipal-700 underline-offset-2 hover:underline">
+            Meu negócio
+          </Link>
+          {" "}
+          (após aprovação da plataforma, a vitrine aparece aqui).
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

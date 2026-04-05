@@ -11,7 +11,7 @@ export class CreateDirectoryListingDto {
   })
   slug!: string;
 
-  @ApiProperty({ example: 'Padaria Central' })
+  @ApiProperty({ example: 'Comércio Exemplo Ltda' })
   @IsString()
   @MinLength(2)
   @MaxLength(255)
