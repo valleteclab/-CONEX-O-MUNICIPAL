@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Guia visual — Conexão Municipal",
+  title: "Guia visual",
   description:
     "Cores, tipografia e componentes do design system (SDD §10). Referência para equipe e revisão de UI.",
 };
