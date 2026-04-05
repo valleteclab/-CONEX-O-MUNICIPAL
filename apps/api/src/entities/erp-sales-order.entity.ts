@@ -39,7 +39,7 @@ export class ErpSalesOrder {
   @JoinColumn({ name: 'party_id' })
   party: ErpParty | null;
 
-  @Column({ length: 24, default: 'draft' })
+  @Column({ type: 'varchar', length: 24, default: 'draft' })
   status: ErpSalesOrderStatus;
 
   @Column({ name: 'total_amount', type: 'decimal', precision: 18, scale: 4, default: 0 })
@@ -48,7 +48,7 @@ export class ErpSalesOrder {
   @Column({ type: 'text', nullable: true })
   note: string | null;
 
-  @Column({ length: 32, default: 'erp' })
+  @Column({ type: 'varchar', length: 32, default: 'erp' })
   source: ErpSalesOrderSource;
 
   @Column({ name: 'portal_request_id', type: 'uuid', nullable: true })

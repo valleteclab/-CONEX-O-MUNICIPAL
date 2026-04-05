@@ -21,14 +21,14 @@ export class ErpBusiness {
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column({ name: 'trade_name', length: 255 })
+  @Column({ name: 'trade_name', type: 'varchar', length: 255 })
   tradeName: string;
 
-  @Column({ name: 'legal_name', length: 255, nullable: true })
+  @Column({ name: 'legal_name', type: 'varchar', length: 255, nullable: true })
   legalName: string | null;
 
   /** CNPJ/CPF alfanumérico sem máscara opcional */
-  @Column({ length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   document: string | null;
 
   @Column({ name: 'is_active', default: true })

@@ -36,7 +36,7 @@ export class ErpBusinessUser {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
-  @Column({ length: 32, default: 'empresa_owner' })
+  @Column({ type: 'varchar', length: 32, default: 'empresa_owner' })
   role: ErpBusinessMemberRole | string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

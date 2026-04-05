@@ -24,7 +24,7 @@ export class ErpStockLocation {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
-  @Column({ length: 120 })
+  @Column({ type: 'varchar', length: 120 })
   name: string;
 
   @Column({ name: 'is_default', default: false })

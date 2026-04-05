@@ -16,22 +16,22 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 255, unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column({ length: 32, nullable: true })
+  @Column({ type: 'varchar', length: 32, nullable: true })
   phone: string | null;
 
-  @Column({ name: 'password_hash', length: 255 })
+  @Column({ name: 'password_hash', type: 'varchar', length: 255 })
   passwordHash: string;
 
-  @Column({ name: 'full_name', length: 200 })
+  @Column({ name: 'full_name', type: 'varchar', length: 200 })
   fullName: string;
 
   @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl: string | null;
 
-  @Column({ length: 32, default: 'citizen' })
+  @Column({ type: 'varchar', length: 32, default: 'citizen' })
   role: AppUserRole;
 
   @Column({ name: 'is_active', default: true })

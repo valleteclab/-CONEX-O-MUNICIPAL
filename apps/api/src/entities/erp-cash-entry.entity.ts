@@ -25,13 +25,13 @@ export class ErpCashEntry {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
-  @Column({ length: 8 })
+  @Column({ type: 'varchar', length: 8 })
   type: ErpCashEntryType;
 
   @Column({ type: 'decimal', precision: 18, scale: 4 })
   amount: string;
 
-  @Column({ length: 80 })
+  @Column({ type: 'varchar', length: 80 })
   category: string;
 
   @Column({ name: 'occurred_at', type: 'timestamptz' })

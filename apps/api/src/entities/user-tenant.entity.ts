@@ -30,7 +30,7 @@ export class UserTenant {
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column({ length: 32, default: 'citizen' })
+  @Column({ type: 'varchar', length: 32, default: 'citizen' })
   role: string;
 
   @Column({ name: 'is_active', default: true })

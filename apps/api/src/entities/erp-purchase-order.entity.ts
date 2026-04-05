@@ -36,7 +36,7 @@ export class ErpPurchaseOrder {
   @JoinColumn({ name: 'supplier_party_id' })
   supplierParty: ErpParty;
 
-  @Column({ length: 24, default: 'draft' })
+  @Column({ type: 'varchar', length: 24, default: 'draft' })
   status: ErpPurchaseOrderStatus;
 
   @Column({ name: 'total_amount', type: 'decimal', precision: 18, scale: 4, default: 0 })

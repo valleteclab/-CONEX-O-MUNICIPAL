@@ -40,10 +40,10 @@ export class ErpAccountReceivable {
   @Column({ type: 'decimal', precision: 18, scale: 4 })
   amount: string;
 
-  @Column({ length: 16, default: 'open' })
+  @Column({ type: 'varchar', length: 16, default: 'open' })
   status: ErpFinanceDocStatus;
 
-  @Column({ name: 'link_ref', length: 32, nullable: true })
+  @Column({ name: 'link_ref', type: 'varchar', length: 32, nullable: true })
   linkRef: string | null;
 
   @Column({ name: 'link_id', type: 'uuid', nullable: true })

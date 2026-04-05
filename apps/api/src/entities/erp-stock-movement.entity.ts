@@ -28,7 +28,7 @@ export class ErpStockMovement {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
-  @Column({ length: 16 })
+  @Column({ type: 'varchar', length: 16 })
   type: ErpStockMovementType;
 
   @Column({ name: 'product_id', type: 'uuid' })
@@ -49,7 +49,7 @@ export class ErpStockMovement {
   @Column({ type: 'decimal', precision: 18, scale: 4 })
   quantity: string;
 
-  @Column({ name: 'ref_type', length: 32, nullable: true })
+  @Column({ name: 'ref_type', type: 'varchar', length: 32, nullable: true })
   refType: string | null;
 
   @Column({ name: 'ref_id', type: 'uuid', nullable: true })

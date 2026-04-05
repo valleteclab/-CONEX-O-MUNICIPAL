@@ -18,6 +18,7 @@
 - [X] SDD + schema: pedidos/orçamentos do diretório → `erp_sales_orders.source` / `portal_request_id`; telas web alinhadas
 - [X] DevContext (MCP): `import_project_data` — features/requisitos/decisões do layout ERP diretório portal→ERP; commits `c60db86` `3310817` `f88a868` `fa0ddf7` registrados
 - [X] Git `main` atualizado com origin; DevContext: import API diretório + PATCH users + PDV; commits `6d4146c` `27d378a` `3ff57ee` registrados
+- [X] Railway: projeto `conexao-municipal`, serviço `api` + Postgres; URL pública `https://api-production-488f.up.railway.app` — build via Railpack; `package.json` raiz **sem BOM UTF-8** (Railpack falhava com `\ufeff`); `@nestjs/cli` em **dependencies** do root; `apps/api` build usa `node ../../node_modules/@nestjs/cli/bin/nest.js build`; `nixpacks.toml` com `npm ci --include=dev` (legado se usar Nixpacks)
 
 ## Responsividade (apps/web)
 - Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
@@ -38,4 +39,6 @@
 - `docker compose` no Windows exige Docker Desktop (pipe `dockerDesktopLinuxEngine`).
 - Workspace path: conexaomunicipal; npm workspaces: pacotes `api`, `web`, `@conexao-municipal/shared`.
 - DevContext foi reconfigurado para este projeto; spec reimportada após troca de MCP.
+- **Railway Railpack:** `package.json` na raiz não pode ter BOM (`\ufeff`); senão `hujson: invalid character '\ufeff'`. Salvar JSON como UTF-8 **sem** BOM.
+- **`NODE_ENV=production`** (variável global no Windows) faz `npm install` omitir devDependencies — `@nestjs/cli` não entra em `node_modules` se estiver só em devDeps; solução: CLI nas **dependencies** do monorepo root e/ou `npm install --include=dev`, ou script de build com caminho explícito ao `nest.js`.
 - Commits multilinha no Windows: escrever mensagem em arquivo e `git commit -F arquivo.txt`, depois apagar o arquivo; prefixo `[Cursor]` no título.

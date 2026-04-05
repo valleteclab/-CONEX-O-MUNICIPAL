@@ -24,19 +24,19 @@ export class DirectoryListing {
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
-  @Column({ length: 120 })
+  @Column({ type: 'varchar', length: 120 })
   slug: string;
 
-  @Column({ name: 'trade_name', length: 255 })
+  @Column({ name: 'trade_name', type: 'varchar', length: 255 })
   tradeName: string;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   category: string | null;
 
-  @Column({ length: 16, default: 'perfil' })
+  @Column({ type: 'varchar', length: 16, default: 'perfil' })
   modo: DirectoryListingModo;
 
   @Column({ name: 'owner_user_id', type: 'uuid' })

@@ -21,7 +21,7 @@ export class PasswordResetToken {
   user: User;
 
   /** SHA-256 hex do token enviado por e-mail (nunca armazenar o token em claro). */
-  @Column({ name: 'token_hash', length: 64, unique: true })
+  @Column({ name: 'token_hash', type: 'varchar', length: 64, unique: true })
   tokenHash: string;
 
   @Column({ name: 'expires_at', type: 'timestamptz' })

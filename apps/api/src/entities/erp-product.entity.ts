@@ -26,19 +26,19 @@ export class ErpProduct {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
-  @Column({ length: 80 })
+  @Column({ type: 'varchar', length: 80 })
   sku: string;
 
-  @Column({ length: 500 })
+  @Column({ type: 'varchar', length: 500 })
   name: string;
 
-  @Column({ length: 16, nullable: true })
+  @Column({ type: 'varchar', length: 16, nullable: true })
   ncm: string | null;
 
-  @Column({ name: 'cfop_default', length: 8, nullable: true })
+  @Column({ name: 'cfop_default', type: 'varchar', length: 8, nullable: true })
   cfopDefault: string | null;
 
-  @Column({ length: 16, default: 'UN' })
+  @Column({ type: 'varchar', length: 16, default: 'UN' })
   unit: string;
 
   @Column({ type: 'decimal', precision: 18, scale: 4, default: 0 })

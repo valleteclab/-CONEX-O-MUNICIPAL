@@ -26,13 +26,13 @@ export class ErpParty {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
-  @Column({ length: 16 })
+  @Column({ type: 'varchar', length: 16 })
   type: ErpPartyType;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column({ length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   document: string | null;
 
   @Column({ type: 'jsonb', default: {} })

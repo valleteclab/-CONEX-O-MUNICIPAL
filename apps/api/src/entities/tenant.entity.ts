@@ -16,10 +16,10 @@ export class Tenant {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column({ length: 100, unique: true })
+  @Column({ type: 'varchar', length: 100, unique: true })
   slug: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
@@ -28,16 +28,16 @@ export class Tenant {
   @Column({ type: 'char', length: 2, nullable: true })
   state: string | null;
 
-  @Column({ length: 120, nullable: true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   city: string | null;
 
   @Column({ name: 'logo_url', type: 'text', nullable: true })
   logoUrl: string | null;
 
-  @Column({ name: 'primary_color', length: 16, nullable: true })
+  @Column({ name: 'primary_color', type: 'varchar', length: 16, nullable: true })
   primaryColor: string | null;
 
-  @Column({ name: 'secondary_color', length: 16, nullable: true })
+  @Column({ name: 'secondary_color', type: 'varchar', length: 16, nullable: true })
   secondaryColor: string | null;
 
   @Column({ name: 'plan_id', type: 'uuid', nullable: true })

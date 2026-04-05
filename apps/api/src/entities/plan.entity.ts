@@ -12,10 +12,10 @@ export class Plan {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 120 })
+  @Column({ type: 'varchar', length: 120 })
   name: string;
 
-  @Column({ length: 64, unique: true })
+  @Column({ type: 'varchar', length: 64, unique: true })
   slug: string;
 
   @Column({ name: 'price_monthly', type: 'decimal', precision: 12, scale: 2, default: 0 })

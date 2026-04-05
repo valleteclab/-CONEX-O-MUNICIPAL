@@ -3,7 +3,8 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm ci"]
+# Instalar devDependencies (Nest CLI, TypeScript) para o build; NODE_ENV=production omitiria isso.
+cmds = ["npm ci --include=dev"]
 
 [phases.build]
 cmds = ["npm run build -w api"]
