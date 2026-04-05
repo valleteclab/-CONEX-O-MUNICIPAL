@@ -22,6 +22,14 @@ type CourseRow = {
 
 type ListCourses = { items: CourseRow[]; total: number };
 
+function isPlaylistUrl(u: string): boolean {
+  try {
+    return new URL(u.trim()).searchParams.has("list");
+  } catch {
+    return false;
+  }
+}
+
 export default function AdminAcademiaPage() {
   const [data, setData] = useState<ListCourses | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -43,6 +51,10 @@ export default function AdminAcademiaPage() {
   } | null>(null);
   const [ytFetching, setYtFetching] = useState(false);
   const [ytErr, setYtErr] = useState<string | null>(null);
+  const [playlistPreview, setPlaylistPreview] = useState<{
+    playlistId: string;
+    items: { title: string; videoUrl: string }[];
+  } | null>(null);
 
   const load = useCallback(async () => {
     if (!getAccessToken()) {
@@ -78,7 +90,28 @@ export default function AdminAcademiaPage() {
     }
     setYtFetching(true);
     setYtErr(null);
+    setPlaylistPreview(null);
     try {
+      if (isPlaylistUrl(u)) {
+        const res = await apiAuthFetch<{
+          playlistId: string;
+          items: { title: string; videoUrl: string }[];
+        }>(
+          `/api/v1/platform/academy/youtube/playlist-preview?url=${encodeURIComponent(u)}`,
+        );
+        if (!res.ok || !res.data) {
+          setYtErr(
+            res.error ||
+              "Não foi possível ler a playlist. Em produção, defina YOUTUBE_API_KEY na API.",
+          );
+          setYtPreview(null);
+          return;
+        }
+        setPlaylistPreview(res.data);
+        setYtPreview(null);
+        return;
+      }
+
       const r = await fetch(`/api/youtube-oembed?url=${encodeURIComponent(u)}`);
       const data = (await r.json()) as {
         title?: string;
@@ -125,7 +158,9 @@ export default function AdminAcademiaPage() {
     const ytu = youtubeUrl.trim();
     if (ytu) {
       body.firstLessonYoutubeUrl = ytu;
-      body.firstLessonTitle = firstLessonTitle.trim() || "Aula em vídeo";
+      if (!isPlaylistUrl(ytu)) {
+        body.firstLessonTitle = firstLessonTitle.trim() || "Aula em vídeo";
+      }
     }
     const res = await apiAuthFetch<CourseRow>("/api/v1/platform/academy/courses", {
       method: "POST",
@@ -145,6 +180,7 @@ export default function AdminAcademiaPage() {
     setYoutubeUrl("");
     setFirstLessonTitle("");
     setYtPreview(null);
+    setPlaylistPreview(null);
     setYtErr(null);
     void load();
   }
@@ -294,17 +330,25 @@ export default function AdminAcademiaPage() {
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-3">
               <label className="block text-xs font-medium text-gray-600">
-                Primeira aula — link do YouTube (opcional)
+                Trilha — link do YouTube (opcional)
               </label>
               <p className="mt-0.5 text-xs text-gray-500">
-                Busca título e autor via oEmbed; ao criar o curso, a primeira aula fica com esse
-                vídeo.
+                Um vídeo isolado: pré-visualização com oEmbed e uma aula. Com{" "}
+                <strong className="font-medium text-gray-700">list=…</strong> na URL (playlist), o
+                sistema importa <strong className="font-medium text-gray-700">todas as aulas</strong>{" "}
+                na ordem da lista — em produção use <code className="text-xs">YOUTUBE_API_KEY</code>{" "}
+                na API para listas completas (YouTube Data API v3).
               </p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
                 <Input
                   value={youtubeUrl}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=… ou youtu.be/…"
+                  onChange={(e) => {
+                    setYoutubeUrl(e.target.value);
+                    setPlaylistPreview(null);
+                    setYtPreview(null);
+                    setYtErr(null);
+                  }}
+                  placeholder="Vídeo ou playlist: …watch?v=…&list=PL…"
                   className="min-w-0 flex-1"
                   type="url"
                 />
@@ -315,10 +359,25 @@ export default function AdminAcademiaPage() {
                   disabled={ytFetching}
                   onClick={() => void fetchYoutubeMeta()}
                 >
-                  {ytFetching ? "Buscando…" : "Buscar dados do vídeo"}
+                  {ytFetching ? "Buscando…" : "Pré-visualizar"}
                 </Button>
               </div>
               {ytErr ? <p className="mt-2 text-xs text-red-600">{ytErr}</p> : null}
+              {playlistPreview ? (
+                <div className="mt-3 rounded-md border border-teal-200 bg-teal-50/60 p-3 text-sm">
+                  <p className="font-medium text-gray-900">
+                    Trilha: {playlistPreview.items.length} vídeos (playlist {playlistPreview.playlistId.slice(0, 12)}…)
+                  </p>
+                  <ol className="mt-2 max-h-40 list-decimal space-y-1 overflow-y-auto pl-5 text-xs text-gray-700">
+                    {playlistPreview.items.slice(0, 40).map((it, i) => (
+                      <li key={`${it.videoUrl}-${i}`}>{it.title}</li>
+                    ))}
+                  </ol>
+                  {playlistPreview.items.length > 40 ? (
+                    <p className="mt-2 text-xs text-gray-500">… e mais {playlistPreview.items.length - 40} aulas</p>
+                  ) : null}
+                </div>
+              ) : null}
               {ytPreview ? (
                 <div className="mt-3 flex gap-3 rounded-md border border-teal-100 bg-teal-50/50 p-2">
                   {ytPreview.thumbnailUrl ? (
@@ -346,7 +405,7 @@ export default function AdminAcademiaPage() {
                   </div>
                 </div>
               ) : null}
-              {youtubeUrl.trim() ? (
+              {youtubeUrl.trim() && !isPlaylistUrl(youtubeUrl) ? (
                 <div className="mt-3">
                   <label className="block text-xs font-medium text-gray-600">
                     Título da primeira aula

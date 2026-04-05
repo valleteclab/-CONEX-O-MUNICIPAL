@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +10,10 @@ import { Tenant } from '../entities/tenant.entity';
 import { CreatePlatformCourseDto } from './dto/create-platform-course.dto';
 import { UpdatePlatformCourseDto } from './dto/update-platform-course.dto';
 import { PlatformLessonsService } from './platform-lessons.service';
+import {
+  extractYoutubePlaylistId,
+  YoutubePlaylistService,
+} from './youtube-playlist.service';
 
 @Injectable()
 export class PlatformCoursesService {
@@ -18,6 +23,7 @@ export class PlatformCoursesService {
     @InjectRepository(Tenant)
     private readonly tenants: Repository<Tenant>,
     private readonly platformLessons: PlatformLessonsService,
+    private readonly youtubePlaylist: YoutubePlaylistService,
   ) {}
 
   async list(query: {
@@ -64,14 +70,33 @@ export class PlatformCoursesService {
     const saved = await this.courses.save(row);
     const yt = dto.firstLessonYoutubeUrl?.trim();
     if (yt) {
-      const lessonTitle =
-        dto.firstLessonTitle?.trim() || 'Aula em vídeo';
-      await this.platformLessons.create(saved.id, {
-        title: lessonTitle,
-        videoUrl: yt,
-        lessonKind: 'youtube',
-        sortOrder: 0,
-      });
+      const playlistId = extractYoutubePlaylistId(yt);
+      if (playlistId) {
+        const items = await this.youtubePlaylist.listPlaylistVideos(playlistId);
+        if (!items.length) {
+          throw new BadRequestException(
+            'Playlist sem vídeos acessíveis. Configure YOUTUBE_API_KEY na API (Google Cloud, YouTube Data API v3) para importar a trilha completa.',
+          );
+        }
+        let order = 0;
+        for (const it of items) {
+          await this.platformLessons.create(saved.id, {
+            title: it.title,
+            videoUrl: it.videoUrl,
+            lessonKind: 'youtube',
+            sortOrder: order++,
+          });
+        }
+      } else {
+        const lessonTitle =
+          dto.firstLessonTitle?.trim() || 'Aula em vídeo';
+        await this.platformLessons.create(saved.id, {
+          title: lessonTitle,
+          videoUrl: yt,
+          lessonKind: 'youtube',
+          sortOrder: 0,
+        });
+      }
     }
     return saved;
   }

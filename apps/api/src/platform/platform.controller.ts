@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -29,6 +30,7 @@ import { PlatformAdminService } from './platform-admin.service';
 import { PlatformCoursesService } from './platform-courses.service';
 import { PlatformLessonsService } from './platform-lessons.service';
 import { PlatformLiveSessionsService } from './platform-live-sessions.service';
+import { YoutubePlaylistService } from './youtube-playlist.service';
 
 @ApiTags('plataforma — super admin')
 @ApiBearerAuth()
@@ -40,6 +42,7 @@ export class PlatformController {
     private readonly platformCourses: PlatformCoursesService,
     private readonly platformLessons: PlatformLessonsService,
     private readonly platformLiveSessions: PlatformLiveSessionsService,
+    private readonly youtubePlaylist: YoutubePlaylistService,
   ) {}
 
   @Get('directory/listings')
@@ -107,6 +110,19 @@ export class PlatformController {
     const skip = Math.max(0, parseInt(skipStr ?? '0', 10) || 0);
     const take = Math.min(100, Math.max(1, parseInt(takeStr ?? '50', 10) || 50));
     return this.platformCourses.list({ skip, take, tenantSlug });
+  }
+
+  @Get('academy/youtube/playlist-preview')
+  @Roles('super_admin')
+  @ApiOperation({
+    summary:
+      'Pré-visualizar vídeos de uma playlist YouTube (URL com list=…). Requer YOUTUBE_API_KEY para lista completa.',
+  })
+  async playlistPreview(@Query('url') url?: string) {
+    if (!url?.trim()) {
+      throw new BadRequestException('Query url é obrigatória');
+    }
+    return this.youtubePlaylist.previewPlaylistUrl(url.trim());
   }
 
   @Post('academy/courses')

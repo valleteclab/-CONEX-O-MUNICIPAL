@@ -114,7 +114,7 @@ export function AcademyLessonTracker({ courseId, slug, initialLessons }: Props) 
         </p>
       ) : null}
 
-      <h2 className="font-serif text-lg text-marinha-900">Aulas</h2>
+      <h2 className="font-serif text-lg text-marinha-900">Trilha — aulas</h2>
       <ul className="mt-4 space-y-6">
         {lessons.map((lesson, idx) => {
           const embed = toYoutubeEmbedUrl(lesson.videoUrl ?? null);

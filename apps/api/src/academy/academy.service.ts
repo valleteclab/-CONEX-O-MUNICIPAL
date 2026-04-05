@@ -72,6 +72,7 @@ export class AcademyService {
       .skip(skip)
       .take(take);
     const [items, total] = await qb.getManyAndCount();
+    await this.attachLessonCounts(items);
     return { items, total };
   }
 
@@ -85,7 +86,28 @@ export class AcademyService {
       order: { createdAt: 'DESC' },
       take: n,
     });
+    await this.attachLessonCounts(items);
     return { items };
+  }
+
+  /** Expõe `lessonCount` em cada curso (catálogo / trilhas). */
+  private async attachLessonCounts(courses: AcademyCourse[]): Promise<void> {
+    if (!courses.length) {
+      return;
+    }
+    const ids = courses.map((c) => c.id);
+    const rows = await this.lessons
+      .createQueryBuilder('l')
+      .select('l.courseId', 'courseId')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('l.courseId IN (:...ids)', { ids })
+      .groupBy('l.courseId')
+      .getRawMany<{ courseId: string; cnt: string }>();
+    const map = new Map(rows.map((r) => [r.courseId, parseInt(r.cnt, 10)]));
+    for (const c of courses) {
+      (c as AcademyCourse & { lessonCount?: number }).lessonCount =
+        map.get(c.id) ?? 0;
+    }
   }
 
   async getCourseBySlug(

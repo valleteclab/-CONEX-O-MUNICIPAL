@@ -6,6 +6,8 @@ export type AcademyCourseDto = {
   durationMinutes: number | null;
   category: string | null;
   isFeatured: boolean;
+  /** Número de aulas na trilha (quando exposto pela API) */
+  lessonCount?: number;
 };
 
 export type AcademyLessonDto = {

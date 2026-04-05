@@ -26,7 +26,7 @@ export default async function AcademiaPage() {
     <>
       <PageIntro
         title="Academia"
-        description="Trilhas e cursos para empreendedores — catálogo público; com conta, matrícula e acompanhamento do progresso."
+        description="Trilhas de formação para empreendedores — cada curso é uma sequência de aulas em vídeo; com conta, matrícula e acompanhamento do progresso."
       />
       <p className="-mt-2 mb-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-marinha-600">
         <Link
@@ -48,7 +48,10 @@ export default async function AcademiaPage() {
               <Link key={c.id} href={`/academia/${c.slug}`} className="block">
                 <Card variant="featured">
                   <p className="text-xs font-semibold uppercase tracking-wide text-municipal-700">
-                    Destaque
+                    Destaque · Trilha
+                    {typeof c.lessonCount === "number" && c.lessonCount > 0 ?
+                      ` · ${c.lessonCount} ${c.lessonCount === 1 ? "aula" : "aulas"}`
+                    : null}
                   </p>
                   <h3 className="mt-2 font-serif text-lg text-marinha-900">{c.title}</h3>
                   {c.summary ? <p className="mt-2 text-sm text-marinha-600">{c.summary}</p> : null}
@@ -60,7 +63,7 @@ export default async function AcademiaPage() {
       ) : null}
 
       <section>
-        <h2 className="font-serif text-xl text-marinha-900">Todos os cursos</h2>
+        <h2 className="font-serif text-xl text-marinha-900">Trilhas — todos os cursos</h2>
         {!data ? (
           <p className="mt-3 text-sm text-marinha-500">
             Não foi possível carregar os cursos (verifique NEXT_PUBLIC_API_BASE_URL).
@@ -74,7 +77,13 @@ export default async function AcademiaPage() {
             {data.items.map((c) => (
               <Link key={c.id} href={`/academia/${c.slug}`} className="block">
                 <Card variant={c.id === data.items[0]?.id ? "featured" : "default"}>
-                  <h3 className="font-serif text-lg text-marinha-900">{c.title}</h3>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-municipal-700">
+                    Trilha
+                    {typeof c.lessonCount === "number" && c.lessonCount > 0 ?
+                      ` · ${c.lessonCount} ${c.lessonCount === 1 ? "aula" : "aulas"}`
+                    : null}
+                  </p>
+                  <h3 className="mt-1 font-serif text-lg text-marinha-900">{c.title}</h3>
                   {c.summary ? <p className="mt-2 text-sm text-marinha-600">{c.summary}</p> : null}
                   {c.category ? (
                     <p className="mt-2 text-xs font-medium text-marinha-500">{c.category}</p>

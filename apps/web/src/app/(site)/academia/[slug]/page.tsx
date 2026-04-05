@@ -34,13 +34,17 @@ export default async function AcademiaCursoPage({ params }: Props) {
   }
 
   const { course, lessons } = data;
+  const trilhaLabel =
+    lessons.length > 0 ?
+      `${lessons.length} ${lessons.length === 1 ? "aula na trilha" : "aulas na trilha"}`
+    : "Trilha";
 
   return (
     <>
       <PageIntro
         title={course.title}
         description={course.summary ?? "Formação da Academia Empresarial do município."}
-        badge={course.category ?? "Curso"}
+        badge={course.category ? `${course.category} · ${trilhaLabel}` : trilhaLabel}
       />
       <p className="mb-6 text-sm text-marinha-600">
         <Link href="/academia" className="font-medium text-municipal-700 hover:underline">

@@ -64,7 +64,7 @@ export class CreatePlatformCourseDto {
 
   @ApiPropertyOptional({
     description:
-      'URL do YouTube (watch, shorts ou youtu.be) — cria a primeira aula do curso com este vídeo',
+      'URL do YouTube (watch, shorts ou youtu.be). Se incluir list=PL… (playlist), importa-se a trilha inteira como aulas; caso contrário, uma única aula.',
   })
   @IsOptional()
   @IsString()
@@ -72,7 +72,8 @@ export class CreatePlatformCourseDto {
   firstLessonYoutubeUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Título da primeira aula; padrão: "Aula em vídeo" se houver URL do YouTube',
+    description:
+      'Título da primeira aula (só quando a URL é um único vídeo, sem playlist)',
   })
   @IsOptional()
   @IsString()
