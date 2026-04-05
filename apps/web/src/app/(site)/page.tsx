@@ -6,7 +6,7 @@ const modules = [
   {
     href: "/diretorio",
     title: "Diretório de negócios",
-    desc: "Encontre empresas e MEIs do município, com filtros e avaliações.",
+    desc: "Perfis e lojas virtuais de empresas e MEIs do município.",
   },
   {
     href: "/cotacoes",
