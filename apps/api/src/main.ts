@@ -1,5 +1,5 @@
+/// <reference path="./types/express.d.ts" />
 import { ValidationPipe } from '@nestjs/common';
-import './types/express';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
