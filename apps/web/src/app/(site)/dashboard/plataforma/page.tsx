@@ -18,7 +18,7 @@ export default function DashboardPlataformaPage() {
           ← Início
         </Link>
         <Link href="/plataforma/entrar" className="font-medium text-municipal-700 hover:underline">
-          Trocar sessão (entrada equipa)
+          Trocar sessão (entrada da equipe)
         </Link>
       </p>
       <SuperAdminPanel />

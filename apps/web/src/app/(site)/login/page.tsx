@@ -13,7 +13,7 @@ export default function LoginPage() {
     <>
       <PageIntro
         title="Entrar"
-        description="Acesso para empresas, empreendedores e cidadãos no município (JWT + refresh). A equipa interna da plataforma usa uma entrada separada."
+        description="Acesso para empresas, empreendedores e cidadãos no município (JWT + refresh). A equipe interna da plataforma usa uma entrada separada."
       />
       <p className="mb-4 text-sm text-marinha-600">
         <Link

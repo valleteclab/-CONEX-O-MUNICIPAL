@@ -94,7 +94,7 @@ export function SuperAdminPanel() {
       <Card className="max-w-lg p-5">
         <p className="text-sm font-medium text-marinha-900">Sessão necessária</p>
         <p className="mt-2 text-sm text-marinha-600">
-          Utilize a entrada dedicada à equipa da plataforma — não é o mesmo link que empresas e cidadãos usam no topo do site.
+          Use a entrada dedicada à equipe da plataforma — não é o mesmo link que empresas e cidadãos usam no topo do site.
         </p>
         <Link
           href="/plataforma/entrar"
@@ -133,7 +133,7 @@ export function SuperAdminPanel() {
           </span>
         </div>
         <p className="mt-4 text-sm text-marinha-600">
-          Quem abre uma vitrine no portal passa por aqui. Novos registos podem ficar{" "}
+          Quem abre uma vitrine no portal passa por aqui. Novos registros podem ficar{" "}
           <strong>pendentes</strong> até aprovar. Total na lista: {dir?.total ?? 0}
         </p>
         <ul className="mt-4 space-y-3">
@@ -270,7 +270,7 @@ export function SuperAdminPanel() {
         </ul>
         {!erp?.items.length ? (
           <p className="mt-4 rounded-btn bg-marinha-900/[0.04] px-3 py-3 text-sm text-marinha-600">
-            Nenhum negócio ERP a tratar. Novos cadastros surgem aqui quando existirem.
+            Nenhum negócio ERP na fila. Novos cadastros aparecem aqui quando existirem.
           </p>
         ) : null}
       </section>

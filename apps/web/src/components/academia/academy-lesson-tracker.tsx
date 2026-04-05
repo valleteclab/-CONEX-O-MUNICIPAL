@@ -47,7 +47,7 @@ export function AcademyLessonTracker({ courseId, slug, initialLessons }: Props) 
     );
     setLoading(false);
     if (!res.ok || !res.data) {
-      setErr(res.error || "Não foi possível registar a aula.");
+      setErr(res.error || "Não foi possível registrar a aula.");
       return;
     }
     setLearning(res.data);
@@ -158,7 +158,7 @@ export function AcademyLessonTracker({ courseId, slug, initialLessons }: Props) 
                   ) : null}
                   {!getAccessToken() && embed ? (
                     <p className="mt-3 text-xs text-marinha-500">
-                      Entre na conta para registar o progresso das aulas.
+                      Entre na conta para registrar o progresso das aulas.
                     </p>
                   ) : null}
                 </div>

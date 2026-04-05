@@ -22,7 +22,7 @@ type AuthMeResponse = {
 export type LoginFormIntent = "portal" | "platform";
 
 type LoginFormProps = {
-  /** `portal` = utilizadores do município / empresas (entrada normal). `platform` = só equipa super admin. */
+  /** `portal` = usuários do município / empresas (entrada normal). `platform` = só equipe super admin. */
   intent?: LoginFormIntent;
 };
 
@@ -60,7 +60,7 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
       }
       if (me.data.role !== "super_admin") {
         setError(
-          "Esta entrada é só para super administradores da plataforma. A sua sessão está ativa (conta de município ou empresa): use o menu do site para continuar, ou termine sessão se entrou aqui por engano.",
+          "Esta entrada é só para super administradores da plataforma. Sua sessão está ativa (conta de município ou empresa): use o menu do site para continuar, ou encerre a sessão se entrou aqui por engano.",
         );
         return;
       }
@@ -116,7 +116,7 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
         </Link>
         {intent === "platform" ? (
           <Link href="/login" className="font-medium text-marinha-600 hover:underline">
-            Entrar como utilizador do município
+            Entrar como usuário do município
           </Link>
         ) : null}
       </div>

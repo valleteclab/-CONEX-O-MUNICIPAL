@@ -8,7 +8,7 @@ export function PlatformDashboardHero() {
   return (
     <div className="mb-8 rounded-2xl border-2 border-municipal-600/25 bg-gradient-to-br from-municipal-600/10 via-surface to-cerrado-500/5 px-5 py-6 shadow-sm sm:px-7">
       <p className="text-xs font-bold uppercase tracking-wider text-municipal-800">
-        Super administrador · equipa Conexão Municipal
+        Super administrador · equipe Conexão Municipal
       </p>
       <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-marinha-900 sm:text-3xl">
         Centro de gestão da plataforma

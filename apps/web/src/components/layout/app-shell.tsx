@@ -9,7 +9,7 @@ import { SiteFooter } from "./site-footer";
 type MainNavItem = {
   href: string;
   label: string;
-  /** Destaque no menu: equipa interna (super admin). */
+  /** Destaque no menu: equipe interna (super admin). */
   kind?: "platform";
 };
 
@@ -20,7 +20,7 @@ const mainNav: MainNavItem[] = [
   { href: "/academia", label: "Academia" },
   { href: "/erp", label: "ERP" },
   { href: "/painel", label: "Painel" },
-  /** Entrada explícita da equipa interna (super admin) — não confundir com Painel do município. */
+  /** Entrada explícita da equipe interna (super admin) — não confundir com Painel do município. */
   { href: "/plataforma/entrar", label: "Plataforma", kind: "platform" },
 ];
 
@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 "focus-ring inline-flex min-h-[44px] items-center justify-center rounded-btn border-2 border-municipal-600 bg-white px-3 py-2 text-sm font-bold text-municipal-900 shadow-sm transition hover:bg-municipal-600/10",
                 isActivePath(pathname, "/plataforma/entrar", "platform") && "bg-municipal-600/15",
               )}
-              title="Login da equipa Conexão Municipal (super administrador)"
+              title="Login da equipe Conexão Municipal (super administrador)"
             >
               Área da plataforma
             </Link>
@@ -170,7 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {item.label}
                   {item.kind === "platform" ?
                     <span className="mt-0.5 block text-xs font-normal text-marinha-600">
-                      Super admin — equipa interna
+                      Super admin — equipe interna
                     </span>
                   : null}
                 </Link>

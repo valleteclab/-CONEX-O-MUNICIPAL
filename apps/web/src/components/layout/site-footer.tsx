@@ -15,7 +15,7 @@ export function SiteFooter() {
             href="/plataforma/entrar"
             className="font-medium text-municipal-700 hover:underline"
           >
-            Gestão da plataforma (equipa)
+            Gestão da plataforma (equipe)
           </Link>
           {process.env.NODE_ENV !== "production" ? (
             <Link

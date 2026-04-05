@@ -45,7 +45,7 @@ export function PlatformAcademyPanel() {
     const res = await apiAuthFetch<ListCourses>("/api/v1/platform/academy/courses?take=100&skip=0");
     setLoading(false);
     if (res.status === 403) {
-      setErr("Sem permissão para gerir a Academia.");
+      setErr("Sem permissão para gerenciar a Academia.");
       setData(null);
       return;
     }

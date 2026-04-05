@@ -50,7 +50,7 @@ export function PainelDashboard() {
     }
     if (res.status === 403) {
       setError(
-        "Este painel mostra indicadores do município e é só para gestores locais (papéis manager ou admin). Se a sua função é super administrador da plataforma (moderação em vários municípios), use o botão «Área da plataforma» no topo do site.",
+        "Este painel mostra indicadores do município e é só para gestores locais (papéis manager ou admin). Se sua função é super administrador da plataforma (moderação em vários municípios), use o botão «Área da plataforma» no topo do site.",
       );
       setData(null);
       return;
@@ -127,7 +127,7 @@ export function PainelDashboard() {
         <KpiCard label="Vitrines publicadas (diretório)" value={k.directoryListingsPublished} />
         <KpiCard label="Negócios ERP ativos" value={k.erpBusinessesActive} />
         <KpiCard
-          label="Novos utilizadores MEI (mês)"
+          label="Novos usuários MEI (mês)"
           value={k.newMeiUsersThisMonth}
           hint="Conta criada neste mês no tenant."
         />
