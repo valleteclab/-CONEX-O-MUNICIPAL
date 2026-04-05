@@ -8,9 +8,10 @@
 - [ ] Subir Docker e validar Postgres + TypeORM/migrations *(Docker Desktop precisa estar rodando no Windows)*
 - [X] Módulo Auth Nest: register/login/refresh/logout/me, Swagger `/docs`, `.env.example` (JWT HS256 MVP; RS256 depois)
 - [X] Contexto tenant no JWT (`tid` claim), `CurrentTenantId`, vínculo user↔tenant na validação JWT; forgot/reset password (token SHA-256; dev loga token em stderr); `@nestjs/throttler` nas rotas `/auth`
-- [X] Web: `AppShell` (nav + auth links + mobile menu + rodapé); telas em `app/(site)/` — `/`, `/login`, `/cadastro`, `/recuperar-senha`, `/diretorio`, `/diretorio/[slug]`, `/cotacoes`, `/academia`, `/erp`, `/painel`, `/design-system`; `PageIntro` + UI base; `app/not-found.tsx`
+- [X] Web: `AppShell` (nav + auth links + mobile menu + rodapé); telas em `app/(site)/` — `/`, `/login`, `/cadastro`, `/recuperar-senha`, `/diretorio`, `/diretorio/[slug]`, `/cotacoes`, `/academia`, `/erp` (+ sub-rotas ERP), `/painel`, `/design-system`; `PageIntro` + UI base; `app/not-found.tsx`
 - [X] ERP Onda A (API): `/erp/businesses`, produtos, parties, estoque (locais/saldos/movimentos), pedidos venda/compra, financeiro AR/AP/caixa; header `X-Business-Id` + `ErpBusinessGuard`; tabelas em `infra/docker/init.sql`
 - [X] Web: layout fluido (sem `max-w-*` no shell/cards centrais); commit `c60db86` em `main`
+- [X] Web ERP: hub `/erp` + `ErpSubNav` + telas `/erp/produtos`, `clientes-fornecedores`, `estoque`, `pedidos-venda`, `pedidos-compra`, `financeiro` (UI + placeholders; API depois)
 
 ## Lessons
 - Rotas ERP (exceto `GET/POST /erp/businesses`) exigem header `X-Business-Id` e vínculo em `erp_business_users`.
