@@ -19,6 +19,7 @@
 - [X] DevContext (MCP): `import_project_data` — features/requisitos/decisões do layout ERP diretório portal→ERP; commits `c60db86` `3310817` `f88a868` `fa0ddf7` registrados
 - [X] Git `main` atualizado com origin; DevContext: import API diretório + PATCH users + PDV; commits `6d4146c` `27d378a` `3ff57ee` registrados
 - [X] Railway: projeto `conexao-municipal`, serviço `api` + Postgres; URL pública `https://api-production-488f.up.railway.app` — build via Railpack; `package.json` raiz **sem BOM UTF-8** (Railpack falhava com `\ufeff`); `@nestjs/cli` em **dependencies** do root; `apps/api` build usa `node ../../node_modules/@nestjs/cli/bin/nest.js build`; `nixpacks.toml` com `npm ci --include=dev` (legado se usar Nixpacks)
+- [X] Git `main`: commit `b5d821e` — deploy automático no Railway: ligar repositório GitHub ao serviço `api` (Settings → **Connect Repo** → branch `main`; instalar [Railway GitHub App](https://github.com/apps/railway-app) se pedido)
 
 ## Responsividade (apps/web)
 - Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
