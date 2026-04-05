@@ -17,6 +17,7 @@
 - [X] Diretório: vitrine pública `/diretorio/[slug]` com modo perfil ou loja (`src/data/diretorio-negocios.ts`)
 - [X] SDD + schema: pedidos/orçamentos do diretório → `erp_sales_orders.source` / `portal_request_id`; telas web alinhadas
 - [X] DevContext (MCP): `import_project_data` — features/requisitos/decisões do layout ERP diretório portal→ERP; commits `c60db86` `3310817` `f88a868` `fa0ddf7` registrados
+- [X] Git `main` atualizado com origin; DevContext: import API diretório + PATCH users + PDV; commits `6d4146c` `27d378a` `3ff57ee` registrados
 
 ## Responsividade (apps/web)
 - Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
