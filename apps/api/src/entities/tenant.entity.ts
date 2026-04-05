@@ -22,7 +22,7 @@ export class Tenant {
   @Column({ length: 100, unique: true })
   slug: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   domain: string | null;
 
   @Column({ type: 'char', length: 2, nullable: true })
