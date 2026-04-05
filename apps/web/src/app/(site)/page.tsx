@@ -32,12 +32,14 @@ const modules = [
 ] as const;
 
 export default async function HomePage() {
+  const showDevExtras = process.env.NODE_ENV !== "production";
+
   return (
     <>
       <PageIntro
         title="Portal Conexão Municipal"
         description="Luís Eduardo Magalhães — negócios, capacitação e serviços ao cidadão. Escolha um módulo abaixo ou use o menu superior."
-        badge="Protótipo de telas"
+        badge="Portal municipal"
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -56,24 +58,20 @@ export default async function HomePage() {
         ))}
       </div>
 
-      <Card variant="featured" className="mt-8 space-y-3">
-        <BackendStatus />
-        <p className="text-sm text-marinha-500">
-          <strong className="text-marinha-900">Desenvolvimento:</strong> todas as telas
-          seguem o mesmo guia visual (tipografia, cores e componentes).{" "}
-          <Link
-            href="/design-system"
-            className="font-semibold text-municipal-700 underline-offset-2 hover:underline"
-          >
-            Ver guia visual
-          </Link>
-          {" · "}
-          rotas REST sob{" "}
-          <code className="rounded bg-marinha-900/5 px-1 font-mono text-marinha-900">
-            /api/v1
-          </code>
-        </p>
-      </Card>
+      {showDevExtras ? (
+        <Card variant="featured" className="mt-8 space-y-3">
+          <BackendStatus />
+          <p className="text-sm text-marinha-500">
+            <strong className="text-marinha-900">Ambiente de desenvolvimento:</strong>{" "}
+            <Link
+              href="/design-system"
+              className="font-semibold text-municipal-700 underline-offset-2 hover:underline"
+            >
+              Guia visual (design system)
+            </Link>
+          </p>
+        </Card>
+      ) : null}
     </>
   );
 }

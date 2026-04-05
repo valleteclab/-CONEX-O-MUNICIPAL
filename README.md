@@ -5,6 +5,7 @@ Monorepo: `apps/web` (Next.js), `apps/api` (NestJS), `packages/shared`.
 ## Documentação
 
 - [SDD-ConexaoMunicipal.md](./SDD-ConexaoMunicipal.md) — **v2.0** (inclui **ERP empresarial nativo** para MEI/pequenas empresas: §5.4, §6.7, ondas A/B/C)
+- [docs/GO-LIVE.md](./docs/GO-LIVE.md) — escopo de liberação (v1), checklist de deploy e roadmap da UI do ERP
 
 ## Comandos
 
