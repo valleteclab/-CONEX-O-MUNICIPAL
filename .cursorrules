@@ -20,6 +20,7 @@
 - [X] Git `main` atualizado com origin; DevContext: import API diretório + PATCH users + PDV; commits `6d4146c` `27d378a` `3ff57ee` registrados
 - [X] Railway: projeto `conexao-municipal`, serviço `api` + Postgres; URL pública `https://api-production-488f.up.railway.app` — build via Railpack; `package.json` raiz **sem BOM UTF-8** (Railpack falhava com `\ufeff`); `@nestjs/cli` em **dependencies** do root; `apps/api` build usa `node ../../node_modules/@nestjs/cli/bin/nest.js build`; `nixpacks.toml` com `npm ci --include=dev` (legado se usar Nixpacks)
 - [X] Git `main`: commit `b5d821e` — deploy automático no Railway: ligar repositório GitHub ao serviço `api` (Settings → **Connect Repo** → branch `main`; instalar [Railway GitHub App](https://github.com/apps/railway-app) se pedido)
+- [ ] **Front Railway:** serviço `conexao-municipal` → Settings → **Config as code** → caminho `/railway.web.toml` (ou Build: `npm ci --include=dev && npm run build:web`, Start: `npm run start:web`). Gerar domínio público no serviço. Falha antiga: BOM no `package.json` + build raiz só compilava API (`npm run build` = api).
 
 ## Responsividade (apps/web)
 - Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
