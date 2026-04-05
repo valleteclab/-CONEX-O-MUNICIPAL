@@ -80,6 +80,25 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens (use
 CREATE INDEX IF NOT EXISTS idx_user_tenants_tenant ON user_tenants (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
 
+-- Diretório público (vitrine / perfil) — independente do núcleo ERP nesta fase
+CREATE TABLE IF NOT EXISTS directory_listings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL REFERENCES tenants (id) ON DELETE CASCADE,
+  slug VARCHAR(120) NOT NULL,
+  trade_name VARCHAR(255) NOT NULL,
+  description TEXT,
+  category VARCHAR(100),
+  modo VARCHAR(16) NOT NULL DEFAULT 'perfil',
+  owner_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, slug),
+  CONSTRAINT chk_directory_modo CHECK (modo IN ('perfil', 'loja'))
+);
+CREATE INDEX IF NOT EXISTS idx_directory_tenant ON directory_listings (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_directory_tenant_pub ON directory_listings (tenant_id, is_published);
+
 -- ========== ERP Onda A (isolamento: tenant_id + business_id; SDD §5.4 / §6.7) ==========
 
 CREATE TABLE IF NOT EXISTS erp_businesses (

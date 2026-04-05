@@ -18,9 +18,9 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Conexão Municipal API')
     .setDescription(
-      'API REST — Auth, ERP Onda A (cadastros, estoque, pedidos, financeiro; SDD v2.0 §6.7). Use header X-Business-Id nas rotas /erp/* exceto /erp/businesses.',
+      'API REST — Auth, cadastro de perfil (PATCH /users/me), diretório público (GET/POST/PATCH /businesses), ERP Onda A (SDD §6.7). Header X-Business-Id nas rotas /erp/* exceto listar/criar negócios ERP.',
     )
-    .setVersion('0.3.0')
+    .setVersion('0.4.0')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);

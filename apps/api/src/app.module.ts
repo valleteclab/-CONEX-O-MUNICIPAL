@@ -5,8 +5,11 @@ import configuration from './config/configuration';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { DirectoryModule } from './directory/directory.module';
 import { ErpModule } from './erp/erp.module';
+import { UsersModule } from './users/users.module';
 import {
+  DirectoryListing,
   ErpAccountPayable,
   ErpAccountReceivable,
   ErpBusiness,
@@ -65,12 +68,15 @@ import {
           ErpAccountReceivable,
           ErpAccountPayable,
           ErpCashEntry,
+          DirectoryListing,
         ],
         synchronize: process.env.TYPEORM_SYNC === 'true',
         logging: process.env.NODE_ENV !== 'production',
       }),
     }),
     AuthModule,
+    DirectoryModule,
+    UsersModule,
     ErpModule,
   ],
   controllers: [AppController],
