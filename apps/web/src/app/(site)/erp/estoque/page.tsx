@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ErpApiHint } from "@/components/erp/erp-api-hint";
 import { ErpPlaceholderTable } from "@/components/erp/erp-placeholder-table";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
@@ -30,14 +29,12 @@ export default function ErpEstoquePage() {
         <ErpPlaceholderTable
           columns={["Produto", "Local", "Quantidade"]}
         />
-        <ErpApiHint path="/api/v1/erp/stock/balances" />
       </Card>
       <Card>
         <h2 className="mb-4 font-serif text-lg font-bold text-marinha-900">Movimentações</h2>
         <ErpPlaceholderTable
           columns={["Data", "Tipo", "Produto", "Qtd", "Referência"]}
         />
-        <ErpApiHint path="/api/v1/erp/stock/movements" />
       </Card>
     </>
   );

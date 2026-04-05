@@ -67,15 +67,6 @@ export default function ErpPage() {
           </Link>
         ))}
       </div>
-
-      <Card variant="featured" className="mt-8">
-        <p className="text-sm text-marinha-600">
-          <strong className="text-marinha-900">Primeiro acesso:</strong> crie um negócio em{" "}
-          <code className="font-mono text-marinha-900">POST /api/v1/erp/businesses</code> e use o header{" "}
-          <code className="font-mono text-marinha-900">X-Business-Id</code> nas demais rotas. Documentação interativa em{" "}
-          <code className="font-mono text-marinha-900">/docs</code> na API.
-        </p>
-      </Card>
     </>
   );
 }

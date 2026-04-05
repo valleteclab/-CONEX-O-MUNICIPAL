@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ErpApiHint } from "@/components/erp/erp-api-hint";
 import { ErpPlaceholderTable } from "@/components/erp/erp-placeholder-table";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,6 @@ export default function ErpPedidosCompraPage() {
         <ErpPlaceholderTable
           columns={["Nº", "Fornecedor", "Data", "Status", "Total"]}
         />
-        <ErpApiHint path="/api/v1/erp/purchase-orders" />
       </Card>
     </>
   );
