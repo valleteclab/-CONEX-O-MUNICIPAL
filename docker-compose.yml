@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cm-postgres
+    environment:
+      POSTGRES_USER: conexao
+      POSTGRES_PASSWORD: conexao_dev
+      POSTGRES_DB: conexao_municipal
+    ports:
+      - "5432:5432"
+    volumes:
+      - cm_pg_data:/var/lib/postgresql/data
+      - ./infra/docker/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conexao -d conexao_municipal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    container_name: cm-redis
+    ports:
+      - "6379:6379"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: cm-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - cm_es_data:/usr/share/elasticsearch/data
+volumes:
+  cm_pg_data:
+  cm_es_data:
