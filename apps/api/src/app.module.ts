@@ -13,6 +13,8 @@ import { QuotationsModule } from './quotations/quotations.module';
 import { UsersModule } from './users/users.module';
 import {
   AcademyCourse,
+  AcademyEnrollment,
+  AcademyLesson,
   DirectoryListing,
   EmailVerificationToken,
   ErpAccountPayable,
@@ -70,6 +72,8 @@ import {
           ErpAccountPayable,
           ErpCashEntry,
           AcademyCourse,
+          AcademyLesson,
+          AcademyEnrollment,
           DirectoryListing,
           QuotationRequest,
         ];

@@ -4,6 +4,8 @@ import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import {
   AcademyCourse,
+  AcademyEnrollment,
+  AcademyLesson,
   DirectoryListing,
   EmailVerificationToken,
   ErpAccountPayable,
@@ -55,6 +57,8 @@ const entities = [
   ErpAccountPayable,
   ErpCashEntry,
   AcademyCourse,
+  AcademyLesson,
+  AcademyEnrollment,
   DirectoryListing,
   QuotationRequest,
 ];
