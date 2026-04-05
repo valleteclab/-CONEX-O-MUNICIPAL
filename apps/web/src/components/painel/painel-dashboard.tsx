@@ -41,15 +41,27 @@ export function PainelDashboard() {
     setError(null);
     const res = await apiAuthFetch<AnalyticsDashboardDto>("/api/v1/analytics/dashboard");
     setLoading(false);
+    if (res.status === 401) {
+      setError(
+        "Sessão inválida ou expirada. Entre novamente. (Se vê «Unauthorized», é este caso.)",
+      );
+      setData(null);
+      return;
+    }
     if (res.status === 403) {
       setError(
-        "Acesso reservado a gestores do município (papéis manager ou admin).",
+        "Este painel mostra indicadores do município e é só para gestores locais (papéis manager ou admin). Se a sua função é super administrador da plataforma (moderação em vários municípios), use o botão «Área da plataforma» no topo do site.",
       );
       setData(null);
       return;
     }
     if (!res.ok || !res.data) {
-      setError(res.error || "Não foi possível carregar o painel.");
+      const raw = res.error || "";
+      const friendly =
+        /unauthorized/i.test(raw) ?
+          "Sessão inválida ou expirada. Faça login novamente."
+        : raw || "Não foi possível carregar o painel.";
+      setError(friendly);
       setData(null);
       return;
     }
@@ -85,9 +97,17 @@ export function PainelDashboard() {
 
   if (error) {
     return (
-      <p className="rounded-btn border border-alerta-500/30 bg-alerta-500/10 px-3 py-2 text-sm text-alerta-700">
-        {error}
-      </p>
+      <div className="space-y-3 rounded-btn border border-alerta-500/30 bg-alerta-500/10 px-3 py-3 text-sm text-alerta-800">
+        <p>{error}</p>
+        <p>
+          <Link
+            href="/plataforma/entrar"
+            className="font-semibold text-municipal-800 underline hover:text-municipal-900"
+          >
+            Ir para Área da plataforma (super admin)
+          </Link>
+        </p>
+      </div>
     );
   }
 
