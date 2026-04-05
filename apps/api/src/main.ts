@@ -1,4 +1,5 @@
 import { ValidationPipe } from '@nestjs/common';
+import './types/express';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -16,8 +17,10 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Conexão Municipal API')
-    .setDescription('API REST — Auth e módulos futuros (SDD v2.0)')
-    .setVersion('0.2.0')
+    .setDescription(
+      'API REST — Auth, ERP Onda A (cadastros, estoque, pedidos, financeiro; SDD v2.0 §6.7). Use header X-Business-Id nas rotas /erp/* exceto /erp/businesses.',
+    )
+    .setVersion('0.3.0')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);

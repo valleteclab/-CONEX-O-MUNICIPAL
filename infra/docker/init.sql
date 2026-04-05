@@ -80,6 +80,181 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens (use
 CREATE INDEX IF NOT EXISTS idx_user_tenants_tenant ON user_tenants (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
 
+-- ========== ERP Onda A (isolamento: tenant_id + business_id; SDD §5.4 / §6.7) ==========
+
+CREATE TABLE IF NOT EXISTS erp_businesses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL REFERENCES tenants (id) ON DELETE CASCADE,
+  trade_name VARCHAR(255) NOT NULL,
+  legal_name VARCHAR(255),
+  document VARCHAR(20),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_erp_businesses_tenant ON erp_businesses (tenant_id);
+
+CREATE TABLE IF NOT EXISTS erp_business_users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  role VARCHAR(32) NOT NULL DEFAULT 'empresa_owner',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, business_id)
+);
+CREATE INDEX IF NOT EXISTS idx_erp_business_users_user ON erp_business_users (user_id);
+
+CREATE TABLE IF NOT EXISTS erp_parties (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  type VARCHAR(16) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  document VARCHAR(20),
+  address JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_erp_parties_business_doc ON erp_parties (business_id, document);
+
+CREATE TABLE IF NOT EXISTS erp_products (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  sku VARCHAR(80) NOT NULL,
+  name VARCHAR(500) NOT NULL,
+  ncm VARCHAR(16),
+  cfop_default VARCHAR(8),
+  unit VARCHAR(16) DEFAULT 'UN',
+  cost DECIMAL(18,4) DEFAULT 0,
+  price DECIMAL(18,4) DEFAULT 0,
+  min_stock DECIMAL(18,4) DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (business_id, sku)
+);
+
+CREATE TABLE IF NOT EXISTS erp_stock_locations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  name VARCHAR(120) NOT NULL,
+  is_default BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS erp_stock_balances (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES erp_products (id) ON DELETE CASCADE,
+  location_id UUID NOT NULL REFERENCES erp_stock_locations (id) ON DELETE CASCADE,
+  quantity DECIMAL(18,4) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (business_id, product_id, location_id)
+);
+
+CREATE TABLE IF NOT EXISTS erp_stock_movements (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  type VARCHAR(16) NOT NULL,
+  product_id UUID NOT NULL REFERENCES erp_products (id) ON DELETE CASCADE,
+  location_id UUID NOT NULL REFERENCES erp_stock_locations (id) ON DELETE CASCADE,
+  quantity DECIMAL(18,4) NOT NULL,
+  ref_type VARCHAR(32),
+  ref_id UUID,
+  user_id UUID REFERENCES users (id) ON DELETE SET NULL,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_erp_stock_mov_prod_created ON erp_stock_movements (product_id, created_at);
+
+CREATE TABLE IF NOT EXISTS erp_sales_orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  party_id UUID REFERENCES erp_parties (id) ON DELETE SET NULL,
+  status VARCHAR(24) DEFAULT 'draft',
+  total_amount DECIMAL(18,4) DEFAULT 0,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS erp_sales_order_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID NOT NULL REFERENCES erp_sales_orders (id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES erp_products (id),
+  qty DECIMAL(18,4) NOT NULL,
+  unit_price DECIMAL(18,4) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS erp_purchase_orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  supplier_party_id UUID NOT NULL REFERENCES erp_parties (id),
+  status VARCHAR(24) DEFAULT 'draft',
+  total_amount DECIMAL(18,4) DEFAULT 0,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS erp_purchase_order_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID NOT NULL REFERENCES erp_purchase_orders (id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES erp_products (id),
+  qty DECIMAL(18,4) NOT NULL,
+  unit_price DECIMAL(18,4) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS erp_accounts_receivable (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  party_id UUID NOT NULL REFERENCES erp_parties (id),
+  due_date DATE NOT NULL,
+  amount DECIMAL(18,4) NOT NULL,
+  status VARCHAR(16) DEFAULT 'open',
+  link_ref VARCHAR(32),
+  link_id UUID,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS erp_accounts_payable (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  party_id UUID NOT NULL REFERENCES erp_parties (id),
+  due_date DATE NOT NULL,
+  amount DECIMAL(18,4) NOT NULL,
+  status VARCHAR(16) DEFAULT 'open',
+  link_ref VARCHAR(32),
+  link_id UUID,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS erp_cash_entries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL,
+  business_id UUID NOT NULL REFERENCES erp_businesses (id) ON DELETE CASCADE,
+  type VARCHAR(8) NOT NULL,
+  amount DECIMAL(18,4) NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  occurred_at TIMESTAMPTZ NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 INSERT INTO plans (name, slug, price_monthly, max_users, max_businesses)
 VALUES ('Municipal Patrocinado', 'municipal-sponsored', 0, NULL, NULL)
 ON CONFLICT (slug) DO NOTHING;

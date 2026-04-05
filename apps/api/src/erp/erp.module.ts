@@ -1,0 +1,73 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ErpBusiness } from '../entities/erp-business.entity';
+import { ErpBusinessUser } from '../entities/erp-business-user.entity';
+import { ErpProduct } from '../entities/erp-product.entity';
+import { ErpParty } from '../entities/erp-party.entity';
+import { ErpStockLocation } from '../entities/erp-stock-location.entity';
+import { ErpStockBalance } from '../entities/erp-stock-balance.entity';
+import { ErpStockMovement } from '../entities/erp-stock-movement.entity';
+import { ErpSalesOrder } from '../entities/erp-sales-order.entity';
+import { ErpSalesOrderItem } from '../entities/erp-sales-order-item.entity';
+import { ErpPurchaseOrder } from '../entities/erp-purchase-order.entity';
+import { ErpPurchaseOrderItem } from '../entities/erp-purchase-order-item.entity';
+import { ErpAccountReceivable } from '../entities/erp-account-receivable.entity';
+import { ErpAccountPayable } from '../entities/erp-account-payable.entity';
+import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
+import { ErpBusinessGuard } from './guards/erp-business.guard';
+import { ErpBusinessController } from './controllers/erp-business.controller';
+import { ErpProductsController } from './controllers/erp-products.controller';
+import { ErpPartiesController } from './controllers/erp-parties.controller';
+import { ErpStockController } from './controllers/erp-stock.controller';
+import { ErpSalesOrdersController } from './controllers/erp-sales-orders.controller';
+import { ErpPurchaseOrdersController } from './controllers/erp-purchase-orders.controller';
+import { ErpFinanceController } from './controllers/erp-finance.controller';
+import { ErpBusinessService } from './services/erp-business.service';
+import { ErpProductService } from './services/erp-product.service';
+import { ErpPartyService } from './services/erp-party.service';
+import { ErpStockService } from './services/erp-stock.service';
+import { ErpSalesOrderService } from './services/erp-sales-order.service';
+import { ErpPurchaseOrderService } from './services/erp-purchase-order.service';
+import { ErpFinanceService } from './services/erp-finance.service';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      ErpBusiness,
+      ErpBusinessUser,
+      ErpProduct,
+      ErpParty,
+      ErpStockLocation,
+      ErpStockBalance,
+      ErpStockMovement,
+      ErpSalesOrder,
+      ErpSalesOrderItem,
+      ErpPurchaseOrder,
+      ErpPurchaseOrderItem,
+      ErpAccountReceivable,
+      ErpAccountPayable,
+      ErpCashEntry,
+    ]),
+  ],
+  controllers: [
+    ErpBusinessController,
+    ErpProductsController,
+    ErpPartiesController,
+    ErpStockController,
+    ErpSalesOrdersController,
+    ErpPurchaseOrdersController,
+    ErpFinanceController,
+  ],
+  providers: [
+    ErpBusinessGuard,
+    ErpBusinessService,
+    ErpProductService,
+    ErpPartyService,
+    ErpStockService,
+    ErpSalesOrderService,
+    ErpPurchaseOrderService,
+    ErpFinanceService,
+  ],
+  exports: [ErpBusinessService],
+})
+export class ErpModule {}
