@@ -40,14 +40,8 @@ import {
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: () => ({
-        type: 'postgres',
-        host: process.env.DATABASE_HOST ?? 'localhost',
-        port: parseInt(process.env.DATABASE_PORT ?? '5432', 10),
-        username: process.env.DATABASE_USER ?? 'conexao',
-        password: process.env.DATABASE_PASSWORD ?? 'conexao_dev',
-        database: process.env.DATABASE_NAME ?? 'conexao_municipal',
-        entities: [
+      useFactory: () => {
+        const entities = [
           Plan,
           Tenant,
           User,
@@ -69,10 +63,31 @@ import {
           ErpAccountPayable,
           ErpCashEntry,
           DirectoryListing,
-        ],
-        synchronize: process.env.TYPEORM_SYNC === 'true',
-        logging: process.env.NODE_ENV !== 'production',
-      }),
+        ];
+        const common = {
+          entities,
+          synchronize: process.env.TYPEORM_SYNC === 'true',
+          logging: process.env.NODE_ENV !== 'production',
+        };
+        const dbUrl = process.env.DATABASE_URL?.trim();
+        if (dbUrl) {
+          return {
+            type: 'postgres' as const,
+            url: dbUrl,
+            ssl: { rejectUnauthorized: false },
+            ...common,
+          };
+        }
+        return {
+          type: 'postgres' as const,
+          host: process.env.DATABASE_HOST ?? 'localhost',
+          port: parseInt(process.env.DATABASE_PORT ?? '5432', 10),
+          username: process.env.DATABASE_USER ?? 'conexao',
+          password: process.env.DATABASE_PASSWORD ?? 'conexao_dev',
+          database: process.env.DATABASE_NAME ?? 'conexao_municipal',
+          ...common,
+        };
+      },
     }),
     AuthModule,
     DirectoryModule,

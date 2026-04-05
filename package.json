@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "conexao-municipal",
   "version": "0.1.0",
   "private": true,
@@ -11,6 +11,7 @@
     "dev:web": "npm run dev -w web",
     "dev:api": "npm run start:dev -w api",
     "build": "npm run build -w api && npm run build -w web",
+    "start": "npm run start:prod -w api",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },
