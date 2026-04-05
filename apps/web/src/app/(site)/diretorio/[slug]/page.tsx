@@ -5,24 +5,30 @@ import { PageIntro } from "@/components/layout/page-intro";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getNegocioDiretorio, listSlugsDiretorio } from "@/data/diretorio-negocios";
+import { apiGet, tenantQueryParam } from "@/lib/api-server";
+import type { DirectoryListingDto } from "@/types/directory";
 
 type Props = { params: { slug: string } };
 
-export function generateStaticParams() {
-  return listSlugsDiretorio().map((slug) => ({ slug }));
-}
+export const dynamic = "force-dynamic";
 
-export function generateMetadata({ params }: Props): Metadata {
-  const data = getNegocioDiretorio(params.slug);
-  const suffix = data?.modo === "loja" ? " — Loja virtual" : " — Perfil";
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const row = await apiGet<DirectoryListingDto>(
+    `/api/v1/businesses/${encodeURIComponent(params.slug)}?${tenantQueryParam()}`,
+    { revalidate: 60 },
+  );
+  const suffix = row?.modo === "loja" ? " — Loja virtual" : " — Perfil";
   return {
-    title: data ? `${data.nome}${suffix}` : "Negócio",
+    title: row ? `${row.tradeName}${suffix}` : "Negócio",
   };
 }
 
-export default function DiretorioNegocioPage({ params }: Props) {
-  const data = getNegocioDiretorio(params.slug);
+export default async function DiretorioNegocioPage({ params }: Props) {
+  const data = await apiGet<DirectoryListingDto>(
+    `/api/v1/businesses/${encodeURIComponent(params.slug)}?${tenantQueryParam()}`,
+    { revalidate: 30 },
+  );
+
   if (!data) {
     notFound();
   }
@@ -32,12 +38,12 @@ export default function DiretorioNegocioPage({ params }: Props) {
   return (
     <>
       <PageIntro
-        title={data.nome}
-        description={data.desc}
+        title={data.tradeName}
+        description={data.description || "Sem descrição cadastrada."}
         badge={isLoja ? "Loja virtual" : "Perfil virtual"}
       >
         <div className="mt-3 flex flex-wrap gap-2">
-          <Badge tone="neutral">{data.cat}</Badge>
+          {data.category ? <Badge tone="neutral">{data.category}</Badge> : null}
           <Badge tone="success">Luís Eduardo Magalhães · BA</Badge>
         </div>
       </PageIntro>
@@ -46,33 +52,25 @@ export default function DiretorioNegocioPage({ params }: Props) {
         <Card className="mb-6">
           <h2 className="font-serif text-lg font-bold text-marinha-900">Vitrine / catálogo</h2>
           <p className="mt-2 text-sm text-marinha-500">
-            Em produção: produtos, preços e disponibilidade para pedido online conforme o SDD.
+            O catálogo de produtos e preços será carregado a partir do ERP quando a integração estiver ativa
+            (SDD §6.2 / §6.7).
           </p>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-3">
-            {["Item exemplo A", "Item exemplo B", "Item exemplo C"].map((item) => (
-              <li
-                key={item}
-                className="rounded-btn border border-marinha-900/10 bg-surface p-4 text-sm font-medium text-marinha-800"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
         </Card>
       ) : (
         <Card className="mb-6">
           <h2 className="font-serif text-lg font-bold text-marinha-900">Sobre o negócio</h2>
           <p className="mt-2 text-sm text-marinha-500">
-            Perfil público para divulgar serviços, horários e contato. Em produção: galeria, avaliações e mapa
-            conforme SDD §6.2.
+            Perfil público para divulgar serviços e contato. Galeria, avaliações e mapa conforme evolução do SDD
+            §6.2.
           </p>
         </Card>
       )}
 
       <Card>
         <p className="text-sm text-marinha-600">
-          <strong className="text-marinha-900">ERP:</strong> orçamentos e pedidos feitos nesta vitrine entram automaticamente
-          no módulo <strong>Pedidos de venda</strong> do ERP do negócio (origem portal), para tratamento interno.
+          <strong className="text-marinha-900">ERP:</strong> orçamentos e pedidos feitos nesta vitrine entram no
+          módulo <strong>Pedidos de venda</strong> do ERP do negócio (origem portal), quando o fluxo estiver
+          ligado.
         </p>
         <p className="mt-3 text-sm text-marinha-500">
           URL pública da vitrine:{" "}

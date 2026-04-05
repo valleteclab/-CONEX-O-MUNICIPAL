@@ -286,3 +286,93 @@ INSERT INTO tenants (name, slug, city, state, plan_id, is_active)
 SELECT 'Luís Eduardo Magalhães', 'luis-eduardo-magalhaes', 'Luís Eduardo Magalhães', 'BA', p.id, true
 FROM plans p WHERE p.slug = 'municipal-sponsored'
 ON CONFLICT (slug) DO NOTHING;
+
+-- Cotações (solicitações públicas por tenant)
+CREATE TABLE IF NOT EXISTS quotation_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  requester_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  status VARCHAR(32) NOT NULL DEFAULT 'open',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT chk_quotation_status CHECK (status IN ('open','in_progress','closed','cancelled'))
+);
+CREATE INDEX IF NOT EXISTS idx_quotation_tenant ON quotation_requests (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_quotation_created ON quotation_requests (created_at DESC);
+
+-- Academia (catálogo de cursos por tenant)
+CREATE TABLE IF NOT EXISTS academy_courses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  summary TEXT,
+  duration_minutes INT,
+  is_published BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_academy_tenant ON academy_courses (tenant_id);
+
+-- Usuário e dados de demo (senha: Demo1234)
+INSERT INTO users (email, password_hash, full_name, role)
+VALUES (
+  'mei@demo.local',
+  '$2b$12$8VmeAeBOTzppiyDNJkE4FuDN3FeXyn0PoDwFQoKrvCPrGt30zfO8m',
+  'MEI Demo',
+  'mei'
+)
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO user_tenants (user_id, tenant_id, role, is_active)
+SELECT u.id, t.id, 'mei', true
+FROM users u
+CROSS JOIN tenants t
+WHERE u.email = 'mei@demo.local' AND t.slug = 'luis-eduardo-magalhaes'
+ON CONFLICT (user_id, tenant_id) DO NOTHING;
+
+INSERT INTO directory_listings (tenant_id, slug, trade_name, description, category, modo, owner_user_id, is_published)
+SELECT t.id, 'padaria-central', 'Padaria Central', 'Pães artesanais e doces regionais. Atendimento de segunda a sábado.', 'Alimentação', 'loja', u.id, true
+FROM tenants t
+JOIN users u ON u.email = 'mei@demo.local'
+WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (SELECT 1 FROM directory_listings d WHERE d.tenant_id = t.id AND d.slug = 'padaria-central');
+
+INSERT INTO directory_listings (tenant_id, slug, trade_name, description, category, modo, owner_user_id, is_published)
+SELECT t.id, 'eletrica-silva', 'Elétrica Silva', 'Instalações e manutenção elétrica residencial e comercial.', 'Serviços', 'perfil', u.id, true
+FROM tenants t
+JOIN users u ON u.email = 'mei@demo.local'
+WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (SELECT 1 FROM directory_listings d WHERE d.tenant_id = t.id AND d.slug = 'eletrica-silva');
+
+INSERT INTO directory_listings (tenant_id, slug, trade_name, description, category, modo, owner_user_id, is_published)
+SELECT t.id, 'tech-solucoes', 'Tech Soluções', 'Suporte em computadores, redes e pequenos sistemas.', 'Tecnologia', 'perfil', u.id, true
+FROM tenants t
+JOIN users u ON u.email = 'mei@demo.local'
+WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (SELECT 1 FROM directory_listings d WHERE d.tenant_id = t.id AND d.slug = 'tech-solucoes');
+
+INSERT INTO quotation_requests (tenant_id, requester_user_id, title, description, status)
+SELECT t.id, u.id, 'Instalação de ar-condicionado', 'Loja comercial ~90 m², preciso orçamento de instalação e materiais.', 'open'
+FROM tenants t
+JOIN users u ON u.email = 'mei@demo.local'
+WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (
+  SELECT 1 FROM quotation_requests q WHERE q.tenant_id = t.id AND q.title = 'Instalação de ar-condicionado'
+);
+
+INSERT INTO academy_courses (tenant_id, title, summary, duration_minutes, is_published)
+SELECT t.id, 'Abertura de MEI', 'Passo a passo, DAS e obrigações básicas para quem está começando.', 120, true
+FROM tenants t WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (SELECT 1 FROM academy_courses c WHERE c.tenant_id = t.id AND c.title = 'Abertura de MEI');
+
+INSERT INTO academy_courses (tenant_id, title, summary, duration_minutes, is_published)
+SELECT t.id, 'Precificação e margem', 'Como formar preço de venda e acompanhar custos.', 90, true
+FROM tenants t WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (SELECT 1 FROM academy_courses c WHERE c.tenant_id = t.id AND c.title = 'Precificação e margem');
+
+INSERT INTO academy_courses (tenant_id, title, summary, duration_minutes, is_published)
+SELECT t.id, 'Atendimento ao cliente', 'Boas práticas presenciais e digitais para fidelizar.', 60, true
+FROM tenants t WHERE t.slug = 'luis-eduardo-magalhaes'
+AND NOT EXISTS (SELECT 1 FROM academy_courses c WHERE c.tenant_id = t.id AND c.title = 'Atendimento ao cliente');

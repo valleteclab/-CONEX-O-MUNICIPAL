@@ -8,18 +8,12 @@ import { cn } from "@/lib/cn";
 
 type Product = { id: string; name: string; price: number; barcode: string };
 
-const MOCK: Product[] = [
-  { id: "1", name: "Pão francês (un.)", price: 1.2, barcode: "7891000100103" },
-  { id: "2", name: "Café médio", price: 6.0, barcode: "7891000055120" },
-  { id: "3", name: "Água 500ml", price: 3.5, barcode: "7891000246646" },
-  { id: "4", name: "Refrigerante lata", price: 5.0, barcode: "7894900011517" },
-  { id: "5", name: "Sanduíche", price: 14.9, barcode: "7891234567891" },
-  { id: "6", name: "Suco natural", price: 9.0, barcode: "7896004005046" },
-];
+/** Catálogo virá de GET /api/v1/erp/products (com X-Business-Id) — integração ERP fora deste escopo. */
+const PRODUCTS: Product[] = [];
 
 const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-const byBarcode = Object.fromEntries(MOCK.map((p) => [p.barcode, p])) as Record<string, Product>;
+const byBarcode = Object.fromEntries(PRODUCTS.map((p) => [p.barcode, p])) as Record<string, Product>;
 
 type Line = { product: Product; qty: number };
 
@@ -31,9 +25,9 @@ export function PdvPanel() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) {
-      return MOCK;
+      return PRODUCTS;
     }
-    return MOCK.filter(
+    return PRODUCTS.filter(
       (p) =>
         p.name.toLowerCase().includes(s) ||
         p.barcode.includes(s.replace(/\D/g, "")),
@@ -57,7 +51,7 @@ export function PdvPanel() {
     if (digits.length < 8) {
       return false;
     }
-    const p = byBarcode[digits] ?? MOCK.find((x) => x.barcode === digits);
+    const p = byBarcode[digits] ?? PRODUCTS.find((x) => x.barcode === digits);
     if (p) {
       addLine(p);
       setBarcodeInput("");
@@ -152,7 +146,9 @@ export function PdvPanel() {
             ))}
           </div>
           {filtered.length === 0 ? (
-            <p className="text-sm text-marinha-500">Nenhum produto encontrado.</p>
+            <p className="text-sm text-marinha-500">
+              Nenhum produto no catálogo. A lista virá da API do ERP quando o negócio estiver configurado.
+            </p>
           ) : null}
         </section>
 

@@ -14,7 +14,7 @@
 - [X] Web: layout fluido (sem `max-w-*` no shell/cards centrais); commit `c60db86` em `main`
 - [X] Web ERP: hub `/erp` + `ErpSubNav` + telas `/erp/pdv`, `produtos`, `clientes-fornecedores`, `estoque`, `pedidos-venda`, `pedidos-compra`, `financeiro` (UI + placeholders; API depois)
 - [X] PDV `/erp/pdv` + regra Cursor `.cursor/rules/responsive-web.mdc`
-- [X] Diretório: vitrine pública `/diretorio/[slug]` com modo perfil ou loja (`src/data/diretorio-negocios.ts`)
+- [X] Diretório: listagem e `/diretorio/[slug]` via API `GET /businesses` (sem mock local)
 - [X] SDD + schema: pedidos/orçamentos do diretório → `erp_sales_orders.source` / `portal_request_id`; telas web alinhadas
 - [X] DevContext (MCP): `import_project_data` — features/requisitos/decisões do layout ERP diretório portal→ERP; commits `c60db86` `3310817` `f88a868` `fa0ddf7` registrados
 - [X] Git `main` atualizado com origin; DevContext: import API diretório + PATCH users + PDV; commits `6d4146c` `27d378a` `3ff57ee` registrados

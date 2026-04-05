@@ -1,0 +1,38 @@
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CurrentTenantId } from '../common/decorators/current-tenant-id.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User } from '../entities/user.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateQuotationDto } from './dto/create-quotation.dto';
+import { ListQuotationQueryDto } from './dto/list-quotation-query.dto';
+import { QuotationsService } from './quotations.service';
+
+@ApiTags('cotações')
+@Controller('quotations')
+export class QuotationsController {
+  constructor(private readonly quotations: QuotationsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Listar solicitações abertas (público, por tenant)' })
+  async list(@Query() query: ListQuotationQueryDto) {
+    const tenantId = await this.quotations.resolveTenantId(query.tenant);
+    return this.quotations.listPublic(tenantId, query);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Criar solicitação de cotação (autenticado)' })
+  async create(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Body() dto: CreateQuotationDto,
+  ) {
+    return this.quotations.create(user, tenantId, dto);
+  }
+}

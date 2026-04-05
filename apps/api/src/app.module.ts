@@ -4,11 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AcademyModule } from './academy/academy.module';
 import { AuthModule } from './auth/auth.module';
 import { DirectoryModule } from './directory/directory.module';
 import { ErpModule } from './erp/erp.module';
+import { QuotationsModule } from './quotations/quotations.module';
 import { UsersModule } from './users/users.module';
 import {
+  AcademyCourse,
   DirectoryListing,
   ErpAccountPayable,
   ErpAccountReceivable,
@@ -26,6 +29,7 @@ import {
   ErpStockMovement,
   PasswordResetToken,
   Plan,
+  QuotationRequest,
   RefreshToken,
   Tenant,
   User,
@@ -62,7 +66,9 @@ import {
           ErpAccountReceivable,
           ErpAccountPayable,
           ErpCashEntry,
+          AcademyCourse,
           DirectoryListing,
+          QuotationRequest,
         ];
         const common = {
           entities,
@@ -89,8 +95,10 @@ import {
         };
       },
     }),
+    AcademyModule,
     AuthModule,
     DirectoryModule,
+    QuotationsModule,
     UsersModule,
     ErpModule,
   ],
