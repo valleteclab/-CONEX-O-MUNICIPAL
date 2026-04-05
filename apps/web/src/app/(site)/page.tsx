@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { PageIntro } from "@/components/layout/page-intro";
+import { BackendStatus } from "@/components/site/backend-status";
 
 const modules = [
   {
@@ -30,7 +31,7 @@ const modules = [
   },
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
   return (
     <>
       <PageIntro
@@ -55,7 +56,8 @@ export default function HomePage() {
         ))}
       </div>
 
-      <Card variant="featured" className="mt-8">
+      <Card variant="featured" className="mt-8 space-y-3">
+        <BackendStatus />
         <p className="text-sm text-marinha-500">
           <strong className="text-marinha-900">Desenvolvimento:</strong> todas as telas
           seguem o mesmo guia visual (tipografia, cores e componentes).{" "}
@@ -66,7 +68,7 @@ export default function HomePage() {
             Ver guia visual
           </Link>
           {" · "}
-          API{" "}
+          rotas REST sob{" "}
           <code className="rounded bg-marinha-900/5 px-1 font-mono text-marinha-900">
             /api/v1
           </code>

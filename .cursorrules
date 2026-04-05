@@ -20,7 +20,7 @@
 - [X] Git `main` atualizado com origin; DevContext: import API diretório + PATCH users + PDV; commits `6d4146c` `27d378a` `3ff57ee` registrados
 - [X] Railway: projeto `conexao-municipal`, serviço `api` + Postgres; URL pública `https://api-production-488f.up.railway.app` — build via Railpack; `package.json` raiz **sem BOM UTF-8** (Railpack falhava com `\ufeff`); `@nestjs/cli` em **dependencies** do root; `apps/api` build usa `node ../../node_modules/@nestjs/cli/bin/nest.js build`; `nixpacks.toml` com `npm ci --include=dev` (legado se usar Nixpacks)
 - [X] Git `main`: commit `b5d821e` — deploy automático no Railway: ligar repositório GitHub ao serviço `api` (Settings → **Connect Repo** → branch `main`; instalar [Railway GitHub App](https://github.com/apps/railway-app) se pedido)
-- [ ] **Front Railway:** serviço `conexao-municipal` → Settings → **Config as code** → caminho `/railway.web.toml` (ou Build: `npm ci --include=dev && npm run build:web`, Start: `npm run start:web`). Gerar domínio público no serviço. Falha antiga: BOM no `package.json` + build raiz só compilava API (`npm run build` = api).
+- [X] **Front → API:** `NEXT_PUBLIC_API_BASE_URL` no serviço Next (Railway); `CORS_ORIGINS` no serviço API com URL do front; home mostra `BackendStatus` (GET `/api/v1/health`). DevContext + SDD §14: próximo foco backend/regras — Cotações → Academia → Painel → ERP Ondas B/C; portal→ERP (`erp_sales_orders.source`).
 
 ## Responsividade (apps/web)
 - Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
@@ -43,4 +43,5 @@
 - DevContext foi reconfigurado para este projeto; spec reimportada após troca de MCP.
 - **Railway Railpack:** `package.json` na raiz não pode ter BOM (`\ufeff`); senão `hujson: invalid character '\ufeff'`. Salvar JSON como UTF-8 **sem** BOM.
 - **`NODE_ENV=production`** (variável global no Windows) faz `npm install` omitir devDependencies — `@nestjs/cli` não entra em `node_modules` se estiver só em devDeps; solução: CLI nas **dependencies** do monorepo root e/ou `npm install --include=dev`, ou script de build com caminho explícito ao `nest.js`.
+- **Next ↔ Nest em produção:** definir `NEXT_PUBLIC_API_BASE_URL` no build do Next; no Nest `enableCors` com `CORS_ORIGINS` listando o domínio do front (chamadas `fetch` no browser). SSR (Server Components) não sofre CORS; chamadas client-side sim.
 - Commits multilinha no Windows: escrever mensagem em arquivo e `git commit -F arquivo.txt`, depois apagar o arquivo; prefixo `[Cursor]` no título.
