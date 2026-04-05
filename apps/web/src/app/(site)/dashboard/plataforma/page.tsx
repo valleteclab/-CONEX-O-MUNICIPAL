@@ -12,7 +12,7 @@ export default function DashboardPlataformaPage() {
     <>
       <PageIntro
         title="Moderação de cadastros"
-        description="Acesso restrito a super administradores da plataforma. Aprove vitrines do diretório e negócios ERP, ou suspenda e reative quando necessário."
+        description="Acesso restrito a super administradores da plataforma: moderação do diretório e do ERP, e gestão dos cursos da Academia por município."
         badge="Plataforma"
       />
       <p className="mb-6 text-sm text-marinha-600">

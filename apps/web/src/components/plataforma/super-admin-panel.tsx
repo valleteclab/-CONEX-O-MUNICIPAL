@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PlatformAcademyPanel } from "./platform-academy-panel";
 import { apiAuthFetch } from "@/lib/api-browser";
 import { getAccessToken } from "@/lib/auth-storage";
 
@@ -235,6 +236,8 @@ export function SuperAdminPanel() {
           <p className="mt-2 text-sm text-marinha-500">Nenhum negócio ERP listado.</p>
         ) : null}
       </section>
+
+      <PlatformAcademyPanel />
     </div>
   );
 }
