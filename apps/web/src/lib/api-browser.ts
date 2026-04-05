@@ -1,5 +1,5 @@
 import { getPublicApiBaseUrl } from "./api-public";
-import { getAccessToken, getTenantId } from "./auth-storage";
+import { getAccessToken, getBusinessId, getTenantId } from "./auth-storage";
 
 function formatApiError(data: unknown, raw: string, statusText: string): string {
   if (data && typeof data === "object" && data !== null && "message" in data) {
@@ -69,6 +69,21 @@ export async function apiAuthFetch<T>(
       Authorization: `Bearer ${accessToken}`,
       ...(tenantId && !includeBusinessIdHeader ? { "X-Tenant-Id": tenantId } : {}),
       ...headers,
+    },
+  });
+}
+
+export async function erpFetch<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ ok: boolean; data?: T; error?: string; status: number }> {
+  const businessId = getBusinessId();
+  const { headers, ...rest } = init ?? {};
+  return apiAuthFetch<T>(path, {
+    ...rest,
+    headers: {
+      ...(businessId ? { "X-Business-Id": businessId } : {}),
+      ...(headers ?? {}),
     },
   });
 }
