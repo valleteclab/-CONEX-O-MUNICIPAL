@@ -25,11 +25,23 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function validatePassword(pw: string): string | null {
+    if (pw.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+    if (!/[A-Z]/.test(pw)) return "A senha deve conter ao menos uma letra maiúscula.";
+    if (!/[0-9]/.test(pw)) return "A senha deve conter ao menos um número.";
+    return null;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!acceptTerms) {
       setError("É necessário aceitar os termos.");
+      return;
+    }
+    const pwErr = validatePassword(password);
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
     setLoading(true);
@@ -131,10 +143,10 @@ export function RegisterForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Mín. 8 caracteres, 1 maiúscula e 1 número"
+          placeholder="Mínimo 8 caracteres"
         />
         <p className="mt-1 text-xs text-marinha-500">
-          A API exige ao menos uma letra maiúscula e um número.
+          Obrigatório: ao menos 8 caracteres, 1 letra maiúscula e 1 número.
         </p>
       </div>
       <label className="flex cursor-pointer gap-3 text-sm text-marinha-700">
