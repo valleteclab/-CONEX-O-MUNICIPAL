@@ -23,7 +23,9 @@ export async function apiGet<T>(
     return null;
   }
   if (!res.ok) {
-    throw new Error(`API ${res.status} ${url}`);
+    // Não lançar no SSG/build: tenant inexistente (400), indisponibilidade, etc.
+    console.error(`[apiGet] ${res.status} ${url}`);
+    return null;
   }
   return res.json() as Promise<T>;
 }

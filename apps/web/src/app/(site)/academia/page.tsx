@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { apiGet, tenantQueryParam, type ApiListResponse } from "@/lib/api-server";
 import type { AcademyCourseDto } from "@/types/academy";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Academia",
 };

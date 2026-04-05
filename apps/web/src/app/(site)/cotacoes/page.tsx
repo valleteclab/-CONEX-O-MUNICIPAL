@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { QuotationCreateForm } from "@/components/cotacoes/quotation-create-form";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Card } from "@/components/ui/card";
-import { QuotationCreateForm } from "@/components/cotacoes/quotation-create-form";
 import { apiGet, tenantQueryParam, type ApiListResponse } from "@/lib/api-server";
 import type { QuotationRequestDto } from "@/types/quotations";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Central de cotações",

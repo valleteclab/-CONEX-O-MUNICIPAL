@@ -44,4 +44,5 @@
 - **Railway Railpack:** `package.json` na raiz não pode ter BOM (`\ufeff`); senão `hujson: invalid character '\ufeff'`. Salvar JSON como UTF-8 **sem** BOM.
 - **`NODE_ENV=production`** (variável global no Windows) faz `npm install` omitir devDependencies — `@nestjs/cli` não entra em `node_modules` se estiver só em devDeps; solução: CLI nas **dependencies** do monorepo root e/ou `npm install --include=dev`, ou script de build com caminho explícito ao `nest.js`.
 - **Next ↔ Nest em produção:** definir `NEXT_PUBLIC_API_BASE_URL` no build do Next; no Nest `enableCors` com `CORS_ORIGINS` listando o domínio do front (chamadas `fetch` no browser). SSR (Server Components) não sofre CORS; chamadas client-side sim.
+- **Build Next (SaaS):** `apiGet` não deve lançar em 4xx/5xx — senão o SSG falha se o tenant não existir na API em produção (400). Páginas que dependem da API: `dynamic = 'force-dynamic'`. O aviso `npm ENOWORKSPACES` no download do SWC costuma ser não fatal; o que quebrava o deploy era o throw no `/diretorio`.
 - Commits multilinha no Windows: escrever mensagem em arquivo e `git commit -F arquivo.txt`, depois apagar o arquivo; prefixo `[Cursor]` no título.

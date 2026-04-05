@@ -3,8 +3,11 @@ import Link from "next/link";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getPublicApiBaseUrl } from "@/lib/api-public";
 import { apiGet, tenantQueryParam, type ApiListResponse } from "@/lib/api-server";
 import type { DirectoryListingDto } from "@/types/directory";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Diretório de negócios",
@@ -21,13 +24,22 @@ export default async function DiretorioPage() {
   );
 
   if (!data) {
+    const hasBase = !!getPublicApiBaseUrl();
     return (
       <>
         <PageIntro
           title="Diretório de negócios"
-          description="Configure NEXT_PUBLIC_API_BASE_URL para carregar os negócios do município."
+          description={
+            hasBase
+              ? "Não foi possível carregar a lista agora (tenant inexistente na API, erro 4xx/5xx ou rede)."
+              : "Configure NEXT_PUBLIC_API_BASE_URL no serviço do Next (Railway)."
+          }
         />
-        <p className="text-sm text-marinha-500">API indisponível ou variável de ambiente em falta.</p>
+        <p className="text-sm text-marinha-500">
+          {hasBase
+            ? "Confirme DEFAULT_TENANT_SLUG / seed do Postgres em produção e se a URL da API está correta."
+            : "Variável de ambiente em falta no build."}
+        </p>
       </>
     );
   }
