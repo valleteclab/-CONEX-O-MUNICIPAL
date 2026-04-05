@@ -28,7 +28,7 @@
 - Pedidos/orçamentos do diretório → ERP do negócio como `erp_sales_orders` com `source` `portal_diretorio` e `portal_request_id` opcional; serviço `ErpSalesOrderService.create(..., meta)`.
 - Rotas ERP (exceto `GET/POST /erp/businesses`) exigem header `X-Business-Id` e vínculo em `erp_business_users`.
 - Web: layout em largura total — sem `max-w-5xl` no shell; só `px-4 sm:px-6 lg:px-8` nas bordas.
-- PDV: rota `/erp/pdv`, componente `components/erp/pdv-panel.tsx` (client); responsivo coluna → `lg:flex-row` com cupom sticky.
+- PDV: rota `/erp/pdv`, componente `components/erp/pdv-panel.tsx` (client); cupom compacto + campo EAN; `lg:max-h-none` no cupom para evitar rolagem no desktop.
 - `next/font` Google: `DM_Serif_Display` só expõe peso `400` — títulos usam negrito sintético ou peso único.
 - Banco já existente: aplicar DDL do bloco ERP em `infra/docker/init.sql` ou `TYPEORM_SYNC=true` só em dev.
 - Tokens JWT emitidos antes da claim `tid` deixam de ser válidos — novo login após deploy.

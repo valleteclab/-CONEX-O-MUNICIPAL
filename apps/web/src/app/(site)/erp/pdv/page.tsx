@@ -12,7 +12,7 @@ export default function ErpPdvPage() {
     <>
       <PageIntro
         title="PDV — Ponto de venda"
-        description="Venda rápida com catálogo e cupom. Layout adaptável: celular (lista + cupom empilhados), tablet e desktop (cupom ao lado). Integração com produtos e pedidos em seguida."
+        description="Código de barras (leitor ou digitar), catálogo e cupom compacto. Em telas largas o cupom evita rolagem com vários itens; no celular, rolagem só se a lista for longa."
         badge="Operação"
       />
       <Card className="mb-4 border-municipal-600/20 bg-municipal-600/5 p-4 sm:p-5">

@@ -12,7 +12,7 @@ alwaysApply: false
 - **Largura útil:** manter o padrão do shell (`w-full` + `px-4 sm:px-6 lg:px-8`); não reintroduzir colunas estreitas `max-w-5xl` no layout global sem motivo.
 - **Touch:** controles primários com altura mínima **≥ 44px** (`min-h-[44px]` ou `min-h-[48px]` em PDV/checkout); `touch-manipulation` em botões que disparam clique rápido.
 - **Grades fluidas:** usar `grid` / `flex` com `min-w-0` em filhos que podem encolher (evita overflow horizontal acidental).
-- **Conteúdo rolável:** painéis com listas longas (`overflow-y-auto`, `max-h-*`, `overscroll-contain`); em telas operacionais (PDV), cupom com altura máxima em relação ao viewport.
+- **Conteúdo rolável:** painéis com listas longas (`overflow-y-auto`, `max-h-*`, `overscroll-contain`); no **PDV**, preferir **linhas compactas** no cupom para evitar barra de rolagem no uso típico; rolagem só em listas muito longas ou viewport baixa (ex.: mobile).
 - **Empilhamento:** em `< lg`, fluxos lado a lado viram **coluna** (`flex-col lg:flex-row`); ordem visual clara (catálogo antes do cupom no PDV, ou `order-*` se necessário).
 - **Acessibilidade:** alvos clicáveis com área suficiente; `aria-label` em ícones; `sr-only` para rótulos de busca quando o placeholder não basta.
 
