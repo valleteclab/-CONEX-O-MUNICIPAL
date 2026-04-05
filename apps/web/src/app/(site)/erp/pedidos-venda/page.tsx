@@ -7,8 +7,8 @@ import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
-import { getBusinessId } from "@/lib/auth-storage";
 
 type SalesOrder = {
   id: string;
@@ -74,7 +74,8 @@ export default function ErpPedidosVendaPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const noBusinessId = !getBusinessId();
+  const businessId = useSelectedBusinessId();
+  const noBusinessId = !businessId;
 
   const load = useCallback(
     async (reset = false) => {
@@ -106,11 +107,18 @@ export default function ErpPedidosVendaPage() {
   }, []);
 
   useEffect(() => {
-    if (noBusinessId) return;
+    if (noBusinessId) {
+      setOrders([]);
+      setProducts([]);
+      setParties([]);
+      setHasMore(false);
+      setSkip(0);
+      return;
+    }
     load(true);
     loadSupport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noBusinessId]);
+  }, [businessId]);
 
   const patchStatus = async (id: string, status: "confirmed" | "cancelled") => {
     const res = await erpFetch(`/api/v1/erp/sales-orders/${id}/status`, {

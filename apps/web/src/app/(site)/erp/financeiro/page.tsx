@@ -6,8 +6,8 @@ import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
-import { getBusinessId } from "@/lib/auth-storage";
 
 type FinanceDoc = {
   id: string;
@@ -147,7 +147,8 @@ export default function ErpFinanceiroPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const noBusinessId = !getBusinessId();
+  const businessId = useSelectedBusinessId();
+  const noBusinessId = !businessId;
 
   const loadAr = useCallback(async () => {
     setArLoading(true);
@@ -187,14 +188,21 @@ export default function ErpFinanceiroPage() {
   }, []);
 
   useEffect(() => {
-    if (noBusinessId) return;
+    if (noBusinessId) {
+      setAr([]);
+      setAp([]);
+      setCash([]);
+      setSummary(null);
+      setParties([]);
+      return;
+    }
     loadAr();
     loadAp();
     loadCash();
     loadSummary();
     loadParties();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noBusinessId]);
+  }, [businessId]);
 
   const patchArStatus = async (id: string, status: "paid" | "cancelled") => {
     const res = await erpFetch(`/api/v1/erp/finance/ar/${id}/status`, {

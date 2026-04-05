@@ -6,8 +6,8 @@ import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
-import { getBusinessId } from "@/lib/auth-storage";
 
 type StockBalance = {
   id: string;
@@ -130,7 +130,8 @@ export default function ErpEstoquePage() {
   const [isMoveSubmitting, setIsMoveSubmitting] = useState(false);
   const [isLocSubmitting, setIsLocSubmitting] = useState(false);
 
-  const noBusinessId = !getBusinessId();
+  const businessId = useSelectedBusinessId();
+  const noBusinessId = !businessId;
 
   const loadBalances = useCallback(async () => {
     setBalancesLoading(true);
@@ -172,13 +173,21 @@ export default function ErpEstoquePage() {
   }, []);
 
   useEffect(() => {
-    if (noBusinessId) return;
+    if (noBusinessId) {
+      setBalances([]);
+      setMovements([]);
+      setLocations([]);
+      setProducts([]);
+      setMovHasMore(false);
+      setMovSkip(0);
+      return;
+    }
     loadBalances();
     loadMovements(true);
     loadLocations();
     loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noBusinessId]);
+  }, [businessId]);
 
   const handleMoveSubmit = async () => {
     if (!moveForm.productId || !moveForm.locationId || !moveForm.quantity) {
