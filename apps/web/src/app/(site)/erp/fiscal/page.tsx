@@ -5,8 +5,8 @@ import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ErpFiscalEmitModal } from "@/components/erp/erp-fiscal-emit-modal";
+import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
-import { getBusinessId } from "@/lib/auth-storage";
 
 type FiscalDoc = {
   id: string;
@@ -63,6 +63,7 @@ function statusBadge(status: string) {
 const TAKE = 50;
 
 export default function FiscalPage() {
+  const businessId = useSelectedBusinessId();
   const [docs, setDocs] = useState<FiscalDoc[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -72,7 +73,13 @@ export default function FiscalPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const load = useCallback(async (skip = 0) => {
-    if (!getBusinessId()) { setLoading(false); return; }
+    if (!businessId) {
+      setDocs([]);
+      setTotal(0);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     const res = await erpFetch<{ items: FiscalDoc[]; total: number }>(
@@ -85,7 +92,7 @@ export default function FiscalPage() {
     }
     setDocs(res.data.items);
     setTotal(res.data.total);
-  }, []);
+  }, [businessId]);
 
   useEffect(() => { void load(); }, [load]);
 

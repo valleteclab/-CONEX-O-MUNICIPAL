@@ -6,8 +6,8 @@ import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
-import { getBusinessId } from "@/lib/auth-storage";
 
 type Product = {
   id: string;
@@ -79,7 +79,8 @@ export default function ErpProdutosPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const noBusinessId = !getBusinessId();
+  const businessId = useSelectedBusinessId();
+  const noBusinessId = !businessId;
 
   const load = useCallback(async (reset = false) => {
     setIsLoading(true);
@@ -97,9 +98,15 @@ export default function ErpProdutosPage() {
   }, [skip]);
 
   useEffect(() => {
-    if (!noBusinessId) load(true);
+    if (noBusinessId) {
+      setProducts([]);
+      setHasMore(false);
+      setSkip(0);
+      return;
+    }
+    load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noBusinessId]);
+  }, [businessId]);
 
   const openModal = () => {
     setForm(EMPTY_FORM);
