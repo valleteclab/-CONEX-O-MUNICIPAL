@@ -12,6 +12,8 @@ import { AcademyEnrollment } from '../entities/academy-enrollment.entity';
 import { AcademyLesson } from '../entities/academy-lesson.entity';
 import { AcademyLessonProgress } from '../entities/academy-lesson-progress.entity';
 import { AcademyUserGamification } from '../entities/academy-user-gamification.entity';
+import { AcademyBadgeDefinition } from '../entities/academy-badge-definition.entity';
+import { AcademyUserBadge } from '../entities/academy-user-badge.entity';
 import { AcademyLiveSession } from '../entities/academy-live-session.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { AcademyCertificateService } from './academy-certificate.service';
@@ -37,6 +39,10 @@ export class AcademyService {
     private readonly lessonProgress: Repository<AcademyLessonProgress>,
     @InjectRepository(AcademyUserGamification)
     private readonly gamification: Repository<AcademyUserGamification>,
+    @InjectRepository(AcademyBadgeDefinition)
+    private readonly badgeDefinitions: Repository<AcademyBadgeDefinition>,
+    @InjectRepository(AcademyUserBadge)
+    private readonly userBadges: Repository<AcademyUserBadge>,
     @InjectRepository(AcademyLiveSession)
     private readonly liveSessions: Repository<AcademyLiveSession>,
   ) {}
@@ -232,14 +238,15 @@ export class AcademyService {
     if (pct >= 100) {
       row.status = 'completed';
       row.completedAt = row.completedAt ?? new Date();
-      if (!wasCompleted) {
-        await this.addPoints(userId, tenantId, POINTS_ON_COURSE_COMPLETE);
-      }
     } else {
       row.status = 'active';
       row.completedAt = null;
     }
     await this.enrollments.save(row);
+    if (pct >= 100 && !wasCompleted) {
+      await this.addPoints(userId, tenantId, POINTS_ON_COURSE_COMPLETE);
+      await this.awardBadgesAfterCourseComplete(userId, tenantId);
+    }
   }
 
   private async addPoints(
@@ -255,12 +262,72 @@ export class AcademyService {
     await this.gamification.save(row);
   }
 
-  async getGamificationPoints(
+  private async grantBadgeBySlug(
     userId: string,
     tenantId: string,
-  ): Promise<{ points: number }> {
+    slug: string,
+  ): Promise<void> {
+    const def = await this.badgeDefinitions.findOne({ where: { slug } });
+    if (!def) {
+      return;
+    }
+    const exists = await this.userBadges.findOne({
+      where: { userId, tenantId, badgeId: def.id },
+    });
+    if (exists) {
+      return;
+    }
+    await this.userBadges.save(
+      this.userBadges.create({
+        userId,
+        tenantId,
+        badgeId: def.id,
+      }),
+    );
+  }
+
+  private async awardBadgesAfterCourseComplete(
+    userId: string,
+    tenantId: string,
+  ): Promise<void> {
+    const completedCount = await this.enrollments.count({
+      where: { userId, tenantId, status: 'completed' },
+    });
+    if (completedCount >= 1) {
+      await this.grantBadgeBySlug(userId, tenantId, 'primeira-formacao');
+    }
+    if (completedCount >= 3) {
+      await this.grantBadgeBySlug(userId, tenantId, 'trilheiro');
+    }
+  }
+
+  async getGamificationSummary(
+    userId: string,
+    tenantId: string,
+  ): Promise<{
+    points: number;
+    badges: Array<{
+      slug: string;
+      title: string;
+      description: string | null;
+      earnedAt: string;
+    }>;
+  }> {
     const row = await this.gamification.findOne({ where: { userId, tenantId } });
-    return { points: row?.points ?? 0 };
+    const ub = await this.userBadges.find({
+      where: { userId, tenantId },
+      relations: ['badge'],
+      order: { earnedAt: 'DESC' },
+    });
+    return {
+      points: row?.points ?? 0,
+      badges: ub.map((r) => ({
+        slug: r.badge.slug,
+        title: r.badge.title,
+        description: r.badge.description,
+        earnedAt: r.earnedAt.toISOString(),
+      })),
+    };
   }
 
   async listLiveSessions(
@@ -341,7 +408,10 @@ export class AcademyService {
       row.progressPercent = 100;
       row.status = 'completed';
       row.completedAt = new Date();
+      const saved = await this.enrollments.save(row);
       await this.addPoints(user.id, tenantId, POINTS_ON_COURSE_COMPLETE);
+      await this.awardBadgesAfterCourseComplete(user.id, tenantId);
+      return saved;
     }
     return this.enrollments.save(row);
   }
@@ -356,10 +426,12 @@ export class AcademyService {
     row.progressPercent = 100;
     row.status = 'completed';
     row.completedAt = new Date();
+    const saved = await this.enrollments.save(row);
     if (!wasCompleted) {
       await this.addPoints(user.id, tenantId, POINTS_ON_COURSE_COMPLETE);
+      await this.awardBadgesAfterCourseComplete(user.id, tenantId);
     }
-    return this.enrollments.save(row);
+    return saved;
   }
 
   private async requireEnrollment(

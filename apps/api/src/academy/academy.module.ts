@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AcademyBadgeDefinition } from '../entities/academy-badge-definition.entity';
+import { AcademyUserBadge } from '../entities/academy-user-badge.entity';
 import { AcademyCourse } from '../entities/academy-course.entity';
 import { AcademyEnrollment } from '../entities/academy-enrollment.entity';
 import { AcademyLesson } from '../entities/academy-lesson.entity';
@@ -20,6 +22,8 @@ import { AcademyService } from './academy.service';
       AcademyLessonProgress,
       AcademyUserGamification,
       AcademyLiveSession,
+      AcademyBadgeDefinition,
+      AcademyUserBadge,
       Tenant,
     ]),
   ],

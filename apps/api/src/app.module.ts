@@ -14,6 +14,8 @@ import { PlatformModule } from './platform/platform.module';
 import { QuotationsModule } from './quotations/quotations.module';
 import { UsersModule } from './users/users.module';
 import {
+  AcademyBadgeDefinition,
+  AcademyUserBadge,
   AcademyCourse,
   AcademyEnrollment,
   AcademyLesson,
@@ -76,8 +78,10 @@ import {
           ErpAccountReceivable,
           ErpAccountPayable,
           ErpCashEntry,
-  AcademyCourse,
-  AcademyLesson,
+          AcademyBadgeDefinition,
+          AcademyUserBadge,
+          AcademyCourse,
+          AcademyLesson,
   AcademyLessonProgress,
   AcademyLiveSession,
   AcademyUserGamification,

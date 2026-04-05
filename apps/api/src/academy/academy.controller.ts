@@ -148,12 +148,15 @@ export class AcademyController {
   @Get('gamification/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Pontos de gamificação (Academia) no município atual' })
+  @ApiOperation({
+    summary:
+      'Pontos e distintivos (Academia) no município atual — resposta inclui `points` e `badges`',
+  })
   async gamificationMe(
     @CurrentUser() user: User,
     @CurrentTenantId() tenantId: string,
   ) {
-    return this.academy.getGamificationPoints(user.id, tenantId);
+    return this.academy.getGamificationSummary(user.id, tenantId);
   }
 
   @Put('my-courses/:courseId/progress')

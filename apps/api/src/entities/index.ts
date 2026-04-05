@@ -21,6 +21,8 @@ export * from './erp-account-receivable.entity';
 export * from './erp-account-payable.entity';
 export * from './erp-cash-entry.entity';
 export * from './quotation-request.entity';
+export * from './academy-badge-definition.entity';
+export * from './academy-user-badge.entity';
 export * from './academy-course.entity';
 export * from './academy-lesson.entity';
 export * from './academy-lesson-progress.entity';

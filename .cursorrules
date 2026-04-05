@@ -1,6 +1,7 @@
 # Conexão Municipal — contexto Cursor
 
 ## Scratchpad
+- **Academia gamificação (2026-04):** [X] migration `1730000008000` + entidades badges; [X] `getGamificationSummary` + atribuição em conclusão (aulas / progress / complete); [X] web `AcademyMyCoursesList` com pontos, distintivos e PDF — [ ] deploy: `migration:run` em ambientes com API
 - **Backend (ordem):** [X] Auth + registro existentes; [X] `directory_listings` + `/businesses` + `PATCH /users/me`; [X] Cotações; [X] Academia; [X] Painel (SDD §6.5: `/api/v1/analytics/dashboard`, `businesses/stats`, `quotations/stats`, `academy/stats`; rotas IA 501; web `/painel` com `apiAuthFetch`); [X] **Super admin plataforma:** role `super_admin`, moderação `directory_listings` + `erp_businesses`, `GET/PATCH /api/v1/platform/...`, migration `1730000005000-PlatformModeration` (seed `superadmin@conexao.local`), web `/dashboard/plataforma`; [ ] ERP evolução / IA transversal
 - [X] Git: `origin` → https://github.com/valleteclab/-CONEX-O-MUNICIPAL — `main` pushed (histórico remoto anterior era só .docx; substituído por `--force-with-lease`)
 - [X] SDD v2.0: §5.4 ERP, §6.7 ERP (ondas A/B/C), escopo §3, RBAC §8, integrações §11, roadmap §14.1–14.2 (Fases 5–7), KPIs §15, riscos R11–R12, glossário
@@ -31,6 +32,7 @@
 - Regra detalhada para o agente: `.cursor/rules/responsive-web.mdc` (globs `apps/web/**`).
 
 ## Lessons
+- **Academia `GET /gamification/me`:** resposta `{ points, badges[] }` — compatível com clientes que só liam `points`; badges com `slug`, `title`, `description`, `earnedAt`.
 - Academia: público `/api/v1/academy/*` (catálogo, matrícula); **gestão de cursos** pelo super admin em `/api/v1/platform/academy/courses` (CRUD). Entidades `academy_lessons`, `academy_enrollments`; aulas ainda podem ser só BD até editor no painel.
 - Painel (SDD §6.5): base `/api/v1/analytics` — KPIs reais por `tenantId` (JWT); `@Roles('manager','admin')` + `RolesGuard`; `/painel` no Next usa `GET /analytics/dashboard` (autenticado). Utilizador demo `mei@demo` é role `mei` — não vê o painel até promover a `manager`/`admin` na BD ou criar utilizador gestor.
 - Diretório na API: tabela `directory_listings` (não confundir com `erp/businesses`); rotas `/api/v1/businesses` (público) e POST/PATCH com JWT; vitrine MEI/Empresa.

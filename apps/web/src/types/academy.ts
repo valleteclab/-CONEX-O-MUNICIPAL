@@ -43,3 +43,15 @@ export type AcademyEnrollmentDto = {
   completedAt: string | null;
   course: AcademyCourseDto;
 };
+
+export type AcademyGamificationBadgeDto = {
+  slug: string;
+  title: string;
+  description: string | null;
+  earnedAt: string;
+};
+
+export type AcademyGamificationSummaryDto = {
+  points: number;
+  badges: AcademyGamificationBadgeDto[];
+};

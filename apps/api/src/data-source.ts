@@ -3,6 +3,8 @@ import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import {
+  AcademyBadgeDefinition,
+  AcademyUserBadge,
   AcademyCourse,
   AcademyEnrollment,
   AcademyLesson,
@@ -59,6 +61,8 @@ const entities = [
   ErpAccountReceivable,
   ErpAccountPayable,
   ErpCashEntry,
+  AcademyBadgeDefinition,
+  AcademyUserBadge,
   AcademyCourse,
   AcademyLesson,
   AcademyLessonProgress,
