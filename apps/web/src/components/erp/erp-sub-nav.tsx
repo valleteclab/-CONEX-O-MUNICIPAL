@@ -13,6 +13,7 @@ const items: { href: string; label: string; exact?: boolean }[] = [
   { href: "/erp/pedidos-venda", label: "Pedidos de venda" },
   { href: "/erp/pedidos-compra", label: "Pedidos de compra" },
   { href: "/erp/financeiro", label: "Financeiro" },
+  { href: "/erp/fiscal", label: "Notas Fiscais" },
 ];
 
 function isActive(pathname: string, href: string, exact: boolean) {

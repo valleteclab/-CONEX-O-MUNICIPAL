@@ -20,6 +20,7 @@ export * from './erp-purchase-order-item.entity';
 export * from './erp-account-receivable.entity';
 export * from './erp-account-payable.entity';
 export * from './erp-cash-entry.entity';
+export * from './erp-fiscal-document.entity';
 export * from './quotation-request.entity';
 export * from './academy-badge-definition.entity';
 export * from './academy-user-badge.entity';

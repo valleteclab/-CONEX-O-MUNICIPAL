@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { ErpBusiness } from '../entities/erp-business.entity';
 import { ErpBusinessUser } from '../entities/erp-business-user.entity';
 import { ErpProduct } from '../entities/erp-product.entity';
@@ -14,6 +15,7 @@ import { ErpPurchaseOrderItem } from '../entities/erp-purchase-order-item.entity
 import { ErpAccountReceivable } from '../entities/erp-account-receivable.entity';
 import { ErpAccountPayable } from '../entities/erp-account-payable.entity';
 import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
+import { ErpFiscalDocument } from '../entities/erp-fiscal-document.entity';
 import { ErpBusinessGuard } from './guards/erp-business.guard';
 import { ErpBusinessController } from './controllers/erp-business.controller';
 import { ErpProductsController } from './controllers/erp-products.controller';
@@ -22,6 +24,7 @@ import { ErpStockController } from './controllers/erp-stock.controller';
 import { ErpSalesOrdersController } from './controllers/erp-sales-orders.controller';
 import { ErpPurchaseOrdersController } from './controllers/erp-purchase-orders.controller';
 import { ErpFinanceController } from './controllers/erp-finance.controller';
+import { ErpFiscalController } from './controllers/erp-fiscal.controller';
 import { ErpBusinessService } from './services/erp-business.service';
 import { ErpProductService } from './services/erp-product.service';
 import { ErpPartyService } from './services/erp-party.service';
@@ -29,9 +32,12 @@ import { ErpStockService } from './services/erp-stock.service';
 import { ErpSalesOrderService } from './services/erp-sales-order.service';
 import { ErpPurchaseOrderService } from './services/erp-purchase-order.service';
 import { ErpFinanceService } from './services/erp-finance.service';
+import { ErpFiscalService } from './services/erp-fiscal.service';
+import { PlugNotasService } from './services/plugnotas.service';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([
       ErpBusiness,
       ErpBusinessUser,
@@ -47,6 +53,7 @@ import { ErpFinanceService } from './services/erp-finance.service';
       ErpAccountReceivable,
       ErpAccountPayable,
       ErpCashEntry,
+      ErpFiscalDocument,
     ]),
   ],
   controllers: [
@@ -57,6 +64,7 @@ import { ErpFinanceService } from './services/erp-finance.service';
     ErpSalesOrdersController,
     ErpPurchaseOrdersController,
     ErpFinanceController,
+    ErpFiscalController,
   ],
   providers: [
     ErpBusinessGuard,
@@ -67,6 +75,8 @@ import { ErpFinanceService } from './services/erp-finance.service';
     ErpSalesOrderService,
     ErpPurchaseOrderService,
     ErpFinanceService,
+    PlugNotasService,
+    ErpFiscalService,
   ],
   exports: [ErpBusinessService],
 })

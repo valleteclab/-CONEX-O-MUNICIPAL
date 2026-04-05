@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
+import { ErpFiscalEmitModal } from "@/components/erp/erp-fiscal-emit-modal";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export default function ErpPedidosVendaPage() {
   const [parties, setParties] = useState<Party[]>([]);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [fiscalModalOrderId, setFiscalModalOrderId] = useState<string | null>(null);
   const [partyId, setPartyId] = useState("");
   const [lines, setLines] = useState<OrderLine[]>([{ productId: "", qty: "1", unitPrice: "0" }]);
   const [formError, setFormError] = useState<string | null>(null);
@@ -221,6 +223,13 @@ export default function ErpPedidosVendaPage() {
               Cancelar
             </button>
           </div>
+        ) : r.status === "confirmed" ? (
+          <button
+            onClick={() => setFiscalModalOrderId(r.id)}
+            className="rounded-btn border border-municipal-600/40 px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10"
+          >
+            Emitir NF
+          </button>
         ) : null,
     },
   ];
@@ -250,6 +259,13 @@ export default function ErpPedidosVendaPage() {
           onLoadMore={() => load(false)}
         />
       </Card>
+
+      <ErpFiscalEmitModal
+        open={fiscalModalOrderId !== null}
+        preSelectedOrderId={fiscalModalOrderId}
+        onClose={() => setFiscalModalOrderId(null)}
+        onSuccess={() => setFiscalModalOrderId(null)}
+      />
 
       <ErpFormModal
         title="Novo pedido de venda"
