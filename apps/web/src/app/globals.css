@@ -3,25 +3,41 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cm-page-bg: #fafcfe;
+  --cm-text: #102a43;
+  --cm-text-muted: #627d98;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--cm-text);
+  background: var(--cm-page-bg);
+  font-family: var(--font-source-sans), "Segoe UI", system-ui, sans-serif;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-dm-serif), Georgia, serif;
+    color: #102a43;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+/* Foco visível (acessibilidade) — anel teal do SDD */
+@layer components {
+  .focus-ring:focus-visible {
+    @apply outline-none ring-2 ring-municipal-600 ring-offset-2 ring-offset-surface;
   }
 }
