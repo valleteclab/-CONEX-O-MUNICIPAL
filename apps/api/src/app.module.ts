@@ -6,6 +6,7 @@ import configuration from './config/configuration';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AcademyModule } from './academy/academy.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { DirectoryModule } from './directory/directory.module';
 import { ErpModule } from './erp/erp.module';
@@ -105,6 +106,7 @@ import {
       },
     }),
     AcademyModule,
+    AnalyticsModule,
     AuthModule,
     DirectoryModule,
     QuotationsModule,

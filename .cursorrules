@@ -1,7 +1,7 @@
 # Conexão Municipal — contexto Cursor
 
 ## Scratchpad
-- **Backend (ordem):** [X] Auth + registro existentes; [X] `directory_listings` + `/businesses` + `PATCH /users/me`; [X] Cotações (GET `/quotations/mine`, UI `/dashboard/cotacoes`, `apiAuthFetch` no create); [X] Academia (SDD §6.4: `courses/featured`, `courses/:slug`+aulas, enroll, `my-courses`, progress, complete; certificado 501; migration `1730000004000`); [ ] Painel; [ ] ERP por último (já existe Onda A, evoluir depois)
+- **Backend (ordem):** [X] Auth + registro existentes; [X] `directory_listings` + `/businesses` + `PATCH /users/me`; [X] Cotações; [X] Academia; [X] Painel (SDD §6.5: `/api/v1/analytics/dashboard`, `businesses/stats`, `quotations/stats`, `academy/stats`; rotas IA 501; web `/painel` com `apiAuthFetch`); [ ] ERP evolução / IA transversal
 - [X] Git: `origin` → https://github.com/valleteclab/-CONEX-O-MUNICIPAL — `main` pushed (histórico remoto anterior era só .docx; substituído por `--force-with-lease`)
 - [X] SDD v2.0: §5.4 ERP, §6.7 ERP (ondas A/B/C), escopo §3, RBAC §8, integrações §11, roadmap §14.1–14.2 (Fases 5–7), KPIs §15, riscos R11–R12, glossário
 - [X] DevContext: +6 requisitos ERP, +4 ADRs (ERP/SEFAZ/Bull/NFS-e), +6 features épicos ERP; projeto v0.2.0
@@ -32,6 +32,7 @@
 
 ## Lessons
 - Academia (SDD): base `/api/v1/academy` — `GET courses/featured`, `GET courses/:slug` (detalhe+aulas), `GET courses`, `POST courses/:id/enroll`, `GET my-courses`, `PUT my-courses/:id/progress`, `POST .../complete`, certificado PDF ainda não (501). Entidades `academy_lessons`, `academy_enrollments`; curso com `slug` único por tenant.
+- Painel (SDD §6.5): base `/api/v1/analytics` — KPIs reais por `tenantId` (JWT); `@Roles('manager','admin')` + `RolesGuard`; `/painel` no Next usa `GET /analytics/dashboard` (autenticado). Utilizador demo `mei@demo` é role `mei` — não vê o painel até promover a `manager`/`admin` na BD ou criar utilizador gestor.
 - Diretório na API: tabela `directory_listings` (não confundir com `erp/businesses`); rotas `/api/v1/businesses` (público) e POST/PATCH com JWT; vitrine MEI/Empresa.
 - Diretório: cada negócio tem modo `perfil` ou `loja`; a mesma rota `/diretorio/[slug]` renderiza a vitrine conforme o modo (até integrar API).
 - Pedidos/orçamentos do diretório → ERP do negócio como `erp_sales_orders` com `source` `portal_diretorio` e `portal_request_id` opcional; serviço `ErpSalesOrderService.create(..., meta)`.
