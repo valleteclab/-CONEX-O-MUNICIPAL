@@ -25,4 +25,12 @@ export default () => ({
   tenant: {
     defaultSlug: process.env.DEFAULT_TENANT_SLUG ?? 'luis-eduardo-magalhaes',
   },
+  fiscal: {
+    plugnotasApiKey:
+      process.env.PLUGNOTAS_API_KEY ?? '2da392a6-79d2-4304-a8b7-959572c7e44d',
+    plugnotasBaseUrl:
+      process.env.PLUGNOTAS_BASE_URL ?? 'https://api.sandbox.plugnotas.com.br',
+    sandbox: process.env.PLUGNOTAS_SANDBOX !== 'false',
+    webhookSecret: process.env.PLUGNOTAS_WEBHOOK_SECRET ?? '',
+  },
 });
