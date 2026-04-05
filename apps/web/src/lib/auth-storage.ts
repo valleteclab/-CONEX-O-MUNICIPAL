@@ -13,12 +13,28 @@ function emitBusinessChanged(id: string | null): void {
   );
 }
 
+function setSessionCookie(name: string, value: string, maxAgeSec: number): void {
+  if (typeof document === "undefined") return;
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSec}; SameSite=Lax${secure}`;
+}
+
+function clearSessionCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; path=/; max-age=0`;
+}
+
+/** Alinhado ao middleware (rotas /admin), que só vê cookies — não só localStorage. */
+const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 7;
+
 export function setTokens(access: string, refresh: string, tenantId?: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(ACCESS, access);
   localStorage.setItem(REFRESH, refresh);
+  setSessionCookie(ACCESS, access, COOKIE_MAX_AGE_SEC);
   if (tenantId) {
     localStorage.setItem(TENANT, tenantId);
+    setSessionCookie(TENANT, tenantId, COOKIE_MAX_AGE_SEC);
   }
 }
 
@@ -43,6 +59,8 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH);
   localStorage.removeItem(TENANT);
   localStorage.removeItem(BUSINESS);
+  clearSessionCookie(ACCESS);
+  clearSessionCookie(TENANT);
   emitBusinessChanged(null);
 }
 

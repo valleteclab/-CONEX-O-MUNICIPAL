@@ -233,11 +233,20 @@ export class AuthService {
       relations: ['tenant'],
       order: { joinedAt: 'ASC' },
     });
-    if (rows.length === 0) {
-      return null;
+    if (rows.length > 0) {
+      const bySlug = rows.find((r) => r.tenant?.slug === defaultSlug);
+      return (bySlug ?? rows[0]).tenantId;
     }
-    const bySlug = rows.find((r) => r.tenant?.slug === defaultSlug);
-    return (bySlug ?? rows[0]).tenantId;
+    /** Produção: super_admin pode existir sem linha em user_tenants; JWT ainda precisa de um tid. */
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (user?.role === 'super_admin') {
+      const fallback = await this.tenants.findOne({
+        where: { isActive: true },
+        order: { createdAt: 'ASC' },
+      });
+      return fallback?.id ?? null;
+    }
+    return null;
   }
 
   private async issueEmailVerificationToken(user: User): Promise<void> {
