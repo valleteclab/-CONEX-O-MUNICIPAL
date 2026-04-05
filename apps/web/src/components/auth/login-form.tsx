@@ -64,7 +64,7 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
         );
         return;
       }
-      router.push("/dashboard/plataforma");
+      router.push("/admin");
       router.refresh();
       return;
     }

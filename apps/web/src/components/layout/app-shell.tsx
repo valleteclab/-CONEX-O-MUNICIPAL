@@ -20,8 +20,7 @@ const mainNav: MainNavItem[] = [
   { href: "/academia", label: "Academia" },
   { href: "/erp", label: "ERP" },
   { href: "/painel", label: "Painel" },
-  /** Entrada explícita da equipe interna (super admin) — não confundir com Painel do município. */
-  { href: "/plataforma/entrar", label: "Plataforma", kind: "platform" },
+  { href: "/admin", label: "Admin", kind: "platform" },
 ];
 
 function navLinkClass(active: boolean) {
@@ -39,9 +38,7 @@ function isActivePath(
   kind?: "platform",
 ) {
   if (kind === "platform") {
-    return (
-      pathname === "/plataforma/entrar" || pathname.startsWith("/dashboard/plataforma")
-    );
+    return pathname.startsWith("/admin");
   }
   if (href === "/") {
     return pathname === "/";
@@ -90,14 +87,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="hidden items-center gap-2 sm:flex">
             <Link
-              href="/plataforma/entrar"
+              href="/admin"
               className={cn(
                 "focus-ring inline-flex min-h-[44px] items-center justify-center rounded-btn border-2 border-municipal-600 bg-white px-3 py-2 text-sm font-bold text-municipal-900 shadow-sm transition hover:bg-municipal-600/10",
-                isActivePath(pathname, "/plataforma/entrar", "platform") && "bg-municipal-600/15",
+                isActivePath(pathname, "/admin", "platform") && "bg-municipal-600/15",
               )}
-              title="Login da equipe Conexão Municipal (super administrador)"
+              title="Painel do super administrador"
             >
-              Área da plataforma
+              Admin
             </Link>
             <Link
               href="/login"
