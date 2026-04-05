@@ -183,9 +183,22 @@ export function DirectoryManageForm({ initialItems }: { initialItems: DirectoryL
                 required
                 disabled={!!selectedItem}
                 value={form.slug}
-                onChange={(e) => setForm((cur) => ({ ...cur, slug: e.target.value.toLowerCase() }))}
+                onChange={(e) =>
+                  setForm((cur) => ({
+                    ...cur,
+                    slug: e.target.value
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")
+                      .replace(/[^a-z0-9-]/g, ""),
+                  }))
+                }
                 placeholder="meu-negocio"
               />
+              <p className="mt-1 text-xs text-marinha-500">
+                {selectedItem
+                  ? "O slug não pode ser alterado após a criação."
+                  : "Apenas letras minúsculas, números e hífens. Ex.: padaria-joao"}
+              </p>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

@@ -66,10 +66,18 @@ export default async function DiretorioNegocioPage({ params }: Props) {
 
       <Card>
         <p className="text-sm text-marinha-600">
-          Em breve: pedidos, orçamentos ou cotações diretamente por esta página.
+          Precisa de um orçamento? Use a{" "}
+          <Link href="/cotacoes" className="font-semibold text-municipal-700 hover:underline">
+            Central de Cotações
+          </Link>{" "}
+          para enviar uma solicitação pública e receber propostas de fornecedores locais.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" disabled>
+          <Button
+            variant="primary"
+            disabled
+            title="Pedido direto disponível em breve (integração ERP Onda B)"
+          >
             {isLoja ? "Comprar / pedir (em breve)" : "Solicitar cotação (em breve)"}
           </Button>
           <Link

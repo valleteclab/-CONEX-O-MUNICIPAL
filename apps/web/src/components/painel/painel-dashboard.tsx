@@ -50,7 +50,7 @@ export function PainelDashboard() {
     }
     if (res.status === 403) {
       setError(
-        "Este painel mostra indicadores do município e é só para gestores locais (papéis manager ou admin). Se sua função é super administrador da plataforma (moderação em vários municípios), use o botão «Área da plataforma» no topo do site.",
+        "Acesso restrito a gestores municipais (papel manager ou admin). Super admins devem usar a Área da plataforma.",
       );
       setData(null);
       return;
