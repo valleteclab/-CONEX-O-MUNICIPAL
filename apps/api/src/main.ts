@@ -53,7 +53,8 @@ async function bootstrap() {
 
   const port = parseInt(process.env.PORT ?? '3001', 10);
   await app.listen(port);
-  console.error(
+  // stdout: agregadores (Railway) classificam stderr como "error" mesmo para mensagens informativas
+  console.log(
     `[api] listening on http://localhost:${port} — Swagger: http://localhost:${port}/docs`,
   );
 }
