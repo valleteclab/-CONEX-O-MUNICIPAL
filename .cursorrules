@@ -53,3 +53,4 @@
 - **Workflow Git (preferência do projeto):** após cada conjunto de alterações no código, fazer **commit e push** (`git push` para `origin` na branch atual), sem deixar trabalho só local — exceto se o utilizador pedir o contrário.
 - **DevContext offline:** se o MCP `user-devcontext` não estiver ligado, guardar payload em `tools/devcontext-import-*.json` e importar quando o MCP voltar; não perder features/decisões/requisitos.
 - **Super admin:** conta demo criada pela migration `1730000005000-PlatformModeration` — `superadmin@conexao.local` (mesmo hash de password que outras demos do projeto; ex.: `Demo1234`). Vitrine pública só com `moderation_status = approved` e `is_published`; ERP usa `moderation_status` + `is_active` e o guard exige aprovado + ativo.
+- **Web ERP (produção):** não expor nas telas rotas REST, `/docs`, `X-Business-Id` nem avisos de protótipo — documentação fica na API/Swagger; UI focada no utilizador final.
