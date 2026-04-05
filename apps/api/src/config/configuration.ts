@@ -13,6 +13,10 @@ export default () => ({
     jwtSecret: process.env.JWT_SECRET ?? 'dev-only-change-me',
     accessExpires: process.env.JWT_ACCESS_EXPIRES ?? '15m',
     refreshExpiresDays: parseInt(process.env.JWT_REFRESH_EXPIRES_DAYS ?? '7', 10),
+    passwordResetExpiresMinutes: parseInt(
+      process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? '60',
+      10,
+    ),
   },
   tenant: {
     defaultSlug: process.env.DEFAULT_TENANT_SLUG ?? 'luis-eduardo-magalhaes',

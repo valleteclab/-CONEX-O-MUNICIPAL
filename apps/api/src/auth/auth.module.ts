@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PasswordResetToken } from '../entities/password-reset-token.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { User } from '../entities/user.entity';
@@ -13,7 +15,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Tenant, UserTenant, RefreshToken]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
+    TypeOrmModule.forFeature([
+      User,
+      Tenant,
+      UserTenant,
+      RefreshToken,
+      PasswordResetToken,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

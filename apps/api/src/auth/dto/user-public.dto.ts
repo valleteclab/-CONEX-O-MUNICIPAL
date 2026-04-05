@@ -20,6 +20,9 @@ export class UserPublicDto {
   @ApiProperty()
   emailVerified: boolean;
 
+  @ApiProperty({ description: 'Tenant (município) ativo no token', required: false })
+  tenantId?: string;
+
   static fromUser(u: {
     id: string;
     email: string;
@@ -27,7 +30,7 @@ export class UserPublicDto {
     fullName: string;
     role: AppUserRole;
     emailVerified: boolean;
-  }): UserPublicDto {
+  }, tenantId?: string): UserPublicDto {
     const d = new UserPublicDto();
     d.id = u.id;
     d.email = u.email;
@@ -35,6 +38,9 @@ export class UserPublicDto {
     d.fullName = u.fullName;
     d.role = u.role;
     d.emailVerified = u.emailVerified;
+    if (tenantId) {
+      d.tenantId = tenantId;
+    }
     return d;
   }
 }

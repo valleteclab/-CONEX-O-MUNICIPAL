@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import {
+  PasswordResetToken,
   Plan,
   RefreshToken,
   Tenant,
@@ -28,7 +29,14 @@ import {
         username: process.env.DATABASE_USER ?? 'conexao',
         password: process.env.DATABASE_PASSWORD ?? 'conexao_dev',
         database: process.env.DATABASE_NAME ?? 'conexao_municipal',
-        entities: [Plan, Tenant, User, UserTenant, RefreshToken],
+        entities: [
+          Plan,
+          Tenant,
+          User,
+          UserTenant,
+          RefreshToken,
+          PasswordResetToken,
+        ],
         synchronize: process.env.TYPEORM_SYNC === 'true',
         logging: process.env.NODE_ENV !== 'production',
       }),
