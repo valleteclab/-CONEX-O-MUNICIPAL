@@ -6,7 +6,8 @@
 - [X] SDD v2.0: §5.4 ERP, §6.7 ERP (ondas A/B/C), escopo §3, RBAC §8, integrações §11, roadmap §14.1–14.2 (Fases 5–7), KPIs §15, riscos R11–R12, glossário
 - [X] DevContext: +6 requisitos ERP, +4 ADRs (ERP/SEFAZ/Bull/NFS-e), +6 features épicos ERP; projeto v0.2.0
 - [X] Monorepo: apps/api (Nest), apps/web (Next), packages/shared, docker-compose, init.sql
-- [ ] Subir Docker e validar Postgres + TypeORM/migrations *(Docker Desktop precisa estar rodando no Windows)*
+- [ ] Subir Docker e validar Postgres + `npm run migration:run` *(Docker Desktop no Windows)*
+- [X] TypeORM: baseline em `infra/docker/migration-baseline.sql`, migration `1730000000000-Baseline`, scripts `migration:run` / `migration:run:dist`; `TYPEORM_MIGRATIONS_RUN` no `.env.example`; **DevContext:** `import_project_data` + épico «TypeORM migrations, baseline SQL e Railway» (`4d0395b4-d6ca-47dd-85e5-8e0e7e28e3bd`), 5 commits vinculados (b5d821e, db8147f, 0f54e4a, 222fee0, 7004ab8)
 - [X] Módulo Auth Nest: register/login/refresh/logout/me, Swagger `/docs`, `.env.example` (JWT HS256 MVP; RS256 depois)
 - [X] Contexto tenant no JWT (`tid` claim), `CurrentTenantId`, vínculo user↔tenant na validação JWT; forgot/reset password (token SHA-256; dev loga token em stderr); `@nestjs/throttler` nas rotas `/auth`
 - [X] Web: `AppShell` (nav + auth links + mobile menu + rodapé); telas em `app/(site)/` — `/`, `/login`, `/cadastro`, `/recuperar-senha`, `/diretorio`, `/diretorio/[slug]`, `/cotacoes`, `/academia`, `/erp` (+ sub-rotas ERP), `/painel`, `/design-system`; `PageIntro` + UI base; `app/not-found.tsx`
@@ -36,13 +37,14 @@
 - Web: layout em largura total — sem `max-w-5xl` no shell; só `px-4 sm:px-6 lg:px-8` nas bordas.
 - PDV: rota `/erp/pdv`, componente `components/erp/pdv-panel.tsx` (client); cupom compacto + campo EAN; `lg:max-h-none` no cupom para evitar rolagem no desktop.
 - `next/font` Google: `DM_Serif_Display` só expõe peso `400` — títulos usam negrito sintético ou peso único.
-- Banco já existente: aplicar DDL do bloco ERP em `infra/docker/init.sql` ou `TYPEORM_SYNC=true` só em dev.
+- Schema: `npm run migration:run` (SQL em `infra/docker/migration-baseline.sql`). `TYPEORM_SYNC=true` só emergência local. Produção/Railway (serviço **api**): `TYPEORM_MIGRATIONS_RUN=true`, `TYPEORM_SYNC=false` — migrations rodam no arranque após cada deploy. Detalhes no **DevContext** (import em 2026).
 - Tokens JWT emitidos antes da claim `tid` deixam de ser válidos — novo login após deploy.
 - `docker compose` no Windows exige Docker Desktop (pipe `dockerDesktopLinuxEngine`).
 - Workspace path: conexaomunicipal; npm workspaces: pacotes `api`, `web`, `@conexao-municipal/shared`.
 - DevContext foi reconfigurado para este projeto; spec reimportada após troca de MCP.
 - **Railway Railpack:** `package.json` na raiz não pode ter BOM (`\ufeff`); senão `hujson: invalid character '\ufeff'`. Salvar JSON como UTF-8 **sem** BOM.
 - **`NODE_ENV=production`** (variável global no Windows) faz `npm install` omitir devDependencies — `@nestjs/cli` não entra em `node_modules` se estiver só em devDeps; solução: CLI nas **dependencies** do monorepo root e/ou `npm install --include=dev`, ou script de build com caminho explícito ao `nest.js`.
-- **Next ↔ Nest em produção:** definir `NEXT_PUBLIC_API_BASE_URL` no build do Next; no Nest `enableCors` com `CORS_ORIGINS` listando o domínio do front (chamadas `fetch` no browser). SSR (Server Components) não sofre CORS; chamadas client-side sim.
+- **Next ↔ Nest em produção:** definir `NEXT_PUBLIC_API_BASE_URL` no build do Next; no Nest `CORS_ORIGINS` com o origin do front **sem barra final** (o browser manda `Origin` sem `/` no fim — se só existir `https://app/` no env, o match falha e o browser mostra `Failed to fetch`). O `main.ts` normaliza origens.
 - **Build Next (SaaS):** `apiGet` não deve lançar em 4xx/5xx — senão o SSG falha se o tenant não existir na API em produção (400). Páginas que dependem da API: `dynamic = 'force-dynamic'`. O aviso `npm ENOWORKSPACES` no download do SWC costuma ser não fatal; o que quebrava o deploy era o throw no `/diretorio`.
 - Commits multilinha no Windows: escrever mensagem em arquivo e `git commit -F arquivo.txt`, depois apagar o arquivo; prefixo `[Cursor]` no título.
+- **Workflow Git (preferência do projeto):** após cada conjunto de alterações no código, fazer **commit e push** (`git push` para `origin` na branch atual), sem deixar trabalho só local — exceto se o utilizador pedir o contrário.

@@ -33,18 +33,22 @@ export function RegisterForm() {
       return;
     }
     setLoading(true);
-    const res = await apiFetch<RegisterResponse>("/api/v1/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        fullName,
-        email,
-        phone: phone.trim() || undefined,
-        password,
-        role,
-        acceptTerms: true,
-      }),
-    });
-    setLoading(false);
+    let res: Awaited<ReturnType<typeof apiFetch<RegisterResponse>>>;
+    try {
+      res = await apiFetch<RegisterResponse>("/api/v1/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone: phone.trim() || undefined,
+          password,
+          role,
+          acceptTerms: true,
+        }),
+      });
+    } finally {
+      setLoading(false);
+    }
     if (!res.ok || !res.data) {
       setError(res.error || "Não foi possível cadastrar");
       return;

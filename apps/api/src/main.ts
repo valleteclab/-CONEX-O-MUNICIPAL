@@ -4,14 +4,30 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+function normalizeCorsOrigin(value: string): string {
+  return value.trim().replace(/\/+$/, '');
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  /** Browsers send Origin without trailing slash; env often has one — normalize so CORS matches. */
   const corsOrigins = process.env.CORS_ORIGINS?.split(',')
-    .map((s) => s.trim())
+    .map((s) => normalizeCorsOrigin(s))
     .filter(Boolean);
   app.enableCors({
-    origin: corsOrigins?.length ? corsOrigins : true,
+    origin:
+      corsOrigins?.length ?
+        (origin, callback) => {
+          if (!origin) {
+            callback(null, true);
+            return;
+          }
+          const requestOrigin = normalizeCorsOrigin(origin);
+          const allowed = corsOrigins.some((o) => o === requestOrigin);
+          callback(null, allowed);
+        }
+      : true,
     credentials: true,
   });
 

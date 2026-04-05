@@ -10,7 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - cm_pg_data:/var/lib/postgresql/data
-      - ./infra/docker/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./infra/docker/init-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U conexao -d conexao_municipal"]
       interval: 5s

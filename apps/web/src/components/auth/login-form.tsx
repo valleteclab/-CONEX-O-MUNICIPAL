@@ -26,11 +26,15 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await apiFetch<LoginResponse>("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    setLoading(false);
+    let res: Awaited<ReturnType<typeof apiFetch<LoginResponse>>>;
+    try {
+      res = await apiFetch<LoginResponse>("/api/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+    } finally {
+      setLoading(false);
+    }
     if (!res.ok || !res.data) {
       setError(res.error || "Falha no login");
       return;

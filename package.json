@@ -16,7 +16,10 @@
     "start": "node tools/railway-service-runner.cjs start",
     "start:web": "npm run start -w web",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "migration:run": "npm run migration:run -w api",
+    "migration:revert": "npm run migration:revert -w api",
+    "migration:show": "npm run migration:show -w api"
   },
   "engines": {
     "node": ">=20"

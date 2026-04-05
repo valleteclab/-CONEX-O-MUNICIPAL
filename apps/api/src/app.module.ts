@@ -1,3 +1,4 @@
+import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -72,6 +73,8 @@ import {
         ];
         const common = {
           entities,
+          migrations: [join(__dirname, 'migrations', '*.js')],
+          migrationsRun: process.env.TYPEORM_MIGRATIONS_RUN === 'true',
           synchronize: process.env.TYPEORM_SYNC === 'true',
           logging: process.env.NODE_ENV !== 'production',
         };

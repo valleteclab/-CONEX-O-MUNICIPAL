@@ -18,13 +18,26 @@ export async function apiFetch<T>(
     return { ok: false, status: 0, error: "NEXT_PUBLIC_API_BASE_URL não definido" };
   }
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Falha de rede";
+    return {
+      ok: false,
+      status: 0,
+      error:
+        msg === "Failed to fetch" ?
+          "Não foi possível contactar a API (rede ou CORS). Verifique NEXT_PUBLIC_API_BASE_URL e CORS_ORIGINS no servidor."
+        : msg,
+    };
+  }
   const text = await res.text();
   let data: T | undefined;
   try {
