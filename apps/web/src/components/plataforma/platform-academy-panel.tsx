@@ -131,18 +131,28 @@ export function PlatformAcademyPanel() {
 
   if (loading) {
     return (
-      <section>
-        <h2 className="font-serif text-lg text-marinha-900">Academia — cursos</h2>
-        <p className="mt-2 text-sm text-marinha-500">A carregar cursos…</p>
+      <section className="rounded-2xl border border-marinha-900/10 bg-surface-card p-5 shadow-sm sm:p-6">
+        <h2 className="font-serif text-xl font-bold text-marinha-900">
+          <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-municipal-600 text-sm font-bold text-white">
+            3
+          </span>
+          Academia — cursos
+        </h2>
+        <p className="mt-4 text-sm text-marinha-500">A carregar cursos…</p>
       </section>
     );
   }
 
   if (err && !data) {
     return (
-      <section>
-        <h2 className="font-serif text-lg text-marinha-900">Academia — cursos</h2>
-        <p className="mt-2 rounded-btn border border-alerta-500/30 bg-alerta-500/10 px-3 py-2 text-sm text-alerta-700">
+      <section className="rounded-2xl border border-marinha-900/10 bg-surface-card p-5 shadow-sm sm:p-6">
+        <h2 className="font-serif text-xl font-bold text-marinha-900">
+          <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-municipal-600 text-sm font-bold text-white">
+            3
+          </span>
+          Academia — cursos
+        </h2>
+        <p className="mt-4 rounded-btn border border-alerta-500/30 bg-alerta-500/10 px-3 py-2 text-sm text-alerta-700">
           {err}
         </p>
         <Button type="button" variant="secondary" className="mt-3 text-sm" onClick={() => void load()}>
@@ -153,19 +163,101 @@ export function PlatformAcademyPanel() {
   }
 
   return (
-    <section>
-      <h2 className="font-serif text-lg text-marinha-900">Academia — cursos</h2>
-      <p className="mt-1 text-sm text-marinha-500">
-        Criar e gerir cursos por município (tenant). Total: {data?.total ?? 0}
+    <section className="rounded-2xl border border-marinha-900/10 bg-surface-card p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-marinha-900/10 pb-3">
+        <h2 className="font-serif text-xl font-bold text-marinha-900">
+          <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-municipal-600 text-sm font-bold text-white">
+            3
+          </span>
+          Academia — cursos
+        </h2>
+        <span className="text-xs font-medium uppercase tracking-wide text-marinha-500">
+          Conteúdo por município
+        </span>
+      </div>
+      <p className="mt-4 text-sm text-marinha-600">
+        Cada curso pertence a um <strong>tenant</strong> (slug do município). Publicados aparecem em{" "}
+        <strong>/academia</strong> desse município. Total de cursos: {data?.total ?? 0}
       </p>
 
       {err ? (
-        <p className="mt-2 text-sm text-alerta-700">{err}</p>
+        <p className="mt-3 text-sm text-alerta-700">{err}</p>
       ) : null}
 
-      <Card className="mt-4 p-4">
-        <h3 className="font-semibold text-marinha-900">Novo curso</h3>
-        <form onSubmit={onCreate} className="mt-3 space-y-3">
+      <ul className="mt-6 space-y-3">
+        {data?.items.map((row) => (
+          <li key={row.id}>
+            <Card className="border border-marinha-900/8 p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="font-semibold text-marinha-900">{row.title}</p>
+                  <p className="text-xs text-marinha-500">
+                    {row.tenant?.name ? `${row.tenant.name} · ` : ""}
+                    {row.tenant?.slug ?? "?"} · /academia/{row.slug}
+                  </p>
+                  {row.summary ? (
+                    <p className="mt-2 line-clamp-2 text-sm text-marinha-600">{row.summary}</p>
+                  ) : null}
+                  <p className="mt-1 text-xs">
+                    publicado: {row.isPublished ? "sim" : "não"} · destaque: {row.isFeatured ? "sim" : "não"}
+                    {row.durationMinutes != null ? ` · ${row.durationMinutes} min` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/dashboard/plataforma/academia/cursos/${row.id}`}
+                    className="inline-flex min-h-[36px] items-center rounded-btn border border-marinha-900/15 bg-white px-3 text-sm font-semibold text-municipal-800 hover:bg-municipal-600/10"
+                  >
+                    Aulas (YouTube)
+                  </Link>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-sm"
+                    onClick={() => void patchCourse(row.id, { isPublished: !row.isPublished })}
+                  >
+                    {row.isPublished ? "Ocultar" : "Publicar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-sm"
+                    onClick={() => void patchCourse(row.id, { isFeatured: !row.isFeatured })}
+                  >
+                    {row.isFeatured ? "Tirar destaque" : "Destaque"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="text-sm"
+                    onClick={() => void removeCourse(row.id)}
+                  >
+                    Remover
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </li>
+        ))}
+      </ul>
+      {!data?.items.length ? (
+        <p className="mt-4 rounded-btn bg-marinha-900/[0.04] px-3 py-3 text-sm text-marinha-600">
+          Ainda não há cursos. Use «Criar novo curso» abaixo para o primeiro.
+        </p>
+      ) : null}
+
+      <details className="group mt-8 rounded-btn border border-municipal-600/25 bg-municipal-600/[0.06] open:bg-municipal-600/10">
+        <summary className="cursor-pointer list-none px-4 py-3 font-semibold text-municipal-900 marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-2">
+            <span className="text-municipal-800 group-open:rotate-90">▸</span>
+            Criar novo curso
+          </span>
+          <span className="mt-1 block text-xs font-normal text-marinha-600">
+            Escolha o município (slug), título e se fica publicado na vitrine da Academia.
+          </span>
+        </summary>
+        <div className="border-t border-marinha-900/10 px-4 pb-4 pt-2">
+          <form onSubmit={onCreate} className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-marinha-600">Slug do município (tenant)</label>
             <Input
@@ -220,71 +312,12 @@ export function PlatformAcademyPanel() {
               Publicado
             </label>
           </div>
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? "A guardar…" : "Criar curso"}
-          </Button>
-        </form>
-      </Card>
-
-      <ul className="mt-6 space-y-3">
-        {data?.items.map((row) => (
-          <li key={row.id}>
-            <Card className="p-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="font-semibold text-marinha-900">{row.title}</p>
-                  <p className="text-xs text-marinha-500">
-                    {row.tenant?.name ? `${row.tenant.name} · ` : ""}
-                    {row.tenant?.slug ?? "?"} · /academia/{row.slug}
-                  </p>
-                  {row.summary ? (
-                    <p className="mt-2 line-clamp-2 text-sm text-marinha-600">{row.summary}</p>
-                  ) : null}
-                  <p className="mt-1 text-xs">
-                    publicado: {row.isPublished ? "sim" : "não"} · destaque: {row.isFeatured ? "sim" : "não"}
-                    {row.durationMinutes != null ? ` · ${row.durationMinutes} min` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href={`/dashboard/plataforma/academia/cursos/${row.id}`}
-                    className="inline-flex min-h-[36px] items-center rounded-btn border border-marinha-900/15 bg-white px-3 text-sm font-semibold text-municipal-800 hover:bg-municipal-600/10"
-                  >
-                    Aulas (YouTube)
-                  </Link>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="text-sm"
-                    onClick={() => void patchCourse(row.id, { isPublished: !row.isPublished })}
-                  >
-                    {row.isPublished ? "Ocultar" : "Publicar"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="text-sm"
-                    onClick={() => void patchCourse(row.id, { isFeatured: !row.isFeatured })}
-                  >
-                    {row.isFeatured ? "Tirar destaque" : "Destaque"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="text-sm"
-                    onClick={() => void removeCourse(row.id)}
-                  >
-                    Remover
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </li>
-        ))}
-      </ul>
-      {!data?.items.length ? (
-        <p className="mt-4 text-sm text-marinha-500">Nenhum curso ainda. Utilize o formulário acima.</p>
-      ) : null}
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? "A guardar…" : "Criar curso"}
+            </Button>
+          </form>
+        </div>
+      </details>
     </section>
   );
 }

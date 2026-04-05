@@ -119,11 +119,22 @@ export function SuperAdminPanel() {
   }
 
   return (
-    <div className="space-y-10">
-      <section>
-        <h2 className="font-serif text-lg text-marinha-900">Diretório — vitrines</h2>
-        <p className="mt-1 text-sm text-marinha-500">
-          Novos cadastros ficam <strong>pendentes</strong> até aprovação. Total: {dir?.total ?? 0}
+    <div className="space-y-8">
+      <section className="rounded-2xl border border-marinha-900/10 bg-surface-card p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-marinha-900/10 pb-3">
+          <h2 className="font-serif text-xl font-bold text-marinha-900">
+            <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-municipal-600 text-sm font-bold text-white">
+              1
+            </span>
+            Diretório — vitrines
+          </h2>
+          <span className="text-xs font-medium uppercase tracking-wide text-marinha-500">
+            Fila de moderação
+          </span>
+        </div>
+        <p className="mt-4 text-sm text-marinha-600">
+          Quem abre uma vitrine no portal passa por aqui. Novos registos podem ficar{" "}
+          <strong>pendentes</strong> até aprovar. Total na lista: {dir?.total ?? 0}
         </p>
         <ul className="mt-4 space-y-3">
           {dir?.items.map((row) => (
@@ -180,14 +191,27 @@ export function SuperAdminPanel() {
           ))}
         </ul>
         {!dir?.items.length ? (
-          <p className="mt-2 text-sm text-marinha-500">Nenhum cadastro listado.</p>
+          <p className="mt-4 rounded-btn bg-marinha-900/[0.04] px-3 py-3 text-sm text-marinha-600">
+            Nenhum pedido na fila. Quando houver vitrines a moderar, aparecem aqui.
+          </p>
         ) : null}
       </section>
 
-      <section>
-        <h2 className="font-serif text-lg text-marinha-900">ERP — negócios</h2>
-        <p className="mt-1 text-sm text-marinha-500">
-          Cadastro de negócio no ERP aguarda aprovação para uso. Total: {erp?.total ?? 0}
+      <section className="rounded-2xl border border-marinha-900/10 bg-surface-card p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-marinha-900/10 pb-3">
+          <h2 className="font-serif text-xl font-bold text-marinha-900">
+            <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-municipal-600 text-sm font-bold text-white">
+              2
+            </span>
+            ERP — negócios
+          </h2>
+          <span className="text-xs font-medium uppercase tracking-wide text-marinha-500">
+            Fila de moderação
+          </span>
+        </div>
+        <p className="mt-4 text-sm text-marinha-600">
+          Negócios que usam o ERP no portal precisam de aprovação para operar. Total na lista:{" "}
+          {erp?.total ?? 0}
         </p>
         <ul className="mt-4 space-y-3">
           {erp?.items.map((row) => (
@@ -245,7 +269,9 @@ export function SuperAdminPanel() {
           ))}
         </ul>
         {!erp?.items.length ? (
-          <p className="mt-2 text-sm text-marinha-500">Nenhum negócio ERP listado.</p>
+          <p className="mt-4 rounded-btn bg-marinha-900/[0.04] px-3 py-3 text-sm text-marinha-600">
+            Nenhum negócio ERP a tratar. Novos cadastros surgem aqui quando existirem.
+          </p>
         ) : null}
       </section>
 

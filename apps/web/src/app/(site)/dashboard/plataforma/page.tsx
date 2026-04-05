@@ -1,26 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SuperAdminPanel } from "@/components/plataforma/super-admin-panel";
-import { PageIntro } from "@/components/layout/page-intro";
+import { PlatformDashboardHero } from "@/components/plataforma/platform-dashboard-hero";
 
 export const metadata: Metadata = {
-  title: "Plataforma — moderação",
+  title: "Plataforma — gestão",
+  description:
+    "Centro de gestão Conexão Municipal: moderação diretório/ERP e Academia por município.",
 };
 
 export default function DashboardPlataformaPage() {
   return (
     <>
-      <PageIntro
-        title="Moderação de cadastros"
-        description="Acesso restrito a super administradores da plataforma: moderação do diretório e do ERP, e gestão dos cursos da Academia por município."
-        badge="Plataforma"
-      />
-      <p className="mb-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-marinha-600">
+      <PlatformDashboardHero />
+      <p className="mb-8 flex flex-wrap gap-x-4 gap-y-1 text-sm text-marinha-600">
         <Link href="/" className="font-medium text-municipal-700 hover:underline">
           ← Início
         </Link>
         <Link href="/plataforma/entrar" className="font-medium text-municipal-700 hover:underline">
-          Entrada da equipa (login)
+          Trocar sessão (entrada equipa)
         </Link>
       </p>
       <SuperAdminPanel />
