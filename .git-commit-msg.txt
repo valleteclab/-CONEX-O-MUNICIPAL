@@ -1,6 +1,0 @@
-[Cursor] Admin: ERP filtros como diretório, logout, Academia YouTube + primeira aula
-
-- ERP: abas pendentes/aprovados/rejeitados/todos e ações condicionais ao estado.
-- Admin layout: botão Sair (logout API + limpar tokens).
-- Academia: proxy oEmbed /api/youtube-oembed; formulário com busca de metadados; POST com firstLessonYoutubeUrl.
-- API: CreatePlatformCourseDto + PlatformCoursesService cria primeira aula quando URL YouTube informada.
