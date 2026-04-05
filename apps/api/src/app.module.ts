@@ -10,6 +10,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { DirectoryModule } from './directory/directory.module';
 import { ErpModule } from './erp/erp.module';
+import { PlatformModule } from './platform/platform.module';
 import { QuotationsModule } from './quotations/quotations.module';
 import { UsersModule } from './users/users.module';
 import {
@@ -110,6 +111,7 @@ import {
     AuthModule,
     DirectoryModule,
     QuotationsModule,
+    PlatformModule,
     UsersModule,
     ErpModule,
   ],

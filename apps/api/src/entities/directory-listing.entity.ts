@@ -12,6 +12,8 @@ import { User } from './user.entity';
 
 export type DirectoryListingModo = 'perfil' | 'loja';
 
+export type DirectoryModerationStatus = 'pending' | 'approved' | 'rejected';
+
 @Entity({ name: 'directory_listings' })
 export class DirectoryListing {
   @PrimaryGeneratedColumn('uuid')
@@ -46,7 +48,11 @@ export class DirectoryListing {
   @JoinColumn({ name: 'owner_user_id' })
   owner: User;
 
-  @Column({ name: 'is_published', default: true })
+  /** Aprovado pela plataforma; só então pode ficar visível (com isPublished). */
+  @Column({ name: 'moderation_status', type: 'varchar', length: 24, default: 'pending' })
+  moderationStatus: DirectoryModerationStatus;
+
+  @Column({ name: 'is_published', default: false })
   isPublished: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

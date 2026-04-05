@@ -9,7 +9,13 @@ import {
 import { RefreshToken } from './refresh-token.entity';
 import { UserTenant } from './user-tenant.entity';
 
-export type AppUserRole = 'citizen' | 'mei' | 'company' | 'manager' | 'admin';
+export type AppUserRole =
+  | 'citizen'
+  | 'mei'
+  | 'company'
+  | 'manager'
+  | 'admin'
+  | 'super_admin';
 
 @Entity({ name: 'users' })
 export class User {

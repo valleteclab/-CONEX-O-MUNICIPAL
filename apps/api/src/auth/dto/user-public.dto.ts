@@ -14,7 +14,16 @@ export class UserPublicDto {
   @ApiProperty()
   fullName: string;
 
-  @ApiProperty({ enum: ['citizen', 'mei', 'company', 'manager', 'admin'] })
+  @ApiProperty({
+    enum: [
+      'citizen',
+      'mei',
+      'company',
+      'manager',
+      'admin',
+      'super_admin',
+    ],
+  })
   role: AppUserRole;
 
   @ApiProperty()

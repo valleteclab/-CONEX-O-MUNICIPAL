@@ -37,8 +37,13 @@ export class ErpBusinessGuard implements CanActivate {
       throw new BadRequestException('Informe o header X-Business-Id (UUID do negócio)');
     }
     const business = await this.businesses.findOne({ where: { id: bid.trim() } });
-    if (!business?.isActive) {
-      throw new NotFoundException('Negócio não encontrado ou inativo');
+    if (
+      !business?.isActive ||
+      business.moderationStatus !== 'approved'
+    ) {
+      throw new NotFoundException(
+        'Negócio não encontrado, inativo ou aguardando aprovação da plataforma',
+      );
     }
     if (business.tenantId !== ctx.tenantId) {
       throw new ForbiddenException('Negócio não pertence ao município do token');

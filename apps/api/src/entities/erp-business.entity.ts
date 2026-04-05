@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { Tenant } from './tenant.entity';
 
+export type ErpBusinessModerationStatus = 'pending' | 'approved' | 'rejected';
+
 @Entity({ name: 'erp_businesses' })
 export class ErpBusiness {
   @PrimaryGeneratedColumn('uuid')
@@ -31,7 +33,10 @@ export class ErpBusiness {
   @Column({ type: 'varchar', length: 20, nullable: true })
   document: string | null;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'moderation_status', type: 'varchar', length: 24, default: 'pending' })
+  moderationStatus: ErpBusinessModerationStatus;
+
+  @Column({ name: 'is_active', default: false })
   isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

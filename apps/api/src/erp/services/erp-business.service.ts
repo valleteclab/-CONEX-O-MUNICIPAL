@@ -22,7 +22,6 @@ export class ErpBusinessService {
       .innerJoinAndSelect('m.business', 'b')
       .where('m.user_id = :uid', { uid: userId })
       .andWhere('b.tenant_id = :tid', { tid: tenantId })
-      .andWhere('b.is_active = true')
       .orderBy('b.trade_name', 'ASC')
       .getMany();
     return rows.map((r) => r.business);
@@ -39,7 +38,8 @@ export class ErpBusinessService {
         tradeName: dto.tradeName.trim(),
         legalName: dto.legalName?.trim() || null,
         document: dto.document?.replace(/\D/g, '') || null,
-        isActive: true,
+        moderationStatus: 'pending',
+        isActive: false,
       });
       await em.save(b);
       await em.save(

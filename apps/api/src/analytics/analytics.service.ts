@@ -51,10 +51,14 @@ export class AnalyticsService {
       academyEnrollmentsActive,
     ] = await Promise.all([
       this.directory.count({
-        where: { tenantId, isPublished: true },
+        where: {
+          tenantId,
+          isPublished: true,
+          moderationStatus: 'approved',
+        },
       }),
       this.erpBusinesses.count({
-        where: { tenantId, isActive: true },
+        where: { tenantId, isActive: true, moderationStatus: 'approved' },
       }),
       this.countNewMeiUsersThisMonth(tenantId),
       this.quotations.count({
@@ -102,9 +106,17 @@ export class AnalyticsService {
     const [directoryTotal, directoryPublished, erpTotal, erpActive] =
       await Promise.all([
         this.directory.count({ where: { tenantId } }),
-        this.directory.count({ where: { tenantId, isPublished: true } }),
+        this.directory.count({
+          where: {
+            tenantId,
+            isPublished: true,
+            moderationStatus: 'approved',
+          },
+        }),
         this.erpBusinesses.count({ where: { tenantId } }),
-        this.erpBusinesses.count({ where: { tenantId, isActive: true } }),
+        this.erpBusinesses.count({
+          where: { tenantId, isActive: true, moderationStatus: 'approved' },
+        }),
       ]);
 
     const raw = await this.directory

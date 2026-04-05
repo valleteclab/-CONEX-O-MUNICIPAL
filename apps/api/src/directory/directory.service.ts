@@ -44,7 +44,8 @@ export class DirectoryService {
     const qb = this.listings
       .createQueryBuilder('l')
       .where('l.tenant_id = :tenantId', { tenantId })
-      .andWhere('l.is_published = true');
+      .andWhere('l.is_published = true')
+      .andWhere("l.moderation_status = 'approved'");
 
     if (query.category?.trim()) {
       qb.andWhere('l.category = :cat', { cat: query.category.trim() });
@@ -74,7 +75,11 @@ export class DirectoryService {
 
   async listFeatured(tenantId: string, take = 6): Promise<DirectoryListing[]> {
     return this.listings.find({
-      where: { tenantId, isPublished: true },
+      where: {
+        tenantId,
+        isPublished: true,
+        moderationStatus: 'approved',
+      },
       order: { createdAt: 'DESC' },
       take: Math.min(Math.max(1, take), 12),
     });
@@ -86,6 +91,7 @@ export class DirectoryService {
       .select('DISTINCT l.category', 'category')
       .where('l.tenant_id = :tenantId', { tenantId })
       .andWhere('l.is_published = true')
+      .andWhere("l.moderation_status = 'approved'")
       .andWhere('l.category IS NOT NULL')
       .andWhere("TRIM(l.category) <> ''")
       .orderBy('category', 'ASC')
@@ -110,6 +116,7 @@ export class DirectoryService {
         tenantId,
         slug,
         isPublished: true,
+        moderationStatus: 'approved',
       },
     });
     if (!row) {
@@ -150,7 +157,8 @@ export class DirectoryService {
       category: dto.category?.trim() || null,
       modo: dto.modo,
       ownerUserId: user.id,
-      isPublished: true,
+      moderationStatus: 'pending',
+      isPublished: false,
     });
     return this.listings.save(row);
   }
