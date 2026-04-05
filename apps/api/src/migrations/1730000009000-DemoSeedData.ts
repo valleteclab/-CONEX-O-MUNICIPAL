@@ -98,8 +98,14 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
     // Cotações abertas
     await queryRunner.query(`
       INSERT INTO quotation_requests
-        (tenant_id, requester_user_id, title, description, status)
-      SELECT t.id, u.id, v.title, v.description, v.status
+        (id, tenant_id, requester_user_id, title, description, status)
+      SELECT
+        gen_random_uuid(),
+        t.id,
+        u.id,
+        v.title,
+        v.description,
+        v.status
       FROM (VALUES
         ('cidadao@demo.local',
          'Reforma elétrica em escritório 60m²',
@@ -123,7 +129,13 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
          'open')
       ) AS v(owner_email, title, description, status)
       JOIN tenants t ON t.slug = 'luis-eduardo-magalhaes'
-      JOIN users u ON u.email = v.owner_email;
+      JOIN users u ON u.email = v.owner_email
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM quotation_requests qr
+        WHERE qr.requester_user_id = u.id
+          AND qr.title = v.title
+      );
     `);
 
     // Cursos da Academia
