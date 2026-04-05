@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -245,6 +246,12 @@ export function PlatformAcademyPanel() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/dashboard/plataforma/academia/cursos/${row.id}`}
+                    className="inline-flex min-h-[36px] items-center rounded-btn border border-marinha-900/15 bg-white px-3 text-sm font-semibold text-municipal-800 hover:bg-municipal-600/10"
+                  >
+                    Aulas (YouTube)
+                  </Link>
                   <Button
                     type="button"
                     variant="ghost"

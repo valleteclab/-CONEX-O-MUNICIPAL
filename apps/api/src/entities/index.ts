@@ -23,4 +23,7 @@ export * from './erp-cash-entry.entity';
 export * from './quotation-request.entity';
 export * from './academy-course.entity';
 export * from './academy-lesson.entity';
+export * from './academy-lesson-progress.entity';
+export * from './academy-live-session.entity';
+export * from './academy-user-gamification.entity';
 export * from './academy-enrollment.entity';

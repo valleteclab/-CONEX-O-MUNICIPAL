@@ -14,6 +14,21 @@ export type AcademyLessonDto = {
   contentMd: string | null;
   sortOrder: number;
   durationMinutes: number | null;
+  videoUrl?: string | null;
+  lessonKind?: string;
+};
+
+export type AcademyLearningResponse = {
+  course: AcademyCourseDto;
+  lessons: AcademyLessonDto[];
+  enrollment: {
+    id: string;
+    status: string;
+    progressPercent: number;
+    completedAt: string | null;
+  } | null;
+  completedLessonIds: string[];
+  points: number;
 };
 
 export type AcademyCourseDetailResponse = {

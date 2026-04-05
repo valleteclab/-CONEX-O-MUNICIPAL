@@ -19,10 +19,16 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminModerationActionDto } from './dto/admin-moderation-action.dto';
+import { CreateLiveSessionDto } from './dto/create-live-session.dto';
 import { CreatePlatformCourseDto } from './dto/create-platform-course.dto';
+import { CreatePlatformLessonDto } from './dto/create-platform-lesson.dto';
+import { UpdateLiveSessionDto } from './dto/update-live-session.dto';
 import { UpdatePlatformCourseDto } from './dto/update-platform-course.dto';
+import { UpdatePlatformLessonDto } from './dto/update-platform-lesson.dto';
 import { PlatformAdminService } from './platform-admin.service';
 import { PlatformCoursesService } from './platform-courses.service';
+import { PlatformLessonsService } from './platform-lessons.service';
+import { PlatformLiveSessionsService } from './platform-live-sessions.service';
 
 @ApiTags('plataforma — super admin')
 @ApiBearerAuth()
@@ -32,6 +38,8 @@ export class PlatformController {
   constructor(
     private readonly platform: PlatformAdminService,
     private readonly platformCourses: PlatformCoursesService,
+    private readonly platformLessons: PlatformLessonsService,
+    private readonly platformLiveSessions: PlatformLiveSessionsService,
   ) {}
 
   @Get('directory/listings')
@@ -123,6 +131,79 @@ export class PlatformController {
   @ApiOperation({ summary: 'Remover curso da Academia' })
   async deleteAcademyCourse(@Param('id', ParseUUIDPipe) id: string) {
     await this.platformCourses.remove(id);
+    return { ok: true };
+  }
+
+  @Get('academy/courses/:courseId/lessons')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Listar aulas de um curso' })
+  async listLessons(@Param('courseId', ParseUUIDPipe) courseId: string) {
+    return this.platformLessons.listForCourse(courseId);
+  }
+
+  @Post('academy/courses/:courseId/lessons')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Criar aula (URL YouTube, texto, etc.)' })
+  async createLesson(
+    @Param('courseId', ParseUUIDPipe) courseId: string,
+    @Body() dto: CreatePlatformLessonDto,
+  ) {
+    return this.platformLessons.create(courseId, dto);
+  }
+
+  @Patch('academy/lessons/:id')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Atualizar aula' })
+  async patchLesson(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePlatformLessonDto,
+  ) {
+    return this.platformLessons.update(id, dto);
+  }
+
+  @Delete('academy/lessons/:id')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Remover aula' })
+  async deleteLesson(@Param('id', ParseUUIDPipe) id: string) {
+    await this.platformLessons.remove(id);
+    return { ok: true };
+  }
+
+  @Get('academy/live-sessions')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Listar aulas ao vivo agendadas' })
+  async listLiveSessions(
+    @Query('tenant') tenantSlug?: string,
+    @Query('skip') skipStr?: string,
+    @Query('take') takeStr?: string,
+  ) {
+    const skip = Math.max(0, parseInt(skipStr ?? '0', 10) || 0);
+    const take = Math.min(100, Math.max(1, parseInt(takeStr ?? '50', 10) || 50));
+    return this.platformLiveSessions.list({ skip, take, tenantSlug });
+  }
+
+  @Post('academy/live-sessions')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Agendar aula ao vivo (Meet/Zoom etc.)' })
+  async createLiveSession(@Body() dto: CreateLiveSessionDto) {
+    return this.platformLiveSessions.create(dto);
+  }
+
+  @Patch('academy/live-sessions/:id')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Atualizar sessão ao vivo' })
+  async patchLiveSession(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateLiveSessionDto,
+  ) {
+    return this.platformLiveSessions.update(id, dto);
+  }
+
+  @Delete('academy/live-sessions/:id')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Remover sessão ao vivo' })
+  async deleteLiveSession(@Param('id', ParseUUIDPipe) id: string) {
+    await this.platformLiveSessions.remove(id);
     return { ok: true };
   }
 }

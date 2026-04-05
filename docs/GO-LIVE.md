@@ -46,6 +46,6 @@ Cada fase pode ser entregue independentemente desde que o guard e o tenant conti
 | Área | Onde se gere hoje | Quem |
 |------|-------------------|------|
 | **Vitrines do diretório** | Utilizador autenticado (MEI/Empresa) em `/dashboard/meu-negocio`; aprovação em `/dashboard/plataforma` (super admin). | Empresa + moderador plataforma |
-| **Cursos da Academia** | Super admin em `/dashboard/plataforma`: secção **Academia — cursos** (`GET/POST/PATCH/DELETE /api/v1/platform/academy/courses`). Escolhe o **slug do município** (tenant), cria curso, publica/destaca ou remove. Aulas (`academy_lessons`) ainda podem ser complementadas por SQL/migration até haver editor de aulas no painel. | **Super administrador** da plataforma |
+| **Cursos da Academia** | Super admin em `/dashboard/plataforma`: cursos + link **Aulas (YouTube)** → `/dashboard/plataforma/academia/cursos/[id]` (`GET/POST/PATCH/DELETE` em `/platform/academy/courses/.../lessons`). Vídeo via URL YouTube; progresso e certificado PDF para o aluno; **pontos** ao concluir curso; **aulas ao vivo** (`/platform/academy/live-sessions` e página pública `/academia/ao-vivo`). | **Super administrador** (cursos, aulas, sessões ao vivo); **cidadão** vê catálogo, vídeos e progresso |
 
 Os dados de demonstração (três vitrines, uma cotação e três cursos de exemplo) foram **removidos** do baseline SQL e limpos em bases já existentes pela migration `RemoveDemoSeedContent1730000006000`.

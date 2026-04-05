@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { AcademyCourse } from './academy-course.entity';
 
+export type AcademyLessonKind = 'youtube' | 'text' | 'live_ref';
+
 @Entity({ name: 'academy_lessons' })
 export class AcademyLesson {
   @PrimaryGeneratedColumn('uuid')
@@ -32,6 +34,13 @@ export class AcademyLesson {
 
   @Column({ name: 'duration_minutes', type: 'int', nullable: true })
   durationMinutes: number | null;
+
+  /** URL do vídeo (YouTube: watch, youtu.be ou /embed) */
+  @Column({ name: 'video_url', type: 'text', nullable: true })
+  videoUrl: string | null;
+
+  @Column({ name: 'lesson_kind', type: 'varchar', length: 24, default: 'youtube' })
+  lessonKind: AcademyLessonKind;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

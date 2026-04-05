@@ -28,12 +28,15 @@ export default async function AcademiaPage() {
         title="Academia"
         description="Trilhas e cursos para empreendedores — catálogo público; com conta, matrícula e acompanhamento do progresso."
       />
-      <p className="-mt-2 mb-6 text-sm text-marinha-600">
+      <p className="-mt-2 mb-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-marinha-600">
         <Link
           href="/dashboard/academia"
           className="font-medium text-municipal-700 underline-offset-2 hover:underline"
         >
           Área logada: minhas formações
+        </Link>
+        <Link href="/academia/ao-vivo" className="font-medium text-municipal-700 underline-offset-2 hover:underline">
+          Aulas ao vivo
         </Link>
       </p>
 

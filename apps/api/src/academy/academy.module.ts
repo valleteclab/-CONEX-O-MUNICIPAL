@@ -3,7 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AcademyCourse } from '../entities/academy-course.entity';
 import { AcademyEnrollment } from '../entities/academy-enrollment.entity';
 import { AcademyLesson } from '../entities/academy-lesson.entity';
+import { AcademyLessonProgress } from '../entities/academy-lesson-progress.entity';
+import { AcademyLiveSession } from '../entities/academy-live-session.entity';
+import { AcademyUserGamification } from '../entities/academy-user-gamification.entity';
 import { Tenant } from '../entities/tenant.entity';
+import { AcademyCertificateService } from './academy-certificate.service';
 import { AcademyController } from './academy.controller';
 import { AcademyService } from './academy.service';
 
@@ -13,10 +17,13 @@ import { AcademyService } from './academy.service';
       AcademyCourse,
       AcademyLesson,
       AcademyEnrollment,
+      AcademyLessonProgress,
+      AcademyUserGamification,
+      AcademyLiveSession,
       Tenant,
     ]),
   ],
   controllers: [AcademyController],
-  providers: [AcademyService],
+  providers: [AcademyService, AcademyCertificateService],
 })
 export class AcademyModule {}

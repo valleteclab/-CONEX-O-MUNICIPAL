@@ -2,18 +2,18 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
   Put,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentTenantId } from '../common/decorators/current-tenant-id.decorator';
@@ -38,6 +38,35 @@ export class AcademyController {
     const tenantId = await this.academy.resolveTenantId(tenantSlug);
     const take = takeRaw ? parseInt(takeRaw, 10) : 6;
     return this.academy.listFeatured(tenantId, Number.isFinite(take) ? take : 6);
+  }
+
+  @Get('live-sessions')
+  @ApiOperation({ summary: 'Próximas aulas ao vivo publicadas (por município)' })
+  async publicLiveSessions(
+    @Query('tenant') tenantSlug: string | undefined,
+    @Query('take') takeRaw?: string,
+  ) {
+    const tenantId = await this.academy.resolveTenantId(tenantSlug);
+    const take = takeRaw ? parseInt(takeRaw, 10) : 20;
+    return this.academy.listLiveSessions(tenantId, {
+      take: Number.isFinite(take) ? take : 20,
+      skip: 0,
+    });
+  }
+
+  @Get('courses/:slug/learning')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Detalhe do curso com matrícula, aulas concluídas e pontos (utilizador autenticado)',
+  })
+  async learning(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Param('slug') slug: string,
+  ) {
+    return this.academy.getLearningView(user, tenantId, slug);
   }
 
   @Get('courses/:slug')
@@ -69,20 +98,39 @@ export class AcademyController {
     return this.academy.enroll(user, tenantId, courseId);
   }
 
+  @Post('courses/:courseId/lessons/:lessonId/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Marcar aula como concluída (atualiza progresso do curso)' })
+  async completeLesson(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Param('courseId', ParseUUIDPipe) courseId: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+  ) {
+    return this.academy.markLessonComplete(
+      user,
+      tenantId,
+      courseId,
+      lessonId,
+    );
+  }
+
   @Get('my-courses/:courseId/certificate')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @HttpCode(HttpStatus.NOT_IMPLEMENTED)
-  @ApiOperation({
-    summary: 'Certificado (planeado — SDD §6.4)',
-    description: 'Resposta 501 até geração PDF/QR.',
-  })
-  certificate() {
-    return {
-      message:
-        'Certificado digital será disponibilizado numa versão futura (SDD §6.4).',
-      status: 'not_implemented',
-    };
+  @ApiProduces('application/pdf')
+  @ApiOperation({ summary: 'Certificado PDF (após conclusão do curso)' })
+  async certificate(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Param('courseId', ParseUUIDPipe) courseId: string,
+  ) {
+    const bytes = await this.academy.getCertificatePdf(user, tenantId, courseId);
+    return new StreamableFile(Buffer.from(bytes), {
+      type: 'application/pdf',
+      disposition: `attachment; filename="certificado-${courseId.slice(0, 8)}.pdf"`,
+    });
   }
 
   @Get('my-courses')
@@ -97,10 +145,21 @@ export class AcademyController {
     return this.academy.listMyCourses(user.id, tenantId, query);
   }
 
+  @Get('gamification/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Pontos de gamificação (Academia) no município atual' })
+  async gamificationMe(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+  ) {
+    return this.academy.getGamificationPoints(user.id, tenantId);
+  }
+
   @Put('my-courses/:courseId/progress')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Atualizar progresso (0–100%)' })
+  @ApiOperation({ summary: 'Atualizar progresso (0–100%) manual' })
   async progress(
     @CurrentUser() user: User,
     @CurrentTenantId() tenantId: string,
@@ -113,7 +172,7 @@ export class AcademyController {
   @Post('my-courses/:courseId/complete')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Marcar curso como concluído' })
+  @ApiOperation({ summary: 'Marcar curso como concluído (atalho)' })
   async complete(
     @CurrentUser() user: User,
     @CurrentTenantId() tenantId: string,

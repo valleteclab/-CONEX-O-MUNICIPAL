@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AcademyLessonTracker } from "@/components/academia/academy-lesson-tracker";
 import { CourseActions } from "@/components/academia/course-actions";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Card } from "@/components/ui/card";
@@ -65,25 +66,7 @@ export default async function AcademiaCursoPage({ params }: Props) {
         </div>
       </Card>
 
-      <section>
-        <h2 className="font-serif text-lg text-marinha-900">Aulas</h2>
-        <ul className="mt-4 space-y-4">
-          {lessons.map((lesson, idx) => (
-            <li key={lesson.id}>
-              <Card className="p-4">
-                <p className="text-xs font-medium text-marinha-500">
-                  Aula {idx + 1}
-                  {lesson.durationMinutes != null ? ` · ~${lesson.durationMinutes} min` : null}
-                </p>
-                <h3 className="mt-1 font-semibold text-marinha-900">{lesson.title}</h3>
-                {lesson.contentMd ? (
-                  <div className="mt-2 whitespace-pre-wrap text-sm text-marinha-600">{lesson.contentMd}</div>
-                ) : null}
-              </Card>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <AcademyLessonTracker courseId={course.id} slug={params.slug} initialLessons={lessons} />
     </>
   );
 }
