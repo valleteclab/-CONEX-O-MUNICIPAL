@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,7 +91,18 @@ export function SuperAdminPanel() {
 
   if (!getAccessToken()) {
     return (
-      <p className="text-sm text-marinha-600">Faça login com a conta de super administrador.</p>
+      <Card className="max-w-lg p-5">
+        <p className="text-sm font-medium text-marinha-900">Sessão necessária</p>
+        <p className="mt-2 text-sm text-marinha-600">
+          Utilize a entrada dedicada à equipa da plataforma — não é o mesmo link que empresas e cidadãos usam no topo do site.
+        </p>
+        <Link
+          href="/plataforma/entrar"
+          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-btn bg-municipal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-municipal-700"
+        >
+          Abrir página de entrada (super admin)
+        </Link>
+      </Card>
     );
   }
 

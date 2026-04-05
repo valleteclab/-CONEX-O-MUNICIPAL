@@ -32,6 +32,7 @@
 - Regra detalhada para o agente: `.cursor/rules/responsive-web.mdc` (globs `apps/web/**`).
 
 ## Lessons
+- **Web — duas entradas de login:** `/login` = portal (empresas/cidadãos); `/plataforma/entrar` = copy e redirect só para `role === super_admin` → `/dashboard/plataforma`. Mesma API `/auth/login`; separação é UX + mensagem clara.
 - **Academia `GET /gamification/me`:** resposta `{ points, badges[] }` — compatível com clientes que só liam `points`; badges com `slug`, `title`, `description`, `earnedAt`.
 - Academia: público `/api/v1/academy/*` (catálogo, matrícula); **gestão de cursos** pelo super admin em `/api/v1/platform/academy/courses` (CRUD). Entidades `academy_lessons`, `academy_enrollments`; aulas ainda podem ser só BD até editor no painel.
 - Painel (SDD §6.5): base `/api/v1/analytics` — KPIs reais por `tenantId` (JWT); `@Roles('manager','admin')` + `RolesGuard`; `/painel` no Next usa `GET /analytics/dashboard` (autenticado). Utilizador demo `mei@demo` é role `mei` — não vê o painel até promover a `manager`/`admin` na BD ou criar utilizador gestor.

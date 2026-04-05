@@ -11,6 +11,12 @@ export function SiteFooter() {
           </p>
         </div>
         <nav className="flex flex-col gap-2 text-sm sm:items-end" aria-label="Rodapé">
+          <Link
+            href="/plataforma/entrar"
+            className="font-medium text-municipal-700 hover:underline"
+          >
+            Gestão da plataforma (equipa)
+          </Link>
           {process.env.NODE_ENV !== "production" ? (
             <Link
               href="/design-system"

@@ -15,9 +15,12 @@ export default function DashboardPlataformaPage() {
         description="Acesso restrito a super administradores da plataforma: moderação do diretório e do ERP, e gestão dos cursos da Academia por município."
         badge="Plataforma"
       />
-      <p className="mb-6 text-sm text-marinha-600">
+      <p className="mb-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-marinha-600">
         <Link href="/" className="font-medium text-municipal-700 hover:underline">
           ← Início
+        </Link>
+        <Link href="/plataforma/entrar" className="font-medium text-municipal-700 hover:underline">
+          Entrada da equipa (login)
         </Link>
       </p>
       <SuperAdminPanel />

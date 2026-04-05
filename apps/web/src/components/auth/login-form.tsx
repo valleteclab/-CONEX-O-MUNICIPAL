@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiFetch } from "@/lib/api-browser";
+import { apiAuthFetch, apiFetch } from "@/lib/api-browser";
 import { setTokens } from "@/lib/auth-storage";
 
 type LoginResponse = {
@@ -15,7 +15,18 @@ type LoginResponse = {
   tenantId: string;
 };
 
-export function LoginForm() {
+type AuthMeResponse = {
+  role: string;
+};
+
+export type LoginFormIntent = "portal" | "platform";
+
+type LoginFormProps = {
+  /** `portal` = utilizadores do município / empresas (entrada normal). `platform` = só equipa super admin. */
+  intent?: LoginFormIntent;
+};
+
+export function LoginForm({ intent = "portal" }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,6 +51,24 @@ export function LoginForm() {
       return;
     }
     setTokens(res.data.accessToken, res.data.refreshToken, res.data.tenantId);
+
+    if (intent === "platform") {
+      const me = await apiAuthFetch<AuthMeResponse>("/api/v1/auth/me");
+      if (!me.ok || !me.data) {
+        setError(me.error || "Não foi possível confirmar o perfil.");
+        return;
+      }
+      if (me.data.role !== "super_admin") {
+        setError(
+          "Esta entrada é só para super administradores da plataforma. A sua sessão está ativa (conta de município ou empresa): use o menu do site para continuar, ou termine sessão se entrou aqui por engano.",
+        );
+        return;
+      }
+      router.push("/dashboard/plataforma");
+      router.refresh();
+      return;
+    }
+
     router.push("/");
     router.refresh();
   }
@@ -85,6 +114,11 @@ export function LoginForm() {
         <Link href="/recuperar-senha" className="font-medium text-municipal-700 hover:underline">
           Esqueci minha senha
         </Link>
+        {intent === "platform" ? (
+          <Link href="/login" className="font-medium text-marinha-600 hover:underline">
+            Entrar como utilizador do município
+          </Link>
+        ) : null}
       </div>
       <Button variant="primary" className="w-full" type="submit" disabled={loading}>
         {loading ? "Entrando…" : "Entrar"}
