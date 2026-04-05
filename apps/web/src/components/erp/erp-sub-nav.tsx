@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 
 const items: { href: string; label: string; exact?: boolean }[] = [
   { href: "/erp", label: "Início", exact: true },
+  { href: "/erp/pdv", label: "PDV" },
   { href: "/erp/produtos", label: "Produtos" },
   { href: "/erp/clientes-fornecedores", label: "Clientes e fornecedores" },
   { href: "/erp/estoque", label: "Estoque" },

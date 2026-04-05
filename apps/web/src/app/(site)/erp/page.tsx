@@ -9,6 +9,11 @@ export const metadata: Metadata = {
 
 const modules = [
   {
+    href: "/erp/pdv",
+    title: "PDV",
+    desc: "Ponto de venda: catálogo rápido e cupom (touch e desktop).",
+  },
+  {
     href: "/erp/produtos",
     title: "Produtos",
     desc: "SKU, NCM, preços e estoque mínimo.",

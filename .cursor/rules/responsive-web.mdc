@@ -1,0 +1,22 @@
+---
+description: UI responsiva no app Next (Tailwind) — mobile-first, touch e breakpoints
+globs: apps/web/**/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Responsividade (Conexão Municipal — web)
+
+## Princípios
+
+- **Mobile-first:** estilos base para viewport estreita; use `sm:`, `md:`, `lg:`, `xl:` para ampliações.
+- **Largura útil:** manter o padrão do shell (`w-full` + `px-4 sm:px-6 lg:px-8`); não reintroduzir colunas estreitas `max-w-5xl` no layout global sem motivo.
+- **Touch:** controles primários com altura mínima **≥ 44px** (`min-h-[44px]` ou `min-h-[48px]` em PDV/checkout); `touch-manipulation` em botões que disparam clique rápido.
+- **Grades fluidas:** usar `grid` / `flex` com `min-w-0` em filhos que podem encolher (evita overflow horizontal acidental).
+- **Conteúdo rolável:** painéis com listas longas (`overflow-y-auto`, `max-h-*`, `overscroll-contain`); em telas operacionais (PDV), cupom com altura máxima em relação ao viewport.
+- **Empilhamento:** em `< lg`, fluxos lado a lado viram **coluna** (`flex-col lg:flex-row`); ordem visual clara (catálogo antes do cupom no PDV, ou `order-*` se necessário).
+- **Acessibilidade:** alvos clicáveis com área suficiente; `aria-label` em ícones; `sr-only` para rótulos de busca quando o placeholder não basta.
+
+## Anti-padrões
+
+- Largura fixa em px para conteúdo principal que quebra em mobile.
+- Depender só de hover para ações críticas (sempre ter alternativa tocável visível).

@@ -11,16 +11,24 @@
 - [X] Web: `AppShell` (nav + auth links + mobile menu + rodapé); telas em `app/(site)/` — `/`, `/login`, `/cadastro`, `/recuperar-senha`, `/diretorio`, `/diretorio/[slug]`, `/cotacoes`, `/academia`, `/erp` (+ sub-rotas ERP), `/painel`, `/design-system`; `PageIntro` + UI base; `app/not-found.tsx`
 - [X] ERP Onda A (API): `/erp/businesses`, produtos, parties, estoque (locais/saldos/movimentos), pedidos venda/compra, financeiro AR/AP/caixa; header `X-Business-Id` + `ErpBusinessGuard`; tabelas em `infra/docker/init.sql`
 - [X] Web: layout fluido (sem `max-w-*` no shell/cards centrais); commit `c60db86` em `main`
-- [X] Web ERP: hub `/erp` + `ErpSubNav` + telas `/erp/produtos`, `clientes-fornecedores`, `estoque`, `pedidos-venda`, `pedidos-compra`, `financeiro` (UI + placeholders; API depois)
+- [X] Web ERP: hub `/erp` + `ErpSubNav` + telas `/erp/pdv`, `produtos`, `clientes-fornecedores`, `estoque`, `pedidos-venda`, `pedidos-compra`, `financeiro` (UI + placeholders; API depois)
+- [X] PDV `/erp/pdv` + regra Cursor `.cursor/rules/responsive-web.mdc`
 - [X] Diretório: vitrine pública `/diretorio/[slug]` com modo perfil ou loja (`src/data/diretorio-negocios.ts`)
 - [X] SDD + schema: pedidos/orçamentos do diretório → `erp_sales_orders.source` / `portal_request_id`; telas web alinhadas
 - [X] DevContext (MCP): `import_project_data` — features/requisitos/decisões do layout ERP diretório portal→ERP; commits `c60db86` `3310817` `f88a868` `fa0ddf7` registrados
+
+## Responsividade (apps/web)
+- Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
+- Controles tocáveis ≥ 44px; PDV e fluxos de caixa com `touch-manipulation` onde fizer sentido.
+- Grades e painéis com `min-w-0` e scroll interno para listas longas; evitar overflow horizontal.
+- Regra detalhada para o agente: `.cursor/rules/responsive-web.mdc` (globs `apps/web/**`).
 
 ## Lessons
 - Diretório: cada negócio tem modo `perfil` ou `loja`; a mesma rota `/diretorio/[slug]` renderiza a vitrine conforme o modo (até integrar API).
 - Pedidos/orçamentos do diretório → ERP do negócio como `erp_sales_orders` com `source` `portal_diretorio` e `portal_request_id` opcional; serviço `ErpSalesOrderService.create(..., meta)`.
 - Rotas ERP (exceto `GET/POST /erp/businesses`) exigem header `X-Business-Id` e vínculo em `erp_business_users`.
 - Web: layout em largura total — sem `max-w-5xl` no shell; só `px-4 sm:px-6 lg:px-8` nas bordas.
+- PDV: rota `/erp/pdv`, componente `components/erp/pdv-panel.tsx` (client); responsivo coluna → `lg:flex-row` com cupom sticky.
 - `next/font` Google: `DM_Serif_Display` só expõe peso `400` — títulos usam negrito sintético ou peso único.
 - Banco já existente: aplicar DDL do bloco ERP em `infra/docker/init.sql` ou `TYPEORM_SYNC=true` só em dev.
 - Tokens JWT emitidos antes da claim `tid` deixam de ser válidos — novo login após deploy.
