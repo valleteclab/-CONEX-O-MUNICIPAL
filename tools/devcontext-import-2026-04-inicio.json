@@ -1,0 +1,128 @@
+{
+  "project_info": {
+    "name": "conexao-municipal",
+    "version": "0.1.0",
+    "description": "Monorepo NestJS + Next.js. Estado 2026-04: multitenant (JWT tid), verificação de e-mail, troca de tenant, RBAC (@Roles + RolesGuard); Diretório (categorias, destaques, busca, /dashboard/meu-negocio); Cotações (público, POST, GET /quotations/mine, /dashboard/cotacoes, apiAuthFetch); ERP migrations fiscal + stock posting; TypeORM migrations; Railway (migrationsRun, CORS normalizado).",
+    "dependencies": [
+      "NestJS 10",
+      "TypeORM",
+      "Next.js 14",
+      "PostgreSQL",
+      "Passport JWT",
+      "Railway"
+    ]
+  },
+  "project_structure": "apps/api: auth (verify-email, switch-tenant), common (roles), directory, quotations (GET mine antes do GET público), erp, migrations\napps/web: cotacoes, dashboard/cotacoes, dashboard/meu-negocio, diretorio, lib/api-browser (apiAuthFetch), auth-storage (tenantId)\ninfra/docker: migration-baseline.sql",
+  "features": [
+    {
+      "title": "Auth: verificação de e-mail e troca de tenant ativo",
+      "description": "EmailVerificationToken + migration; POST /auth/verify-email e POST /auth/switch-tenant; token de verificação no registo; JWT tid validado contra user_tenants.",
+      "module": "auth",
+      "status": "done",
+      "priority": "must",
+      "implementation_notes": "auth.service.ts, auth.controller.ts, jwt.strategy.ts"
+    },
+    {
+      "title": "RBAC base: @Roles e RolesGuard",
+      "description": "Decorator e guard com tenantRole a partir de user_tenants.",
+      "module": "auth/common",
+      "status": "done",
+      "priority": "must"
+    },
+    {
+      "title": "Frontend: tenantId e apiAuthFetch",
+      "description": "localStorage cm_tenant_id; setTokens(..., tenantId); apiAuthFetch com Bearer + X-Tenant-Id; login/cadastro persistem tenant.",
+      "module": "web",
+      "status": "done",
+      "priority": "must"
+    },
+    {
+      "title": "Diretório: API categorias, destaques, busca e filtros",
+      "description": "Endpoints featured, categories, search com sort; DTOs expandidos.",
+      "module": "directory/api",
+      "status": "done",
+      "priority": "must"
+    },
+    {
+      "title": "Diretório: gestão e /dashboard/meu-negocio",
+      "description": "GET /businesses/mine/list; DirectoryManageForm CRUD.",
+      "module": "directory/web",
+      "status": "done",
+      "priority": "must"
+    },
+    {
+      "title": "Cotações: mine, dashboard e labels PT",
+      "description": "GET /quotations/mine (JWT); /dashboard/cotacoes; apiAuthFetch no create; router.refresh; quotation-labels.ts; rota mine antes do GET público.",
+      "module": "quotations",
+      "status": "done",
+      "priority": "must"
+    },
+    {
+      "title": "ERP: migrations fiscal e stock posting",
+      "description": "1730000001000 ErpCatalogFiscalBase; 1730000002000 ErpOrderStockPosting; ajustes serviços/entidades ERP.",
+      "module": "erp",
+      "status": "done",
+      "priority": "should"
+    },
+    {
+      "title": "Infra: migrations TypeORM e CORS",
+      "description": "Baseline + migrations; CORS origens normalizadas; Railway migrations; startup stdout.",
+      "module": "infra",
+      "status": "done",
+      "priority": "must"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Tenant ativo no JWT (tid) validado em user_tenants; switch-tenant reemite tokens.",
+      "reason": "Multitenancy consistente."
+    },
+    {
+      "decision": "GET /quotations/mine antes de GET /quotations no controller.",
+      "reason": "Evitar colisão de rotas."
+    },
+    {
+      "decision": "apiAuthFetch centraliza Bearer + X-Tenant-Id para módulos autenticados.",
+      "reason": "Reutilização e alinhamento com storage."
+    },
+    {
+      "decision": "Evolução ERP fiscal/stock via migrations numeradas.",
+      "reason": "Deploy com TYPEORM_MIGRATIONS_RUN."
+    }
+  ],
+  "requirements": [
+    {
+      "type": "functional",
+      "title": "Área logada lista apenas cotações do utilizador no tenant",
+      "description": "GET /quotations/mine filtra requesterUserId + tenantId do JWT.",
+      "priority": "high",
+      "status": "implemented"
+    },
+    {
+      "type": "non_functional",
+      "title": "Verificação de e-mail e troca de tenant",
+      "description": "Fluxos verify-email e switch-tenant com tokens.",
+      "priority": "high",
+      "status": "implemented"
+    },
+    {
+      "type": "non_functional",
+      "title": "RBAC preparado para @Roles em rotas",
+      "description": "RolesGuard + tenantRole.",
+      "priority": "medium",
+      "status": "implemented"
+    }
+  ],
+  "database_info": {
+    "type": "postgres",
+    "provider": "Railway + Docker local",
+    "tables": [
+      "email_verification_tokens",
+      "quotation_requests",
+      "directory_listings",
+      "user_tenants",
+      "tabelas ERP tocadas nas migrations 1730000001000/2000",
+      "schema baseline + migrations sequenciais"
+    ]
+  }
+}

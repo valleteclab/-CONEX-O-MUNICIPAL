@@ -22,6 +22,7 @@
 - [X] Railway: projeto `conexao-municipal`, serviço `api` + Postgres; URL pública `https://api-production-488f.up.railway.app` — build via Railpack; `package.json` raiz **sem BOM UTF-8** (Railpack falhava com `\ufeff`); `@nestjs/cli` em **dependencies** do root; `apps/api` build usa `node ../../node_modules/@nestjs/cli/bin/nest.js build`; `nixpacks.toml` com `npm ci --include=dev` (legado se usar Nixpacks)
 - [X] Git `main`: commit `b5d821e` — deploy automático no Railway: ligar repositório GitHub ao serviço `api` (Settings → **Connect Repo** → branch `main`; instalar [Railway GitHub App](https://github.com/apps/railway-app) se pedido)
 - [X] **Front → API:** `NEXT_PUBLIC_API_BASE_URL` no serviço Next (Railway); `CORS_ORIGINS` no serviço API com URL do front; home mostra `BackendStatus` (GET `/api/v1/health`). DevContext + SDD §14: próximo foco backend/regras — Cotações → Academia → Painel → ERP Ondas B/C; portal→ERP (`erp_sales_orders.source`).
+- [X] **DevContext (2026-04):** payload para `import_project_data` em `tools/devcontext-import-2026-04-inicio.json` (8 features, 4 decisões, 3 requisitos). **MCP `user-devcontext` indisponível nesta sessão** — com o servidor ligado no Cursor, importar esse JSON ou colar o conteúdo na ferramenta; depois `register_commit` + `link_commit_to_feature` para `0d14c6b` (épico «Início transversal» ou criar feature nova).
 
 ## Responsividade (apps/web)
 - Mobile-first (Tailwind `sm` / `md` / `lg` / `xl`); shell já usa `px-4 sm:px-6 lg:px-8`.
@@ -48,3 +49,4 @@
 - **Build Next (SaaS):** `apiGet` não deve lançar em 4xx/5xx — senão o SSG falha se o tenant não existir na API em produção (400). Páginas que dependem da API: `dynamic = 'force-dynamic'`. O aviso `npm ENOWORKSPACES` no download do SWC costuma ser não fatal; o que quebrava o deploy era o throw no `/diretorio`.
 - Commits multilinha no Windows: escrever mensagem em arquivo e `git commit -F arquivo.txt`, depois apagar o arquivo; prefixo `[Cursor]` no título.
 - **Workflow Git (preferência do projeto):** após cada conjunto de alterações no código, fazer **commit e push** (`git push` para `origin` na branch atual), sem deixar trabalho só local — exceto se o utilizador pedir o contrário.
+- **DevContext offline:** se o MCP `user-devcontext` não estiver ligado, guardar payload em `tools/devcontext-import-*.json` e importar quando o MCP voltar; não perder features/decisões/requisitos.
