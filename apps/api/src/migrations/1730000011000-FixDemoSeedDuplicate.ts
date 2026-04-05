@@ -10,26 +10,27 @@ export class FixDemoSeedDuplicate1730000011000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Remove dados demo duplicados mantendo apenas um de cada por email/slug
+    // DISTINCT ON evita MIN(uuid): em vários Postgres, aggregate min(uuid) não existe.
     await queryRunner.query(`
-      DELETE FROM quotation_requests
-      WHERE title IN (
+      DELETE FROM quotation_requests qr
+      WHERE qr.title IN (
         'Reforma elétrica em escritório 60m²',
         'Uniforme corporativo para equipe de 8 pessoas',
         'Consultoria em marketing digital para pequeno negócio',
         'Equipamentos para padaria: forno e batedeira industrial',
         'Pintura residencial — casa de 3 quartos'
       )
-      AND id NOT IN (
-        SELECT MIN(id)
-        FROM quotation_requests
-        WHERE title IN (
+      AND qr.id NOT IN (
+        SELECT DISTINCT ON (sub.title) sub.id
+        FROM quotation_requests sub
+        WHERE sub.title IN (
           'Reforma elétrica em escritório 60m²',
           'Uniforme corporativo para equipe de 8 pessoas',
           'Consultoria em marketing digital para pequeno negócio',
           'Equipamentos para padaria: forno e batedeira industrial',
           'Pintura residencial — casa de 3 quartos'
         )
-        GROUP BY title
+        ORDER BY sub.title, sub.id
       );
     `);
 
