@@ -61,4 +61,21 @@ export class CreatePlatformCourseDto {
   @IsString()
   @MaxLength(160)
   slug?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'URL do YouTube (watch, shorts ou youtu.be) — cria a primeira aula do curso com este vídeo',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  firstLessonYoutubeUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Título da primeira aula; padrão: "Aula em vídeo" se houver URL do YouTube',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  firstLessonTitle?: string;
 }

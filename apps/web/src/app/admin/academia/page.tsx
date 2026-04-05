@@ -34,6 +34,15 @@ export default function AdminAcademiaPage() {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [firstLessonTitle, setFirstLessonTitle] = useState("");
+  const [ytPreview, setYtPreview] = useState<{
+    title: string;
+    authorName: string;
+    thumbnailUrl: string;
+  } | null>(null);
+  const [ytFetching, setYtFetching] = useState(false);
+  const [ytErr, setYtErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!getAccessToken()) {
@@ -61,6 +70,41 @@ export default function AdminAcademiaPage() {
     void load();
   }, [load]);
 
+  async function fetchYoutubeMeta() {
+    const u = youtubeUrl.trim();
+    if (!u) {
+      setYtErr("Cole o link do YouTube.");
+      return;
+    }
+    setYtFetching(true);
+    setYtErr(null);
+    try {
+      const r = await fetch(`/api/youtube-oembed?url=${encodeURIComponent(u)}`);
+      const data = (await r.json()) as {
+        title?: string;
+        authorName?: string;
+        thumbnailUrl?: string;
+        message?: string;
+      };
+      if (!r.ok) {
+        setYtErr(data.message || "Não foi possível obter dados do vídeo.");
+        setYtPreview(null);
+        return;
+      }
+      setYtPreview({
+        title: data.title ?? "",
+        authorName: data.authorName ?? "",
+        thumbnailUrl: data.thumbnailUrl ?? "",
+      });
+      setFirstLessonTitle(data.title?.trim() || "Aula em vídeo");
+    } catch {
+      setYtErr("Falha de rede ao contactar o servidor.");
+      setYtPreview(null);
+    } finally {
+      setYtFetching(false);
+    }
+  }
+
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
@@ -78,6 +122,11 @@ export default function AdminAcademiaPage() {
       const n = parseInt(durationMinutes, 10);
       if (Number.isFinite(n) && n > 0) body.durationMinutes = n;
     }
+    const ytu = youtubeUrl.trim();
+    if (ytu) {
+      body.firstLessonYoutubeUrl = ytu;
+      body.firstLessonTitle = firstLessonTitle.trim() || "Aula em vídeo";
+    }
     const res = await apiAuthFetch<CourseRow>("/api/v1/platform/academy/courses", {
       method: "POST",
       body: JSON.stringify(body),
@@ -93,6 +142,10 @@ export default function AdminAcademiaPage() {
     setDurationMinutes("");
     setIsFeatured(false);
     setIsPublished(true);
+    setYoutubeUrl("");
+    setFirstLessonTitle("");
+    setYtPreview(null);
+    setYtErr(null);
     void load();
   }
 
@@ -238,6 +291,74 @@ export default function AdminAcademiaPage() {
                 onChange={(e) => setSummary(e.target.value)}
                 className="mt-1 min-h-[80px]"
               />
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-3">
+              <label className="block text-xs font-medium text-gray-600">
+                Primeira aula — link do YouTube (opcional)
+              </label>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Busca título e autor via oEmbed; ao criar o curso, a primeira aula fica com esse
+                vídeo.
+              </p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
+                <Input
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=… ou youtu.be/…"
+                  className="min-w-0 flex-1"
+                  type="url"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="shrink-0 text-sm"
+                  disabled={ytFetching}
+                  onClick={() => void fetchYoutubeMeta()}
+                >
+                  {ytFetching ? "Buscando…" : "Buscar dados do vídeo"}
+                </Button>
+              </div>
+              {ytErr ? <p className="mt-2 text-xs text-red-600">{ytErr}</p> : null}
+              {ytPreview ? (
+                <div className="mt-3 flex gap-3 rounded-md border border-teal-100 bg-teal-50/50 p-2">
+                  {ytPreview.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ytPreview.thumbnailUrl}
+                      alt=""
+                      className="h-16 w-28 shrink-0 rounded object-cover"
+                    />
+                  ) : null}
+                  <div className="min-w-0 text-sm">
+                    <p className="font-medium text-gray-900">{ytPreview.title || "Vídeo"}</p>
+                    {ytPreview.authorName ? (
+                      <p className="text-xs text-gray-600">{ytPreview.authorName}</p>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="mt-1 text-xs font-medium text-municipal-700 underline"
+                      onClick={() => {
+                        if (ytPreview.title) setTitle(ytPreview.title);
+                      }}
+                    >
+                      Usar título do vídeo no nome do curso
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {youtubeUrl.trim() ? (
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600">
+                    Título da primeira aula
+                  </label>
+                  <Input
+                    value={firstLessonTitle}
+                    onChange={(e) => setFirstLessonTitle(e.target.value)}
+                    placeholder="Ex.: Introdução"
+                    className="mt-1"
+                  />
+                </div>
+              ) : null}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>

@@ -8,6 +8,7 @@ import { AcademyCourse } from '../entities/academy-course.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { CreatePlatformCourseDto } from './dto/create-platform-course.dto';
 import { UpdatePlatformCourseDto } from './dto/update-platform-course.dto';
+import { PlatformLessonsService } from './platform-lessons.service';
 
 @Injectable()
 export class PlatformCoursesService {
@@ -16,6 +17,7 @@ export class PlatformCoursesService {
     private readonly courses: Repository<AcademyCourse>,
     @InjectRepository(Tenant)
     private readonly tenants: Repository<Tenant>,
+    private readonly platformLessons: PlatformLessonsService,
   ) {}
 
   async list(query: {
@@ -59,7 +61,19 @@ export class PlatformCoursesService {
       isFeatured: dto.isFeatured ?? false,
       isPublished: dto.isPublished ?? true,
     });
-    return this.courses.save(row);
+    const saved = await this.courses.save(row);
+    const yt = dto.firstLessonYoutubeUrl?.trim();
+    if (yt) {
+      const lessonTitle =
+        dto.firstLessonTitle?.trim() || 'Aula em vídeo';
+      await this.platformLessons.create(saved.id, {
+        title: lessonTitle,
+        videoUrl: yt,
+        lessonKind: 'youtube',
+        sortOrder: 0,
+      });
+    }
+    return saved;
   }
 
   async update(id: string, dto: UpdatePlatformCourseDto): Promise<AcademyCourse> {

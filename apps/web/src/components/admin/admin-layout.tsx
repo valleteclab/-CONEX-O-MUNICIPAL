@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { apiFetch } from "@/lib/api-browser";
+import { clearTokens, getRefreshToken } from "@/lib/auth-storage";
 
 type AdminNavItem = {
   href: string;
@@ -53,7 +55,22 @@ function iconFor(icon: string) {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    const rt = getRefreshToken();
+    if (rt) {
+      await apiFetch("/api/v1/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken: rt }),
+      });
+    }
+    clearTokens();
+    router.push("/plataforma/entrar");
+  }
 
   const grouped = adminNav.reduce<Record<string, AdminNavItem[]>>((acc, item) => {
     const section = item.section || "Geral";
@@ -150,6 +167,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <div className="flex-1" />
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-gray-500 sm:inline">Super Administrador</span>
+            <button
+              type="button"
+              disabled={loggingOut}
+              onClick={() => void handleLogout()}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
+            >
+              {loggingOut ? "Saindo…" : "Sair"}
+            </button>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-municipal-600 text-sm font-semibold text-white">
               SA
             </div>
