@@ -11,8 +11,10 @@
     "dev:web": "npm run dev -w web",
     "dev:api": "npm run start:dev -w api",
     "build": "npm run build -w api",
+    "build:web": "npm run build -w web",
     "build:all": "npm run build -w api && npm run build -w web",
     "start": "npm run start:prod -w api",
+    "start:web": "npm run start -w web",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },
