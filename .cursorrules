@@ -1,7 +1,7 @@
 # Conexão Municipal — contexto Cursor
 
 ## Scratchpad
-- [X] Git: repo `main`, commit inicial `[Cursor] Initial commit` — falta `remote` + `push` (criar repo vazio no GitHub/GitLab)
+- [X] Git: `origin` → https://github.com/valleteclab/-CONEX-O-MUNICIPAL — `main` pushed (histórico remoto anterior era só .docx; substituído por `--force-with-lease`)
 - [X] SDD v2.0: §5.4 ERP, §6.7 ERP (ondas A/B/C), escopo §3, RBAC §8, integrações §11, roadmap §14.1–14.2 (Fases 5–7), KPIs §15, riscos R11–R12, glossário
 - [X] DevContext: +6 requisitos ERP, +4 ADRs (ERP/SEFAZ/Bull/NFS-e), +6 features épicos ERP; projeto v0.2.0
 - [X] Monorepo: apps/api (Nest), apps/web (Next), packages/shared, docker-compose, init.sql
