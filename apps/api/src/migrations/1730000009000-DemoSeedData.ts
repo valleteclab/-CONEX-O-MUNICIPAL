@@ -33,7 +33,7 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
         ('d0000001-0000-0000-0000-000000000004', 'gestor@demo.local',
          '$2b$12$8VmeAeBOTzppiyDNJkE4FuDN3FeXyn0PoDwFQoKrvCPrGt30zfO8m',
          'Carlos Eduardo Moreira', '(77) 99804-0004', 'manager', true, true)
-      ON CONFLICT (email) DO NOTHING;
+      ON CONFLICT (id) DO NOTHING;
     `);
 
     // Vincular ao tenant de Luís Eduardo Magalhães
@@ -47,7 +47,12 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
         'empresa@demo.local', 'gestor@demo.local'
       )
       AND t.slug = 'luis-eduardo-magalhaes'
-      ON CONFLICT (user_id, tenant_id) DO NOTHING;
+      AND NOT EXISTS (
+        SELECT 1
+        FROM user_tenants ut
+        WHERE ut.user_id = u.id
+          AND ut.tenant_id = t.id
+      );
     `);
 
     // Vitrines no diretório (aprovadas e publicadas)
@@ -82,7 +87,12 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
       ) AS v(slug, trade_name, description, category, modo, owner_email)
       JOIN tenants t ON t.slug = 'luis-eduardo-magalhaes'
       JOIN users u ON u.email = v.owner_email
-      ON CONFLICT (tenant_id, slug) DO NOTHING;
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM directory_listings dl
+        WHERE dl.tenant_id = t.id
+          AND dl.slug = v.slug
+      );
     `);
 
     // Cotações abertas
@@ -147,7 +157,12 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
          'Fiscal', '45', 'false', '80')
       ) AS v(cid, title, slug, summary, category, dur, feat, pts)
       JOIN tenants t ON t.slug = 'luis-eduardo-magalhaes'
-      ON CONFLICT (tenant_id, slug) DO NOTHING;
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM academy_courses ac
+        WHERE ac.tenant_id = t.id
+          AND ac.slug = v.slug
+      );
     `);
 
     // Aulas — Curso 1: Como Abrir o Seu MEI
@@ -271,8 +286,14 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
     await queryRunner.query(`
       INSERT INTO erp_business_users (user_id, business_id, role)
       SELECT u.id, 'd0000009-0000-e000-0000-000000000001'::UUID, 'empresa_owner'
-      FROM users u WHERE u.email = 'mei@demo.local'
-      ON CONFLICT (user_id, business_id) DO NOTHING;
+      FROM users u
+      WHERE u.email = 'mei@demo.local'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM erp_business_users ebu
+          WHERE ebu.user_id = u.id
+            AND ebu.business_id = 'd0000009-0000-e000-0000-000000000001'::UUID
+        );
     `);
 
     await queryRunner.query(`
@@ -308,7 +329,12 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
         ('d0000009-0000-e000-0000-000000000024', 'BEB-001', 'Café Expresso (un)',        'UN',  '0.80',   '3.00',  '0.00')
       ) AS v(pid, sku, name, unit, cost, price, min_stock)
       JOIN tenants t ON t.slug = 'luis-eduardo-magalhaes'
-      ON CONFLICT (business_id, sku) DO NOTHING;
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM erp_products ep
+        WHERE ep.business_id = 'd0000009-0000-e000-0000-000000000001'::UUID
+          AND ep.sku = v.sku
+      );
     `);
 
     await queryRunner.query(`
@@ -328,7 +354,13 @@ export class DemoSeedData1730000009000 implements MigrationInterface {
         ('d0000009-0000-e000-0000-000000000024',  '0.00')
       ) AS v(pid, qty)
       JOIN tenants t ON t.slug = 'luis-eduardo-magalhaes'
-      ON CONFLICT (business_id, product_id, location_id) DO NOTHING;
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM erp_stock_balances esb
+        WHERE esb.business_id = 'd0000009-0000-e000-0000-000000000001'::UUID
+          AND esb.product_id = v.pid::UUID
+          AND esb.location_id = 'd0000009-0000-e000-0000-000000000010'::UUID
+      );
     `);
 
     await queryRunner.query(`
