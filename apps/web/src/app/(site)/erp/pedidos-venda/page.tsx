@@ -14,7 +14,7 @@ export default function ErpPedidosVendaPage() {
     <>
       <PageIntro
         title="Pedidos de venda"
-        description="Pedidos com cliente, itens, totais e status (Onda A)."
+        description="Inclui pedidos criados no ERP e solicitações vindas do diretório (orçamento ou compra na vitrine), com origem identificável."
         badge="Vendas"
       />
       <div className="mb-4 flex flex-wrap gap-3">
@@ -24,7 +24,7 @@ export default function ErpPedidosVendaPage() {
       </div>
       <Card>
         <ErpPlaceholderTable
-          columns={["Nº", "Cliente", "Data", "Status", "Total"]}
+          columns={["Nº", "Origem", "Cliente", "Data", "Status", "Total"]}
         />
         <ErpApiHint path="/api/v1/erp/sales-orders" />
       </Card>

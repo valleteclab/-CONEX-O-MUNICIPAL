@@ -14,6 +14,9 @@ import { ErpSalesOrderItem } from './erp-sales-order-item.entity';
 
 export type ErpSalesOrderStatus = 'draft' | 'confirmed' | 'cancelled';
 
+/** Origem do pedido: manual no ERP, vitrine do diretório ou central de cotações. */
+export type ErpSalesOrderSource = 'erp' | 'portal_diretorio' | 'portal_cotacoes';
+
 @Entity({ name: 'erp_sales_orders' })
 export class ErpSalesOrder {
   @PrimaryGeneratedColumn('uuid')
@@ -44,6 +47,12 @@ export class ErpSalesOrder {
 
   @Column({ type: 'text', nullable: true })
   note: string | null;
+
+  @Column({ length: 32, default: 'erp' })
+  source: ErpSalesOrderSource;
+
+  @Column({ name: 'portal_request_id', type: 'uuid', nullable: true })
+  portalRequestId: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

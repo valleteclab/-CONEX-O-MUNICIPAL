@@ -181,9 +181,13 @@ CREATE TABLE IF NOT EXISTS erp_sales_orders (
   status VARCHAR(24) DEFAULT 'draft',
   total_amount DECIMAL(18,4) DEFAULT 0,
   note TEXT,
+  source VARCHAR(32) DEFAULT 'erp',
+  portal_request_id UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+-- Origem típica: erp (manual), portal_diretorio (vitrine / orçamento no diretório), portal_cotacoes (central de cotações).
+-- Bancos já criados antes desta coluna: ALTER TABLE erp_sales_orders ADD COLUMN IF NOT EXISTS source VARCHAR(32) DEFAULT 'erp'; ADD COLUMN IF NOT EXISTS portal_request_id UUID;
 
 CREATE TABLE IF NOT EXISTS erp_sales_order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

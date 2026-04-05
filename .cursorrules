@@ -13,9 +13,11 @@
 - [X] Web: layout fluido (sem `max-w-*` no shell/cards centrais); commit `c60db86` em `main`
 - [X] Web ERP: hub `/erp` + `ErpSubNav` + telas `/erp/produtos`, `clientes-fornecedores`, `estoque`, `pedidos-venda`, `pedidos-compra`, `financeiro` (UI + placeholders; API depois)
 - [X] Diretório: vitrine pública `/diretorio/[slug]` com modo perfil ou loja (`src/data/diretorio-negocios.ts`)
+- [X] SDD + schema: pedidos/orçamentos do diretório → `erp_sales_orders.source` / `portal_request_id`; telas web alinhadas
 
 ## Lessons
 - Diretório: cada negócio tem modo `perfil` ou `loja`; a mesma rota `/diretorio/[slug]` renderiza a vitrine conforme o modo (até integrar API).
+- Pedidos/orçamentos do diretório → ERP do negócio como `erp_sales_orders` com `source` `portal_diretorio` e `portal_request_id` opcional; serviço `ErpSalesOrderService.create(..., meta)`.
 - Rotas ERP (exceto `GET/POST /erp/businesses`) exigem header `X-Business-Id` e vínculo em `erp_business_users`.
 - Web: layout em largura total — sem `max-w-5xl` no shell; só `px-4 sm:px-6 lg:px-8` nas bordas.
 - `next/font` Google: `DM_Serif_Display` só expõe peso `400` — títulos usam negrito sintético ou peso único.

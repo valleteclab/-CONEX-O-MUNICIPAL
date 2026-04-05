@@ -11,7 +11,7 @@ export default function CotacoesPage() {
     <>
       <PageIntro
         title="Central de cotações"
-        description="Publique o que precisa comprar ou contratar e receba propostas de fornecedores do município. Módulo em implementação conforme SDD §6.3."
+        description="Publique o que precisa comprar ou contratar e receba propostas de fornecedores do município. Quando a negociação envolver um fornecedor da plataforma, o fechamento pode espelhar no ERP dele (pedido de venda). SDD §6.3 e integração ERP §6.2."
       />
       <Card>
         <ul className="list-inside list-disc space-y-2 text-sm text-marinha-600">

@@ -550,7 +550,7 @@ Todas as entidades abaixo residem no **schema do tenant** (`tenant_*`), vinculad
 
 | Entidade | Campos principais | Notas |
 |----------|-------------------|--------|
-| `erp_sales_orders` | status, party_id, totals, business_id | Pedido de venda |
+| `erp_sales_orders` | status, party_id, totals, business_id, **source**, **portal_request_id** | Pedido de venda; **origem** do portal (diretório, cotações) para auditoria |
 | `erp_sales_order_items` | order_id, product_id, qty, unit_price | Itens |
 | `erp_purchase_orders` | status, supplier_party_id | Pedidos de compra |
 
@@ -686,6 +686,15 @@ POST /api/v1/businesses/search
 | Perfil do Negócio | `/diretorio/:slug` | Detalhes completos, galeria, serviços, avaliações, mapa |
 | Cadastro/Edição | `/dashboard/meu-negocio` | Formulário completo multi-step |
 | Admin: Verificação | `/painel/verificacoes` | Fila de aprovação de selos |
+
+**Integração obrigatória com o ERP do negócio**
+
+Orçamentos e pedidos originados na **vitrine do diretório** (`/diretorio/:slug`, perfil ou loja virtual) devem **gerar registro no ERP do cliente** (dono do `business_id` vinculado ao anúncio), tipicamente como **pedido de venda** em status inicial `draft` (orçamento) ou fluxo equivalente, com:
+
+- `source = portal_diretorio` (e, quando existir entidade de solicitação no portal, `portal_request_id` apontando para o UUID da solicitação);
+- notificação ao time do negócio (fila/in-app) para tratamento no módulo **Pedidos de venda** do ERP.
+
+A **Central de cotações** (§6.3), quando uma proposta for aceita ou um fluxo convergir para contratação com um fornecedor cadastrado na plataforma, deve **opcionalmente** espelhar o resultado no ERP do fornecedor (`source = portal_cotacoes`), respeitando o mesmo princípio: nada fica só no portal — o operacional do negócio permanece no ERP nativo.
 
 ---
 
@@ -860,6 +869,8 @@ POST /api/v1/businesses/search
 | Financeiro | Contas a pagar/receber, fluxo de caixa, status (aberto/pago/atrasado) |
 | Fiscal NF-e/NFC-e | Geração XML, assinatura digital, envio SEFAZ, autorização, cancelamento dentro do prazo, carta de correção, contingência, consulta situação, armazenamento XML/PDF |
 | Relatórios | Curva ABC estoque, vendas por período, títulos em aberto *(mínimo viável)* |
+
+**Integração portal → ERP:** solicitações feitas na vitrine do **Diretório** (orçamento ou pedido) são materializadas como **pedidos de venda** no ERP do negócio, com rastreio de origem (`source`, `portal_request_id`); a **Central de cotações** pode alimentar o mesmo fluxo quando aplicável (ver §6.2).
 
 #### 6.7.3 Endpoints REST (representativos)
 

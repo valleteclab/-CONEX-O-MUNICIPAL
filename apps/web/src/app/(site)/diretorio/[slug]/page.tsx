@@ -70,7 +70,11 @@ export default function DiretorioNegocioPage({ params }: Props) {
       )}
 
       <Card>
-        <p className="text-sm text-marinha-500">
+        <p className="text-sm text-marinha-600">
+          <strong className="text-marinha-900">ERP:</strong> orçamentos e pedidos feitos nesta vitrine entram automaticamente
+          no módulo <strong>Pedidos de venda</strong> do ERP do negócio (origem portal), para tratamento interno.
+        </p>
+        <p className="mt-3 text-sm text-marinha-500">
           URL pública da vitrine:{" "}
           <code className="rounded bg-marinha-900/5 px-1 font-mono text-marinha-900">
             /diretorio/{data.slug}

@@ -8,7 +8,10 @@ import { DataSource, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpParty } from '../../entities/erp-party.entity';
 import { ErpProduct } from '../../entities/erp-product.entity';
-import { ErpSalesOrder } from '../../entities/erp-sales-order.entity';
+import {
+  ErpSalesOrder,
+  ErpSalesOrderSource,
+} from '../../entities/erp-sales-order.entity';
 import { ErpSalesOrderItem } from '../../entities/erp-sales-order-item.entity';
 import {
   CreateSalesOrderDto,
@@ -53,7 +56,13 @@ export class ErpSalesOrderService {
   async create(
     business: ErpBusiness,
     dto: CreateSalesOrderDto,
+    meta?: {
+      source?: ErpSalesOrderSource;
+      portalRequestId?: string | null;
+    },
   ): Promise<ErpSalesOrder> {
+    const source: ErpSalesOrderSource = meta?.source ?? 'erp';
+    const portalRequestId = meta?.portalRequestId ?? null;
     return this.dataSource.transaction(async (em) => {
       if (dto.partyId) {
         const party = await em.findOne(ErpParty, {
@@ -88,6 +97,8 @@ export class ErpSalesOrderService {
         status: 'draft',
         totalAmount: dec(total),
         note: dto.note?.trim() || null,
+        source,
+        portalRequestId,
       });
       await em.save(order);
       for (const line of dto.items) {
