@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes } from 'crypto';
 import { Repository } from 'typeorm';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { EmailVerificationToken } from '../entities/email-verification-token.entity';
 import { PasswordResetToken } from '../entities/password-reset-token.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { Tenant } from '../entities/tenant.entity';
@@ -36,6 +37,8 @@ export class AuthService {
     private readonly refreshTokens: Repository<RefreshToken>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResets: Repository<PasswordResetToken>,
+    @InjectRepository(EmailVerificationToken)
+    private readonly emailVerifications: Repository<EmailVerificationToken>,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -73,6 +76,7 @@ export class AuthService {
       isActive: true,
     });
     await this.userTenants.save(ut);
+    await this.issueEmailVerificationToken(user);
     return this.issueTokens(user, tenant.id);
   }
 
@@ -194,6 +198,32 @@ export class AuthService {
     return { ok: true, message: 'Senha alterada. Faça login novamente.' };
   }
 
+  async verifyEmail(tokenRaw: string) {
+    const tokenHash = sha256Hex(tokenRaw.trim());
+    const row = await this.emailVerifications.findOne({
+      where: { tokenHash },
+      relations: ['user'],
+    });
+    if (!row || row.expiresAt < new Date() || !row.user?.isActive) {
+      throw new BadRequestException('Token inválido ou expirado');
+    }
+    row.user.emailVerified = true;
+    await this.users.save(row.user);
+    await this.emailVerifications.delete({ userId: row.user.id });
+    return { ok: true, message: 'E-mail verificado com sucesso.' };
+  }
+
+  async switchTenant(user: User, tenantId: string) {
+    const membership = await this.userTenants.findOne({
+      where: { userId: user.id, tenantId, isActive: true },
+      relations: ['tenant'],
+    });
+    if (!membership?.tenant?.isActive) {
+      throw new UnauthorizedException('Usuário sem vínculo ativo com este tenant');
+    }
+    return this.issueTokens(user, tenantId);
+  }
+
   private async resolveTenantIdForUser(userId: string): Promise<string | null> {
     const defaultSlug = this.config.get<string>('tenant.defaultSlug', {
       infer: true,
@@ -208,6 +238,30 @@ export class AuthService {
     }
     const bySlug = rows.find((r) => r.tenant?.slug === defaultSlug);
     return (bySlug ?? rows[0]).tenantId;
+  }
+
+  private async issueEmailVerificationToken(user: User): Promise<void> {
+    await this.emailVerifications.delete({ userId: user.id });
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = sha256Hex(rawToken);
+    const minutes =
+      this.config.get<number>('auth.emailVerificationExpiresMinutes', {
+        infer: true,
+      }) ?? 1440;
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + minutes);
+    await this.emailVerifications.save(
+      this.emailVerifications.create({
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      }),
+    );
+    if (this.config.get<string>('nodeEnv') !== 'production') {
+      console.error(
+        `[api] email verification (dev) email=${user.email} token=${rawToken} expira_em_min=${minutes}`,
+      );
+    }
   }
 
   private async issueTokens(user: User, tenantId: string) {

@@ -94,3 +94,15 @@ export class CreateCashEntryDto {
   @IsString()
   description?: string;
 }
+
+export class FinanceSummaryQueryDto {
+  @ApiPropertyOptional({ example: '2026-04-01' })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @ApiPropertyOptional({ example: '2026-04-30' })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+}

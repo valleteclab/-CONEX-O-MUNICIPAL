@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { ErpAccountPayable } from '../../entities/erp-account-payable.entity';
 import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpBusiness } from '../../entities/erp-business.entity';
@@ -10,6 +10,7 @@ import {
   CreateAccountPayableDto,
   CreateAccountReceivableDto,
   CreateCashEntryDto,
+  FinanceSummaryQueryDto,
   PatchFinanceStatusDto,
 } from '../dto/finance.dto';
 import { dec } from '../utils/decimal';
@@ -159,6 +160,70 @@ export class ErpFinanceService {
       description: dto.description?.trim() || null,
     });
     return this.cash.save(row);
+  }
+
+  async summary(business: ErpBusiness, query: FinanceSummaryQueryDto) {
+    const from = query.from ? new Date(`${query.from}T00:00:00.000Z`) : null;
+    const to = query.to ? new Date(`${query.to}T23:59:59.999Z`) : null;
+
+    const cashWhere = {
+      businessId: business.id,
+      tenantId: business.tenantId,
+      ...(from && to ? { occurredAt: Between(from, to) } : {}),
+    };
+
+    const [cashEntries, openAr, openAp] = await Promise.all([
+      this.cash.find({ where: cashWhere }),
+      this.ar.find({
+        where: {
+          businessId: business.id,
+          tenantId: business.tenantId,
+          status: 'open',
+        },
+      }),
+      this.ap.find({
+        where: {
+          businessId: business.id,
+          tenantId: business.tenantId,
+          status: 'open',
+        },
+      }),
+    ]);
+
+    let cashIn = 0;
+    let cashOut = 0;
+    for (const entry of cashEntries) {
+      const amount = parseFloat(entry.amount);
+      if (entry.type === 'in') {
+        cashIn += amount;
+      } else {
+        cashOut += amount;
+      }
+    }
+
+    const receivablesOpen = openAr.reduce((sum, row) => sum + parseFloat(row.amount), 0);
+    const payablesOpen = openAp.reduce((sum, row) => sum + parseFloat(row.amount), 0);
+
+    return {
+      period: {
+        from: query.from ?? null,
+        to: query.to ?? null,
+      },
+      cash: {
+        entries: cashEntries.length,
+        totalIn: dec(cashIn),
+        totalOut: dec(cashOut),
+        balance: dec(cashIn - cashOut),
+      },
+      receivables: {
+        openCount: openAr.length,
+        openAmount: dec(receivablesOpen),
+      },
+      payables: {
+        openCount: openAp.length,
+        openAmount: dec(payablesOpen),
+      },
+    };
   }
 
   private async ensureParty(business: ErpBusiness, partyId: string): Promise<void> {

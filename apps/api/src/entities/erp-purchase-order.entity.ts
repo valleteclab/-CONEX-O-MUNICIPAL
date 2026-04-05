@@ -45,6 +45,9 @@ export class ErpPurchaseOrder {
   @Column({ type: 'text', nullable: true })
   note: string | null;
 
+  @Column({ name: 'stock_posted_at', type: 'timestamptz', nullable: true })
+  stockPostedAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

@@ -18,6 +18,7 @@ import {
   CreateAccountPayableDto,
   CreateAccountReceivableDto,
   CreateCashEntryDto,
+  FinanceSummaryQueryDto,
   PatchFinanceStatusDto,
 } from '../dto/finance.dto';
 import { ErpFinanceService } from '../services/erp-finance.service';
@@ -29,6 +30,15 @@ import { ErpFinanceService } from '../services/erp-finance.service';
 @ApiHeader({ name: 'X-Business-Id', required: true })
 export class ErpFinanceController {
   constructor(private readonly svc: ErpFinanceService) {}
+
+  @Get('summary')
+  @ApiOperation({ summary: 'Resumo financeiro do período' })
+  summary(
+    @SelectedBusiness() business: ErpBusiness,
+    @Query() query: FinanceSummaryQueryDto,
+  ) {
+    return this.svc.summary(business, query);
+  }
 
   @Get('ar')
   @ApiOperation({ summary: 'Contas a receber' })

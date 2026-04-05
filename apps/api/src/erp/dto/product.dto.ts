@@ -1,7 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsIn,
   IsNumberString,
+  IsObject,
   IsOptional,
   IsString,
   MaxLength,
@@ -9,6 +11,12 @@ import {
 } from 'class-validator';
 
 export class CreateErpProductDto {
+  @ApiPropertyOptional({ enum: ['product', 'service'], default: 'product' })
+  @IsOptional()
+  @IsString()
+  @IsIn(['product', 'service'])
+  kind?: 'product' | 'service';
+
   @ApiProperty({ example: 'SKU-001' })
   @IsString()
   @MinLength(1)
@@ -24,8 +32,31 @@ export class CreateErpProductDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  barcode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   @MaxLength(16)
   ncm?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  cest?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(4)
+  originCode?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -53,9 +84,20 @@ export class CreateErpProductDto {
   @IsOptional()
   @IsNumberString()
   minStock?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  taxConfig?: Record<string, unknown>;
 }
 
 export class UpdateErpProductDto {
+  @ApiPropertyOptional({ enum: ['product', 'service'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['product', 'service'])
+  kind?: 'product' | 'service';
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -65,8 +107,31 @@ export class UpdateErpProductDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  description?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  barcode?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   @MaxLength(16)
   ncm?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  cest?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(4)
+  originCode?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -94,6 +159,11 @@ export class UpdateErpProductDto {
   @IsOptional()
   @IsNumberString()
   minStock?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  taxConfig?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   @IsOptional()

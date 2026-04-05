@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/tokens.dto';
+import { SwitchTenantDto, VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
@@ -61,6 +62,12 @@ export class AuthController {
     return this.auth.resetPassword(dto.token, dto.newPassword);
   }
 
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verificar e-mail com token' })
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.auth.verifyEmail(dto.token);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -70,5 +77,13 @@ export class AuthController {
     @CurrentTenantId() tenantId: string,
   ) {
     return this.auth.me(user, tenantId);
+  }
+
+  @Post('switch-tenant')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Trocar tenant ativo e emitir nova sessão JWT' })
+  switchTenant(@CurrentUser() user: User, @Body() dto: SwitchTenantDto) {
+    return this.auth.switchTenant(user, dto.tenantId);
   }
 }

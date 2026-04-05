@@ -1,4 +1,5 @@
 import { getPublicApiBaseUrl } from "./api-public";
+import { getAccessToken, getTenantId } from "./auth-storage";
 
 function formatApiError(data: unknown, raw: string, statusText: string): string {
   if (data && typeof data === "object" && data !== null && "message" in data) {
@@ -50,4 +51,24 @@ export async function apiFetch<T>(
     return { ok: false, status: res.status, error: msg };
   }
   return { ok: true, status: res.status, data };
+}
+
+export async function apiAuthFetch<T>(
+  path: string,
+  init?: RequestInit & { includeBusinessIdHeader?: boolean },
+): Promise<{ ok: boolean; data?: T; error?: string; status: number }> {
+  const accessToken = getAccessToken();
+  const tenantId = getTenantId();
+  if (!accessToken) {
+    return { ok: false, status: 401, error: "Sessão expirada. Faça login novamente." };
+  }
+  const { includeBusinessIdHeader, headers, ...rest } = init ?? {};
+  return apiFetch<T>(path, {
+    ...rest,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(tenantId && !includeBusinessIdHeader ? { "X-Tenant-Id": tenantId } : {}),
+      ...headers,
+    },
+  });
 }

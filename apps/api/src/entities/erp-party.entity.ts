@@ -32,11 +32,32 @@ export class ErpParty {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ name: 'legal_name', type: 'varchar', length: 255, nullable: true })
+  legalName: string | null;
+
   @Column({ type: 'varchar', length: 20, nullable: true })
   document: string | null;
 
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  email: string | null;
+
+  @Column({ type: 'varchar', length: 24, nullable: true })
+  phone: string | null;
+
+  @Column({ name: 'state_registration', type: 'varchar', length: 32, nullable: true })
+  stateRegistration: string | null;
+
+  @Column({ name: 'municipal_registration', type: 'varchar', length: 32, nullable: true })
+  municipalRegistration: string | null;
+
+  @Column({ name: 'taxpayer_type', type: 'varchar', length: 24, nullable: true })
+  taxpayerType: string | null;
+
   @Column({ type: 'jsonb', default: {} })
   address: Record<string, unknown>;
+
+  @Column({ name: 'notes', type: 'text', nullable: true })
+  notes: string | null;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;

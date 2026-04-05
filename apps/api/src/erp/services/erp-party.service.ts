@@ -32,8 +32,15 @@ export class ErpPartyService {
       businessId: business.id,
       type: dto.type,
       name: dto.name.trim(),
+      legalName: dto.legalName?.trim() || null,
       document: dto.document?.replace(/\D/g, '') || null,
+      email: dto.email?.trim().toLowerCase() || null,
+      phone: dto.phone?.trim() || null,
+      stateRegistration: dto.stateRegistration?.trim() || null,
+      municipalRegistration: dto.municipalRegistration?.trim() || null,
+      taxpayerType: dto.taxpayerType?.trim() || null,
       address: dto.address ?? {},
+      notes: dto.notes?.trim() || null,
       isActive: true,
     });
     return this.parties.save(row);
@@ -61,11 +68,32 @@ export class ErpPartyService {
     if (dto.name !== undefined) {
       row.name = dto.name.trim();
     }
+    if (dto.legalName !== undefined) {
+      row.legalName = dto.legalName?.trim() || null;
+    }
     if (dto.document !== undefined) {
       row.document = dto.document?.replace(/\D/g, '') || null;
     }
+    if (dto.email !== undefined) {
+      row.email = dto.email?.trim().toLowerCase() || null;
+    }
+    if (dto.phone !== undefined) {
+      row.phone = dto.phone?.trim() || null;
+    }
+    if (dto.stateRegistration !== undefined) {
+      row.stateRegistration = dto.stateRegistration?.trim() || null;
+    }
+    if (dto.municipalRegistration !== undefined) {
+      row.municipalRegistration = dto.municipalRegistration?.trim() || null;
+    }
+    if (dto.taxpayerType !== undefined) {
+      row.taxpayerType = dto.taxpayerType?.trim() || null;
+    }
     if (dto.address !== undefined) {
       row.address = dto.address;
+    }
+    if (dto.notes !== undefined) {
+      row.notes = dto.notes?.trim() || null;
     }
     if (dto.isActive !== undefined) {
       row.isActive = dto.isActive;

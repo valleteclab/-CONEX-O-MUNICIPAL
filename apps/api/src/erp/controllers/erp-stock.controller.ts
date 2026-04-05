@@ -48,6 +48,12 @@ export class ErpStockController {
     return this.svc.listBalances(business, locationId);
   }
 
+  @Get('alerts/minimum')
+  @ApiOperation({ summary: 'Alertas de estoque abaixo do mínimo' })
+  minimumAlerts(@SelectedBusiness() business: ErpBusiness) {
+    return this.svc.listMinimumAlerts(business);
+  }
+
   @Get('movements')
   @ApiOperation({ summary: 'Histórico de movimentações' })
   movements(

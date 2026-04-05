@@ -1,14 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/input";
-import { apiFetch } from "@/lib/api-browser";
+import { apiAuthFetch } from "@/lib/api-browser";
 import { getAccessToken } from "@/lib/auth-storage";
 
 export function QuotationCreateForm() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,18 +21,20 @@ export function QuotationCreateForm() {
     e.preventDefault();
     setError(null);
     setOk(false);
-    const t = getAccessToken();
-    if (!t) {
+    if (!getAccessToken()) {
       setError("Faça login para criar uma solicitação.");
       return;
     }
     setLoading(true);
-    const res = await apiFetch<{ id: string }>("/api/v1/quotations", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${t}` },
-      body: JSON.stringify({ title, description: description.trim() || undefined }),
-    });
-    setLoading(false);
+    let res: Awaited<ReturnType<typeof apiAuthFetch<{ id: string }>>>;
+    try {
+      res = await apiAuthFetch<{ id: string }>("/api/v1/quotations", {
+        method: "POST",
+        body: JSON.stringify({ title, description: description.trim() || undefined }),
+      });
+    } finally {
+      setLoading(false);
+    }
     if (!res.ok) {
       setError(res.error || "Erro ao enviar");
       return;
@@ -38,6 +42,7 @@ export function QuotationCreateForm() {
     setOk(true);
     setTitle("");
     setDescription("");
+    router.refresh();
   }
 
   if (!getAccessToken()) {
@@ -46,6 +51,10 @@ export function QuotationCreateForm() {
         Para publicar uma solicitação,{" "}
         <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
           entre na sua conta
+        </Link>
+        . Depois pode acompanhar tudo em{" "}
+        <Link href="/dashboard/cotacoes" className="font-semibold text-municipal-700 hover:underline">
+          Minhas cotações
         </Link>
         .
       </p>
@@ -91,6 +100,11 @@ export function QuotationCreateForm() {
       <Button type="submit" variant="primary" disabled={loading}>
         {loading ? "Enviando…" : "Publicar solicitação"}
       </Button>
+      <p className="text-center text-xs text-marinha-500">
+        <Link href="/dashboard/cotacoes" className="font-medium text-municipal-700 hover:underline">
+          Ver todas as minhas solicitações
+        </Link>
+      </p>
     </form>
   );
 }

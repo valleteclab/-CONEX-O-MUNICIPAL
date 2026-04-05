@@ -4,10 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpParty } from '../../entities/erp-party.entity';
 import { ErpProduct } from '../../entities/erp-product.entity';
+import { ErpStockBalance } from '../../entities/erp-stock-balance.entity';
+import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
+import { ErpStockMovement } from '../../entities/erp-stock-movement.entity';
 import {
   ErpSalesOrder,
   ErpSalesOrderSource,
@@ -127,15 +130,95 @@ export class ErpSalesOrderService {
     id: string,
     dto: PatchSalesOrderStatusDto,
   ): Promise<ErpSalesOrder> {
-    const row = await this.findOne(business, id);
-    if (row.status === 'cancelled') {
-      throw new BadRequestException('Pedido cancelado não pode ser alterado');
-    }
-    if (dto.status === 'draft') {
-      throw new BadRequestException('Não é possível voltar para rascunho');
-    }
-    row.status = dto.status;
-    await this.orders.save(row);
+    await this.dataSource.transaction(async (em) => {
+      const row = await em.findOne(ErpSalesOrder, {
+        where: { id, businessId: business.id, tenantId: business.tenantId },
+        relations: ['items', 'items.product', 'party'],
+      });
+      if (!row) {
+        throw new NotFoundException('Pedido de venda não encontrado');
+      }
+      if (row.status === 'cancelled') {
+        throw new BadRequestException('Pedido cancelado não pode ser alterado');
+      }
+      if (dto.status === 'draft') {
+        throw new BadRequestException('Não é possível voltar para rascunho');
+      }
+      if (dto.status === 'confirmed' && row.status === 'draft') {
+        await this.postStock(em, business, row);
+        row.stockPostedAt = new Date();
+      }
+      row.status = dto.status;
+      await em.save(row);
+    });
     return this.findOne(business, id);
+  }
+
+  private async postStock(
+    em: EntityManager,
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+  ): Promise<void> {
+    if (order.stockPostedAt) {
+      throw new BadRequestException('Estoque deste pedido já foi lançado');
+    }
+    const defaultLocation = await em.findOne(ErpStockLocation, {
+      where: {
+        businessId: business.id,
+        tenantId: business.tenantId,
+        isDefault: true,
+      },
+    });
+    if (!defaultLocation) {
+      throw new BadRequestException(
+        'Defina um local de estoque padrão antes de confirmar o pedido',
+      );
+    }
+
+    for (const item of order.items) {
+      let balance = await em.findOne(ErpStockBalance, {
+        where: {
+          businessId: business.id,
+          tenantId: business.tenantId,
+          productId: item.productId,
+          locationId: defaultLocation.id,
+        },
+      });
+      const current = balance ? parseFloat(balance.quantity) : 0;
+      const next = current - parseFloat(item.qty);
+      if (next < 0) {
+        throw new BadRequestException(
+          `Estoque insuficiente para o produto ${item.product?.name ?? item.productId}`,
+        );
+      }
+
+      await em.save(
+        em.create(ErpStockMovement, {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          type: 'out',
+          productId: item.productId,
+          locationId: defaultLocation.id,
+          quantity: dec(item.qty),
+          refType: 'sales_order',
+          refId: order.id,
+          userId: null,
+          note: `Baixa automática do pedido ${order.id}`,
+        }),
+      );
+
+      if (!balance) {
+        balance = em.create(ErpStockBalance, {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          productId: item.productId,
+          locationId: defaultLocation.id,
+          quantity: dec(next),
+        });
+      } else {
+        balance.quantity = dec(next);
+      }
+      await em.save(balance);
+    }
   }
 }

@@ -26,14 +26,29 @@ export class ErpProduct {
   @JoinColumn({ name: 'business_id' })
   business: ErpBusiness;
 
+  @Column({ type: 'varchar', length: 24, default: 'product' })
+  kind: 'product' | 'service';
+
   @Column({ type: 'varchar', length: 80 })
   sku: string;
 
   @Column({ type: 'varchar', length: 500 })
   name: string;
 
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  barcode: string | null;
+
   @Column({ type: 'varchar', length: 16, nullable: true })
   ncm: string | null;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  cest: string | null;
+
+  @Column({ name: 'origin_code', type: 'varchar', length: 4, nullable: true })
+  originCode: string | null;
 
   @Column({ name: 'cfop_default', type: 'varchar', length: 8, nullable: true })
   cfopDefault: string | null;
@@ -49,6 +64,9 @@ export class ErpProduct {
 
   @Column({ name: 'min_stock', type: 'decimal', precision: 18, scale: 4, default: 0 })
   minStock: string;
+
+  @Column({ name: 'tax_config', type: 'jsonb', default: {} })
+  taxConfig: Record<string, unknown>;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;

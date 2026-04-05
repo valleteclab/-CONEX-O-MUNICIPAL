@@ -1,7 +1,7 @@
 # Conexão Municipal — contexto Cursor
 
 ## Scratchpad
-- **Backend (ordem):** [X] Auth + registro existentes; [X] `directory_listings` + `/businesses` + `PATCH /users/me`; [ ] Cotações; [ ] Academia; [ ] Painel; [ ] ERP por último (já existe Onda A, evoluir depois)
+- **Backend (ordem):** [X] Auth + registro existentes; [X] `directory_listings` + `/businesses` + `PATCH /users/me`; [X] Cotações (GET `/quotations/mine`, UI `/dashboard/cotacoes`, `apiAuthFetch` no create); [ ] Academia; [ ] Painel; [ ] ERP por último (já existe Onda A, evoluir depois)
 - [X] Git: `origin` → https://github.com/valleteclab/-CONEX-O-MUNICIPAL — `main` pushed (histórico remoto anterior era só .docx; substituído por `--force-with-lease`)
 - [X] SDD v2.0: §5.4 ERP, §6.7 ERP (ondas A/B/C), escopo §3, RBAC §8, integrações §11, roadmap §14.1–14.2 (Fases 5–7), KPIs §15, riscos R11–R12, glossário
 - [X] DevContext: +6 requisitos ERP, +4 ADRs (ERP/SEFAZ/Bull/NFS-e), +6 features épicos ERP; projeto v0.2.0

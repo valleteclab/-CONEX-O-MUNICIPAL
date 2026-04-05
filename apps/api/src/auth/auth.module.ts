@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EmailVerificationToken } from '../entities/email-verification-token.entity';
 import { PasswordResetToken } from '../entities/password-reset-token.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { Tenant } from '../entities/tenant.entity';
@@ -22,6 +23,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       UserTenant,
       RefreshToken,
       PasswordResetToken,
+      EmailVerificationToken,
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

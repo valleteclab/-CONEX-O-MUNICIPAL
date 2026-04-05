@@ -1,3 +1,4 @@
+import type { AuthUserContext } from '../auth/auth-user-context';
 import type { ErpBusiness } from '../entities/erp-business.entity';
 
 declare global {
@@ -5,6 +6,7 @@ declare global {
     interface Request {
       erpBusiness?: ErpBusiness;
       erpBusinessRole?: string;
+      user?: AuthUserContext;
     }
   }
 }

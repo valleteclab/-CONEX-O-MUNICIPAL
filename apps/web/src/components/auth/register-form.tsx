@@ -53,7 +53,7 @@ export function RegisterForm() {
       setError(res.error || "Não foi possível cadastrar");
       return;
     }
-    setTokens(res.data.accessToken, res.data.refreshToken);
+    setTokens(res.data.accessToken, res.data.refreshToken, res.data.tenantId);
     router.push("/");
     router.refresh();
   }

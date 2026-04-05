@@ -28,6 +28,31 @@ import { UpdateDirectoryListingDto } from './dto/update-directory-listing.dto';
 export class DirectoryController {
   constructor(private readonly directory: DirectoryService) {}
 
+  @Get('featured')
+  @ApiOperation({ summary: 'Listar negócios em destaque' })
+  async featured(
+    @Query('tenant') tenantSlug?: string,
+    @Query('take') takeStr?: string,
+  ) {
+    const tenantId = await this.directory.resolveTenantId(tenantSlug);
+    const take = Math.min(12, Math.max(1, parseInt(takeStr ?? '6', 10) || 6));
+    return this.directory.listFeatured(tenantId, take);
+  }
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Listar categorias do diretório' })
+  async categories(@Query('tenant') tenantSlug?: string) {
+    const tenantId = await this.directory.resolveTenantId(tenantSlug);
+    return this.directory.listCategories(tenantId);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Buscar negócios publicados' })
+  async search(@Query() query: ListDirectoryQueryDto) {
+    const tenantId = await this.directory.resolveTenantId(query.tenant);
+    return this.directory.search(tenantId, query);
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Listar negócios publicados (tenant via query ou default)',
@@ -35,6 +60,14 @@ export class DirectoryController {
   async list(@Query() query: ListDirectoryQueryDto) {
     const tenantId = await this.directory.resolveTenantId(query.tenant);
     return this.directory.listPublic(tenantId, query);
+  }
+
+  @Get('mine/list')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar vitrines do usuário autenticado no tenant ativo' })
+  async mine(@CurrentUser() user: User, @CurrentTenantId() tenantId: string) {
+    return this.directory.listMine(user, tenantId);
   }
 
   @Get(':slug')

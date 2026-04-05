@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { QuotationCreateForm } from "@/components/cotacoes/quotation-create-form";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Card } from "@/components/ui/card";
+import { quotationStatusLabel } from "@/lib/quotation-labels";
 import { apiGet, tenantQueryParam, type ApiListResponse } from "@/lib/api-server";
 import type { QuotationRequestDto } from "@/types/quotations";
 
@@ -34,6 +36,14 @@ export default async function CotacoesPage() {
         title="Central de cotações"
         description="Publique o que precisa comprar ou contratar e receba propostas de fornecedores do município. Dados em tempo real a partir da API."
       />
+      <p className="-mt-2 mb-6 text-sm text-marinha-600">
+        <Link
+          href="/dashboard/cotacoes"
+          className="font-medium text-municipal-700 underline-offset-2 hover:underline"
+        >
+          Área logada: minhas solicitações
+        </Link>
+      </p>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <h2 className="font-serif text-lg text-marinha-900">Nova solicitação</h2>
@@ -62,7 +72,7 @@ export default async function CotacoesPage() {
                     <p className="mt-1 line-clamp-2 text-marinha-600">{q.description}</p>
                   ) : null}
                   <p className="mt-2 text-xs text-marinha-500">
-                    {formatDate(q.createdAt)} · {q.status}
+                    {formatDate(q.createdAt)} · {quotationStatusLabel(q.status)}
                   </p>
                 </li>
               ))}

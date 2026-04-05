@@ -17,6 +17,10 @@ export default () => ({
       process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? '60',
       10,
     ),
+    emailVerificationExpiresMinutes: parseInt(
+      process.env.EMAIL_VERIFICATION_EXPIRES_MINUTES ?? '1440',
+      10,
+    ),
   },
   tenant: {
     defaultSlug: process.env.DEFAULT_TENANT_SLUG ?? 'luis-eduardo-magalhaes',

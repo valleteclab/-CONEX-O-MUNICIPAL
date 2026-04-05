@@ -71,6 +71,48 @@ export class ErpStockService {
     });
   }
 
+  async listMinimumAlerts(
+    business: ErpBusiness,
+  ): Promise<
+    Array<{
+      productId: string;
+      sku: string;
+      name: string;
+      quantity: string;
+      minStock: string;
+      shortage: string;
+    }>
+  > {
+    const rows = await this.balances
+      .createQueryBuilder('balance')
+      .innerJoin('balance.product', 'product')
+      .select('balance.productId', 'productId')
+      .addSelect('product.sku', 'sku')
+      .addSelect('product.name', 'name')
+      .addSelect('product.minStock', 'minStock')
+      .addSelect('COALESCE(SUM(balance.quantity), 0)', 'quantity')
+      .where('balance.businessId = :businessId', { businessId: business.id })
+      .andWhere('balance.tenantId = :tenantId', { tenantId: business.tenantId })
+      .groupBy('balance.productId')
+      .addGroupBy('product.sku')
+      .addGroupBy('product.name')
+      .addGroupBy('product.minStock')
+      .having('COALESCE(SUM(balance.quantity), 0) < product.minStock')
+      .orderBy('product.name', 'ASC')
+      .getRawMany<{
+        productId: string;
+        sku: string;
+        name: string;
+        quantity: string;
+        minStock: string;
+      }>();
+
+    return rows.map((row) => ({
+      ...row,
+      shortage: dec(Math.max(0, parseFloat(row.minStock) - parseFloat(row.quantity))),
+    }));
+  }
+
   async listMovements(
     business: ErpBusiness,
     take = 50,

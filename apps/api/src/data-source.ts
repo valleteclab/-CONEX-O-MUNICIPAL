@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import {
   AcademyCourse,
   DirectoryListing,
+  EmailVerificationToken,
   ErpAccountPayable,
   ErpAccountReceivable,
   ErpBusiness,
@@ -38,6 +39,7 @@ const entities = [
   UserTenant,
   RefreshToken,
   PasswordResetToken,
+  EmailVerificationToken,
   ErpBusiness,
   ErpBusinessUser,
   ErpProduct,

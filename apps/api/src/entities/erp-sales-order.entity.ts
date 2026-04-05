@@ -54,6 +54,9 @@ export class ErpSalesOrder {
   @Column({ name: 'portal_request_id', type: 'uuid', nullable: true })
   portalRequestId: string | null;
 
+  @Column({ name: 'stock_posted_at', type: 'timestamptz', nullable: true })
+  stockPostedAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

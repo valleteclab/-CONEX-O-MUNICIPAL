@@ -60,10 +60,45 @@ export class DirectoryService {
       );
     }
 
-    qb.orderBy('l.trade_name', 'ASC').skip(skip).take(take);
+    if (query.sort === 'recent') {
+      qb.orderBy('l.created_at', 'DESC');
+    } else {
+      qb.orderBy('l.trade_name', 'ASC');
+    }
+
+    qb.skip(skip).take(take);
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total };
+  }
+
+  async listFeatured(tenantId: string, take = 6): Promise<DirectoryListing[]> {
+    return this.listings.find({
+      where: { tenantId, isPublished: true },
+      order: { createdAt: 'DESC' },
+      take: Math.min(Math.max(1, take), 12),
+    });
+  }
+
+  async listCategories(tenantId: string): Promise<string[]> {
+    const rows = await this.listings
+      .createQueryBuilder('l')
+      .select('DISTINCT l.category', 'category')
+      .where('l.tenant_id = :tenantId', { tenantId })
+      .andWhere('l.is_published = true')
+      .andWhere('l.category IS NOT NULL')
+      .andWhere("TRIM(l.category) <> ''")
+      .orderBy('category', 'ASC')
+      .getRawMany<{ category: string }>();
+
+    return rows.map((row) => row.category);
+  }
+
+  async search(
+    tenantId: string,
+    query: ListDirectoryQueryDto,
+  ): Promise<{ items: DirectoryListing[]; total: number }> {
+    return this.listPublic(tenantId, query);
   }
 
   async findBySlugPublic(
@@ -81,6 +116,13 @@ export class DirectoryService {
       throw new NotFoundException('Negócio não encontrado');
     }
     return row;
+  }
+
+  async listMine(user: User, tenantId: string): Promise<DirectoryListing[]> {
+    return this.listings.find({
+      where: { tenantId, ownerUserId: user.id },
+      order: { updatedAt: 'DESC' },
+    });
   }
 
   async create(

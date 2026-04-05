@@ -46,6 +46,24 @@ export class QuotationsService {
     return { items, total };
   }
 
+  async listMine(
+    userId: string,
+    tenantId: string,
+    query: ListQuotationQueryDto,
+  ): Promise<{ items: QuotationRequest[]; total: number }> {
+    const take = Math.min(100, Math.max(1, query.take ?? 50));
+    const skip = Math.max(0, query.skip ?? 0);
+    const qb = this.quotations
+      .createQueryBuilder('q')
+      .where('q.tenantId = :tenantId', { tenantId })
+      .andWhere('q.requesterUserId = :userId', { userId })
+      .orderBy('q.created_at', 'DESC')
+      .skip(skip)
+      .take(take);
+    const [items, total] = await qb.getManyAndCount();
+    return { items, total };
+  }
+
   async create(
     user: User,
     tenantId: string,

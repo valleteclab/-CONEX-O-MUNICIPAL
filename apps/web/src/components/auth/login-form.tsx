@@ -39,7 +39,7 @@ export function LoginForm() {
       setError(res.error || "Falha no login");
       return;
     }
-    setTokens(res.data.accessToken, res.data.refreshToken);
+    setTokens(res.data.accessToken, res.data.refreshToken, res.data.tenantId);
     router.push("/");
     router.refresh();
   }

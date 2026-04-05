@@ -5,6 +5,7 @@ export * from './user.entity';
 export * from './user-tenant.entity';
 export * from './refresh-token.entity';
 export * from './password-reset-token.entity';
+export * from './email-verification-token.entity';
 export * from './erp-business.entity';
 export * from './erp-business-user.entity';
 export * from './erp-product.entity';

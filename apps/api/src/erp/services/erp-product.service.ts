@@ -31,14 +31,20 @@ export class ErpProductService {
     const row = this.products.create({
       tenantId: business.tenantId,
       businessId: business.id,
+      kind: dto.kind ?? 'product',
       sku: dto.sku.trim(),
       name: dto.name.trim(),
+      description: dto.description?.trim() || null,
+      barcode: dto.barcode?.trim() || null,
       ncm: dto.ncm?.trim() || null,
+      cest: dto.cest?.trim() || null,
+      originCode: dto.originCode?.trim() || null,
       cfopDefault: dto.cfopDefault?.trim() || null,
       unit: dto.unit?.trim() || 'UN',
       cost: dec(dto.cost ?? '0'),
       price: dec(dto.price ?? '0'),
       minStock: dec(dto.minStock ?? '0'),
+      taxConfig: dto.taxConfig ?? {},
       isActive: true,
     });
     return this.products.save(row);
@@ -64,11 +70,26 @@ export class ErpProductService {
     dto: UpdateErpProductDto,
   ): Promise<ErpProduct> {
     const row = await this.findOne(business, id);
+    if (dto.kind !== undefined) {
+      row.kind = dto.kind;
+    }
     if (dto.name !== undefined) {
       row.name = dto.name.trim();
     }
+    if (dto.description !== undefined) {
+      row.description = dto.description?.trim() || null;
+    }
+    if (dto.barcode !== undefined) {
+      row.barcode = dto.barcode?.trim() || null;
+    }
     if (dto.ncm !== undefined) {
       row.ncm = dto.ncm?.trim() || null;
+    }
+    if (dto.cest !== undefined) {
+      row.cest = dto.cest?.trim() || null;
+    }
+    if (dto.originCode !== undefined) {
+      row.originCode = dto.originCode?.trim() || null;
     }
     if (dto.cfopDefault !== undefined) {
       row.cfopDefault = dto.cfopDefault?.trim() || null;
@@ -84,6 +105,9 @@ export class ErpProductService {
     }
     if (dto.minStock !== undefined) {
       row.minStock = dec(dto.minStock);
+    }
+    if (dto.taxConfig !== undefined) {
+      row.taxConfig = dto.taxConfig;
     }
     if (dto.isActive !== undefined) {
       row.isActive = dto.isActive;

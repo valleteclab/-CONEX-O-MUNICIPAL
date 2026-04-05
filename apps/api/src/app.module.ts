@@ -14,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import {
   AcademyCourse,
   DirectoryListing,
+  EmailVerificationToken,
   ErpAccountPayable,
   ErpAccountReceivable,
   ErpBusiness,
@@ -53,6 +54,7 @@ import {
           UserTenant,
           RefreshToken,
           PasswordResetToken,
+          EmailVerificationToken,
           ErpBusiness,
           ErpBusinessUser,
           ErpProduct,

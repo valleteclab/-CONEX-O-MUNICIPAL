@@ -17,6 +17,20 @@ import { QuotationsService } from './quotations.service';
 export class QuotationsController {
   constructor(private readonly quotations: QuotationsService) {}
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Listar minhas solicitações (autenticado, tenant ativo no JWT)',
+  })
+  async listMine(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Query() query: ListQuotationQueryDto,
+  ) {
+    return this.quotations.listMine(user.id, tenantId, query);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Listar solicitações abertas (público, por tenant)' })
   async list(@Query() query: ListQuotationQueryDto) {

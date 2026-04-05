@@ -26,6 +26,11 @@ export class ListDirectoryQueryDto {
   @MaxLength(200)
   q?: string;
 
+  @ApiPropertyOptional({ enum: ['name', 'recent'] })
+  @IsOptional()
+  @IsIn(['name', 'recent'])
+  sort?: 'name' | 'recent';
+
   @ApiPropertyOptional({ default: 50 })
   @IsOptional()
   @Type(() => Number)
