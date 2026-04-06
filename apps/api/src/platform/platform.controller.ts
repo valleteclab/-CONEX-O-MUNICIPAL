@@ -125,6 +125,19 @@ export class PlatformController {
     return this.youtubePlaylist.previewPlaylistUrl(url.trim());
   }
 
+  @Get('academy/youtube/duration-preview')
+  @Roles('super_admin')
+  @ApiOperation({
+    summary:
+      'Duração em minutos: vídeo único ou soma da playlist (YouTube Data API v3; requer YOUTUBE_API_KEY).',
+  })
+  async durationPreview(@Query('url') url?: string) {
+    if (!url?.trim()) {
+      throw new BadRequestException('Query url é obrigatória');
+    }
+    return this.youtubePlaylist.getDurationPreviewForUrl(url.trim());
+  }
+
   @Post('academy/courses')
   @Roles('super_admin')
   @ApiOperation({ summary: 'Criar curso da Academia num município' })

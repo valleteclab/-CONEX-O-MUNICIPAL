@@ -5,8 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
+import { ACADEMY_COURSE_CATEGORIES } from "@/lib/academy-categories";
 import { apiAuthFetch } from "@/lib/api-browser";
 import { getAccessToken } from "@/lib/auth-storage";
+import { cn } from "@/lib/cn";
 
 type CourseRow = {
   id: string;
@@ -55,6 +57,7 @@ export default function AdminAcademiaPage() {
     playlistId: string;
     items: { title: string; videoUrl: string }[];
   } | null>(null);
+  const [durationHint, setDurationHint] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!getAccessToken()) {
@@ -82,6 +85,26 @@ export default function AdminAcademiaPage() {
     void load();
   }, [load]);
 
+  async function fetchDurationMeta(u: string) {
+    const dRes = await apiAuthFetch<{
+      durationMinutes: number | null;
+      playlistTotalMinutes: number | null;
+      playlistVideoCount: number | null;
+      hint: string | null;
+    }>(`/api/v1/platform/academy/youtube/duration-preview?url=${encodeURIComponent(u)}`);
+    if (!dRes.ok || !dRes.data) {
+      setDurationHint(null);
+      return;
+    }
+    const d = dRes.data;
+    if (d.durationMinutes != null) {
+      setDurationMinutes(String(d.durationMinutes));
+    } else if (d.playlistTotalMinutes != null) {
+      setDurationMinutes(String(d.playlistTotalMinutes));
+    }
+    setDurationHint(d.hint);
+  }
+
   async function fetchYoutubeMeta() {
     const u = youtubeUrl.trim();
     if (!u) {
@@ -91,6 +114,7 @@ export default function AdminAcademiaPage() {
     setYtFetching(true);
     setYtErr(null);
     setPlaylistPreview(null);
+    setDurationHint(null);
     try {
       if (isPlaylistUrl(u)) {
         const res = await apiAuthFetch<{
@@ -109,6 +133,7 @@ export default function AdminAcademiaPage() {
         }
         setPlaylistPreview(res.data);
         setYtPreview(null);
+        await fetchDurationMeta(u);
         return;
       }
 
@@ -130,6 +155,7 @@ export default function AdminAcademiaPage() {
         thumbnailUrl: data.thumbnailUrl ?? "",
       });
       setFirstLessonTitle(data.title?.trim() || "Aula em vídeo");
+      await fetchDurationMeta(u);
     } catch {
       setYtErr("Falha de rede ao contactar o servidor.");
       setYtPreview(null);
@@ -182,6 +208,7 @@ export default function AdminAcademiaPage() {
     setYtPreview(null);
     setPlaylistPreview(null);
     setYtErr(null);
+    setDurationHint(null);
     void load();
   }
 
@@ -347,6 +374,7 @@ export default function AdminAcademiaPage() {
                     setPlaylistPreview(null);
                     setYtPreview(null);
                     setYtErr(null);
+                    setDurationHint(null);
                   }}
                   placeholder="Vídeo ou playlist: …watch?v=…&list=PL…"
                   className="min-w-0 flex-1"
@@ -422,7 +450,24 @@ export default function AdminAcademiaPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-xs font-medium text-gray-600">Categoria</label>
-                <Input value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1" />
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className={cn(
+                    "mt-1 w-full min-h-[44px] rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900",
+                    "focus:border-municipal-600 focus:outline-none focus:ring-2 focus:ring-municipal-600/25",
+                  )}
+                >
+                  <option value="">— Selecione uma categoria —</option>
+                  {ACADEMY_COURSE_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Lista padrão do sistema; use a mesma etiqueta nos filtros do portal público.
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600">Duração (minutos)</label>
@@ -433,6 +478,15 @@ export default function AdminAcademiaPage() {
                   onChange={(e) => setDurationMinutes(e.target.value)}
                   className="mt-1"
                 />
+                {durationHint ? (
+                  <p className="mt-1 text-xs text-amber-800">{durationHint}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Preenchido ao pré-visualizar o link, se{" "}
+                    <code className="text-[11px]">YOUTUBE_API_KEY</code> estiver na API (soma da
+                    trilha ou duração do vídeo).
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-4 text-sm">

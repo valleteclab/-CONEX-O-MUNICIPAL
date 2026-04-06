@@ -4,6 +4,7 @@ import { AcademyCatalogWithProgress } from "@/components/academia/academy-catalo
 import { AcademyCategoryFilters } from "@/components/academia/academy-category-filters";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Card } from "@/components/ui/card";
+import { ACADEMY_COURSE_CATEGORIES } from "@/lib/academy-categories";
 import { apiGet, tenantQueryParam, type ApiListResponse } from "@/lib/api-server";
 import type { AcademyCourseDto } from "@/types/academy";
 
@@ -39,7 +40,9 @@ export default async function AcademiaPage({ searchParams }: PageProps) {
     apiGet<CategoriesResponse>(`/api/v1/academy/courses/categories?${tenantQ}`, { revalidate: 60 }),
   ]);
 
-  const categories = categoriesRes?.items ?? [];
+  const categories = Array.from(
+    new Set([...ACADEMY_COURSE_CATEGORIES, ...(categoriesRes?.items ?? [])]),
+  ).sort((a, b) => a.localeCompare(b, "pt"));
 
   return (
     <>

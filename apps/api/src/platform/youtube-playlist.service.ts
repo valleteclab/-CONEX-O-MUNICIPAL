@@ -5,6 +5,8 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parseIso8601DurationToSeconds } from '../common/youtube-duration';
+import { youtubeVideoIdFromUrl } from '../common/youtube-thumb';
 
 export type YoutubePlaylistItem = {
   title: string;
@@ -47,6 +49,62 @@ export class YoutubePlaylistService {
       'YOUTUBE_API_KEY não definida — a usar feed RSS da playlist (pode ser incompleto).',
     );
     return this.listViaRss(playlistId);
+  }
+
+  /**
+   * Duração em minutos: vídeo único ou soma da playlist (requer YOUTUBE_API_KEY).
+   */
+  async getDurationPreviewForUrl(url: string): Promise<{
+    durationMinutes: number | null;
+    playlistTotalMinutes: number | null;
+    playlistVideoCount: number | null;
+    hint: string | null;
+  }> {
+    const key = this.config.get<string>('YOUTUBE_API_KEY')?.trim();
+    if (!key) {
+      return {
+        durationMinutes: null,
+        playlistTotalMinutes: null,
+        playlistVideoCount: null,
+        hint: 'Defina YOUTUBE_API_KEY na API para calcular a duração automaticamente (YouTube Data API v3).',
+      };
+    }
+    const trimmed = url.trim();
+    const plId = extractYoutubePlaylistId(trimmed);
+    if (plId) {
+      const items = await this.listPlaylistVideos(plId);
+      const ids = items
+        .map((i) => youtubeVideoIdFromUrl(i.videoUrl))
+        .filter((x): x is string => !!x);
+      const totalSec = await this.sumVideoDurationsSeconds(ids, key);
+      return {
+        durationMinutes: null,
+        playlistTotalMinutes:
+          totalSec > 0 ? Math.max(1, Math.round(totalSec / 60)) : null,
+        playlistVideoCount: items.length,
+        hint:
+          totalSec <= 0 ?
+            'Não foi possível somar as durações (verifique a chave e a playlist).'
+          : null,
+      };
+    }
+    const vid = youtubeVideoIdFromUrl(trimmed);
+    if (!vid) {
+      throw new BadRequestException(
+        'Cole um link de vídeo ou playlist válido do YouTube.',
+      );
+    }
+    const sec = await this.fetchVideoDurationSeconds(vid, key);
+    return {
+      durationMinutes:
+        sec != null && sec > 0 ? Math.max(1, Math.round(sec / 60)) : null,
+      playlistTotalMinutes: null,
+      playlistVideoCount: null,
+      hint:
+        sec == null || sec <= 0 ?
+          'Não foi possível ler a duração deste vídeo.'
+        : null,
+    };
   }
 
   async previewPlaylistUrl(url: string): Promise<{
@@ -125,6 +183,67 @@ export class YoutubePlaylistService {
       pageToken = json.nextPageToken;
     } while (pageToken);
     return out;
+  }
+
+  private async fetchVideoDurationSeconds(
+    videoId: string,
+    apiKey: string,
+  ): Promise<number | null> {
+    const u = new URL('https://www.googleapis.com/youtube/v3/videos');
+    u.searchParams.set('part', 'contentDetails');
+    u.searchParams.set('id', videoId);
+    u.searchParams.set('key', apiKey);
+    let res: Response;
+    try {
+      res = await fetch(u);
+    } catch (e) {
+      this.logger.warn(e);
+      return null;
+    }
+    const json = (await res.json()) as {
+      items?: Array<{ contentDetails?: { duration?: string } }>;
+    };
+    if (!res.ok || !json.items?.[0]?.contentDetails?.duration) {
+      return null;
+    }
+    return parseIso8601DurationToSeconds(json.items[0].contentDetails.duration);
+  }
+
+  private async sumVideoDurationsSeconds(
+    videoIds: string[],
+    apiKey: string,
+  ): Promise<number> {
+    if (!videoIds.length) {
+      return 0;
+    }
+    let total = 0;
+    for (let i = 0; i < videoIds.length; i += 50) {
+      const batch = videoIds.slice(i, i + 50);
+      const u = new URL('https://www.googleapis.com/youtube/v3/videos');
+      u.searchParams.set('part', 'contentDetails');
+      u.searchParams.set('id', batch.join(','));
+      u.searchParams.set('key', apiKey);
+      let res: Response;
+      try {
+        res = await fetch(u);
+      } catch (e) {
+        this.logger.warn(e);
+        continue;
+      }
+      const json = (await res.json()) as {
+        items?: Array<{ contentDetails?: { duration?: string } }>;
+      };
+      if (!res.ok) {
+        continue;
+      }
+      for (const item of json.items ?? []) {
+        const dur = item?.contentDetails?.duration;
+        if (dur) {
+          total += parseIso8601DurationToSeconds(dur);
+        }
+      }
+    }
+    return total;
   }
 
   private async listViaRss(playlistId: string): Promise<YoutubePlaylistItem[]> {
