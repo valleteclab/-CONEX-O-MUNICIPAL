@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 
 const items: { href: string; label: string; exact?: boolean }[] = [
   { href: "/erp", label: "Início", exact: true },
+  { href: "/erp/cadastrar-negocio", label: "Cadastrar negócio" },
   { href: "/erp/pdv", label: "PDV" },
   { href: "/erp/produtos", label: "Produtos" },
   { href: "/erp/clientes-fornecedores", label: "Clientes e fornecedores" },
@@ -13,6 +14,7 @@ const items: { href: string; label: string; exact?: boolean }[] = [
   { href: "/erp/pedidos-venda", label: "Pedidos de venda" },
   { href: "/erp/pedidos-compra", label: "Pedidos de compra" },
   { href: "/erp/financeiro", label: "Financeiro" },
+  { href: "/erp/dados-fiscais", label: "Dados fiscais" },
   { href: "/erp/fiscal", label: "Notas Fiscais" },
 ];
 

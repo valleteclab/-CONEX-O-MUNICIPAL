@@ -25,7 +25,9 @@ import { ErpSalesOrdersController } from './controllers/erp-sales-orders.control
 import { ErpPurchaseOrdersController } from './controllers/erp-purchase-orders.controller';
 import { ErpFinanceController } from './controllers/erp-finance.controller';
 import { ErpFiscalController } from './controllers/erp-fiscal.controller';
+import { ErpCnpjController } from './controllers/erp-cnpj.controller';
 import { ErpBusinessService } from './services/erp-business.service';
+import { CnpjLookupService } from './services/cnpj-lookup.service';
 import { ErpProductService } from './services/erp-product.service';
 import { ErpPartyService } from './services/erp-party.service';
 import { ErpStockService } from './services/erp-stock.service';
@@ -65,9 +67,11 @@ import { PlugNotasService } from './services/plugnotas.service';
     ErpPurchaseOrdersController,
     ErpFinanceController,
     ErpFiscalController,
+    ErpCnpjController,
   ],
   providers: [
     ErpBusinessGuard,
+    CnpjLookupService,
     ErpBusinessService,
     ErpProductService,
     ErpPartyService,
@@ -78,6 +82,6 @@ import { PlugNotasService } from './services/plugnotas.service';
     PlugNotasService,
     ErpFiscalService,
   ],
-  exports: [ErpBusinessService],
+  exports: [ErpBusinessService, ErpFiscalService],
 })
 export class ErpModule {}

@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpBusinessUser } from '../../entities/erp-business-user.entity';
 import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
 import { CreateErpBusinessDto } from '../dto/create-business.dto';
+import { UpdateErpBusinessProfileDto } from '../dto/update-erp-business-profile.dto';
 
 @Injectable()
 export class ErpBusinessService {
@@ -38,6 +43,10 @@ export class ErpBusinessService {
         tradeName: dto.tradeName.trim(),
         legalName: dto.legalName?.trim() || null,
         document: dto.document?.replace(/\D/g, '') || null,
+        address: dto.address ?? null,
+        cityIbgeCode: dto.cityIbgeCode?.trim() || null,
+        taxRegime: dto.taxRegime ?? null,
+        fiscalConfig: { ...(dto.fiscalConfig ?? {}) },
         moderationStatus: 'pending',
         isActive: false,
       });
@@ -59,5 +68,60 @@ export class ErpBusinessService {
       );
       return b;
     });
+  }
+
+  async findOneForUser(
+    userId: string,
+    tenantId: string,
+    businessId: string,
+  ): Promise<ErpBusiness> {
+    const member = await this.members.findOne({
+      where: { userId, businessId },
+    });
+    if (!member) {
+      throw new ForbiddenException('Sem permissão para este negócio');
+    }
+    const b = await this.businesses.findOne({
+      where: { id: businessId, tenantId },
+    });
+    if (!b) throw new NotFoundException('Negócio não encontrado');
+    return b;
+  }
+
+  async updateProfile(
+    userId: string,
+    tenantId: string,
+    businessId: string,
+    dto: UpdateErpBusinessProfileDto,
+  ): Promise<ErpBusiness> {
+    const b = await this.findOneForUser(userId, tenantId, businessId);
+
+    if (dto.legalName !== undefined) {
+      b.legalName = dto.legalName.trim() || null;
+    }
+    if (dto.document !== undefined) {
+      const d = dto.document.replace(/\D/g, '');
+      b.document = d || null;
+    }
+    if (dto.address !== undefined) {
+      b.address = { ...(b.address ?? {}), ...dto.address };
+    }
+    if (dto.inscricaoMunicipal !== undefined) {
+      b.inscricaoMunicipal = dto.inscricaoMunicipal.trim() || null;
+    }
+    if (dto.inscricaoEstadual !== undefined) {
+      b.inscricaoEstadual = dto.inscricaoEstadual.trim() || null;
+    }
+    if (dto.taxRegime !== undefined) {
+      b.taxRegime = dto.taxRegime;
+    }
+    if (dto.cityIbgeCode !== undefined) {
+      b.cityIbgeCode = dto.cityIbgeCode;
+    }
+    if (dto.fiscalConfig !== undefined) {
+      b.fiscalConfig = { ...(b.fiscalConfig ?? {}), ...dto.fiscalConfig };
+    }
+
+    return this.businesses.save(b);
   }
 }

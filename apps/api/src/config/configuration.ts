@@ -33,4 +33,10 @@ export default () => ({
     sandbox: process.env.PLUGNOTAS_SANDBOX !== 'false',
     webhookSecret: process.env.PLUGNOTAS_WEBHOOK_SECRET ?? '',
   },
+  /** Consulta CNPJ — https://api.invertexto.com (cadastro ERP) */
+  cnpj: {
+    apiToken: process.env.CNPJ_API_TOKEN ?? '',
+    apiBaseUrl:
+      process.env.CNPJ_API_BASE_URL ?? 'https://api.invertexto.com/v1/cnpj',
+  },
 });

@@ -9,6 +9,11 @@ export const metadata: Metadata = {
 
 const modules = [
   {
+    href: "/erp/cadastrar-negocio",
+    title: "Cadastrar negócio",
+    desc: "CNPJ, consulta Receita e solicitação de acesso ao ERP.",
+  },
+  {
     href: "/erp/pdv",
     title: "PDV",
     desc: "Ponto de venda: catálogo rápido e cupom (touch e desktop).",
@@ -42,6 +47,11 @@ const modules = [
     href: "/erp/financeiro",
     title: "Financeiro",
     desc: "Contas a receber, a pagar e fluxo de caixa.",
+  },
+  {
+    href: "/erp/dados-fiscais",
+    title: "Dados fiscais",
+    desc: "Emitente, endereço, inscrições e parâmetros NFS-e antes de emitir nota.",
   },
 ] as const;
 

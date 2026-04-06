@@ -24,9 +24,14 @@ export function ErpBusinessSelector() {
     return (
       <div className="mb-4 rounded-btn border border-municipal-200 bg-municipal-50 px-4 py-3 text-sm text-municipal-800">
         Você ainda não possui um negócio cadastrado no ERP.{" "}
+        <a href="/erp/cadastrar-negocio" className="font-semibold underline hover:no-underline">
+          Cadastrar com CNPJ
+        </a>{" "}
+        ou{" "}
         <a href="/erp" className="font-semibold underline hover:no-underline">
-          Saiba como começar.
+          visão geral do ERP
         </a>
+        .
       </div>
     );
   }

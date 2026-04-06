@@ -55,6 +55,22 @@ export class ErpFiscalController {
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)
   @ApiBearerAuth()
   @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Get('readiness')
+  @ApiOperation({
+    summary:
+      'Checklist de dados do emitente para NFS-e ou NF-e (query type=nfse|nfe)',
+  })
+  readiness(
+    @SelectedBusiness() business: ErpBusiness,
+    @Query('type') typeStr?: string,
+  ) {
+    const type = typeStr === 'nfe' ? 'nfe' : 'nfse';
+    return this.svc.getEmitReadiness(business, type);
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
   @Post('emit')
   @ApiOperation({ summary: 'Emitir nota fiscal a partir de pedido confirmado' })
   emit(
@@ -62,6 +78,22 @@ export class ErpFiscalController {
     @Body() dto: EmitFiscalDto,
   ) {
     return this.svc.emitFromOrder(business, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Post('register-emitente')
+  @ApiOperation({
+    summary:
+      'Cadastrar emitente no PlugNotas (POST /empresa na API deles). Query force=true reenvia.',
+  })
+  registerEmitente(
+    @SelectedBusiness() business: ErpBusiness,
+    @Query('force') forceStr?: string,
+  ) {
+    const force = forceStr === 'true' || forceStr === '1';
+    return this.svc.registerEmitentePlugnotas(business, { force });
   }
 
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)

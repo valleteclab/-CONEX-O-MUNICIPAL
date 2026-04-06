@@ -1,21 +1,26 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DirectoryListing } from '../entities/directory-listing.entity';
 import { ErpBusiness } from '../entities/erp-business.entity';
+import { ErpFiscalService } from '../erp/services/erp-fiscal.service';
 import { AdminModerationActionDto } from './dto/admin-moderation-action.dto';
 
 @Injectable()
 export class PlatformAdminService {
+  private readonly logger = new Logger(PlatformAdminService.name);
+
   constructor(
     @InjectRepository(DirectoryListing)
     private readonly listings: Repository<DirectoryListing>,
     @InjectRepository(ErpBusiness)
     private readonly erpBusinesses: Repository<ErpBusiness>,
+    private readonly erpFiscal: ErpFiscalService,
   ) {}
 
   async listDirectoryListings(query: {
@@ -128,6 +133,16 @@ export class PlatformAdminService {
       default:
         throw new BadRequestException('Ação inválida para o ERP');
     }
-    return this.erpBusinesses.save(row);
+    const saved = await this.erpBusinesses.save(row);
+    if (dto.action === 'approve') {
+      try {
+        await this.erpFiscal.registerEmitentePlugnotas(saved, { force: false });
+      } catch (err) {
+        this.logger.warn(
+          `Registro PlugNotas pós-aprovação negócio ${saved.id}: ${(err as Error).message}`,
+        );
+      }
+    }
+    return saved;
   }
 }

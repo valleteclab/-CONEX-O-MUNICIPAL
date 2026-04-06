@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateErpBusinessDto {
   @ApiProperty({ example: 'Comércio Exemplo Ltda' })
@@ -19,4 +26,41 @@ export class CreateErpBusinessDto {
   @IsString()
   @MaxLength(20)
   document?: string;
+
+  @ApiPropertyOptional({ description: 'Endereço do estabelecimento (ex.: consulta CNPJ)' })
+  @IsOptional()
+  @IsObject()
+  address?: Record<string, string>;
+
+  @ApiPropertyOptional({ description: 'Código IBGE do município (7 dígitos), se já souber' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  cityIbgeCode?: string;
+
+  @ApiPropertyOptional({
+    enum: [
+      'mei',
+      'simples_nacional',
+      'simples_nacional_excesso',
+      'lucro_presumido',
+      'lucro_real',
+    ],
+  })
+  @IsOptional()
+  @IsIn([
+    'mei',
+    'simples_nacional',
+    'simples_nacional_excesso',
+    'lucro_presumido',
+    'lucro_real',
+  ])
+  taxRegime?: string;
+
+  @ApiPropertyOptional({
+    description: 'Mesclado em fiscal_config (ex.: cnae sugerido pela consulta CNPJ)',
+  })
+  @IsOptional()
+  @IsObject()
+  fiscalConfig?: Record<string, unknown>;
 }

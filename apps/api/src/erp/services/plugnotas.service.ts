@@ -109,7 +109,10 @@ export class PlugNotasService {
     );
   }
 
-  /** Registrar ou atualizar empresa emitente no PlugNotas */
+  /**
+   * Cadastro/atualização do emitente no PlugNotas (empresa que emitirá NF-e/NFS-e).
+   * Documentação: https://docs.plugnotas.com.br/ — autenticação `x-api-key` no header.
+   */
   async registerEmpresa(payload: object): Promise<void> {
     await this.request<unknown>('POST', '/empresa', payload);
   }

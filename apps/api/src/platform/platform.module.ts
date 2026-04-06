@@ -13,9 +13,11 @@ import { PlatformCoursesService } from './platform-courses.service';
 import { PlatformLessonsService } from './platform-lessons.service';
 import { PlatformLiveSessionsService } from './platform-live-sessions.service';
 import { YoutubePlaylistService } from './youtube-playlist.service';
+import { ErpModule } from '../erp/erp.module';
 
 @Module({
   imports: [
+    ErpModule,
     TypeOrmModule.forFeature([
       DirectoryListing,
       ErpBusiness,

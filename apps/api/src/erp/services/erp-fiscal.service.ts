@@ -15,6 +15,12 @@ import { ErpParty } from '../../entities/erp-party.entity';
 import { PlugNotasService, PlugNotasDocumentResponse } from './plugnotas.service';
 import { EmitFiscalDto } from '../dto/fiscal.dto';
 
+export type FiscalReadinessCheck = {
+  id: string;
+  ok: boolean;
+  message: string;
+};
+
 /** Status reportado pelo PlugNotas normalizado para nosso domínio */
 function normalizeStatus(raw: string): ErpFiscalDocument['status'] {
   const s = (raw ?? '').toUpperCase();
@@ -69,6 +75,83 @@ export class ErpFiscalService {
     return doc;
   }
 
+  /**
+   * Registra o emitente no PlugNotas via API (`POST /empresa`), conforme documentação oficial.
+   * Idempotente: se `fiscalConfig.plugnotasRegistered` já for true, não reenvia (use `force`).
+   */
+  async registerEmitentePlugnotas(
+    business: ErpBusiness,
+    options?: { force?: boolean },
+  ): Promise<{
+    ok: true;
+    alreadyRegistered: boolean;
+    message: string;
+  }> {
+    const fc = (business.fiscalConfig ?? {}) as Record<string, unknown>;
+    if (fc['plugnotasRegistered'] && !options?.force) {
+      return {
+        ok: true,
+        alreadyRegistered: true,
+        message:
+          'Emitente já registrado no PlugNotas. Use POST .../register-emitente?force=true para reenviar o cadastro.',
+      };
+    }
+    const docDigits = (business.document ?? '').replace(/\D/g, '');
+    if (docDigits.length !== 11 && docDigits.length !== 14) {
+      throw new BadRequestException(
+        'Informe CNPJ ou CPF válido do negócio antes de registrar no PlugNotas.',
+      );
+    }
+    await this.plugnotas.registerEmpresa(this.buildPlugnotasEmpresaPayload(business));
+    const newFc = { ...fc, plugnotasRegistered: true };
+    await this.businesses.update(business.id, { fiscalConfig: newFc });
+    business.fiscalConfig = newFc;
+    return {
+      ok: true,
+      alreadyRegistered: false,
+      message: 'Empresa cadastrada/atualizada no PlugNotas.',
+    };
+  }
+
+  /** Checklist para a UI — não inclui itens do pedido (NCM); use antes de emitir para NF-e. */
+  getEmitReadiness(
+    business: ErpBusiness,
+    type: 'nfse' | 'nfe',
+  ): {
+    type: 'nfse' | 'nfe';
+    sandbox: boolean;
+    ready: boolean;
+    checks: FiscalReadinessCheck[];
+    productionNotes: string[];
+  } {
+    const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
+    const checks = this.buildBusinessChecks(business, type);
+    const ready = checks.every((c) => c.ok);
+    const productionNotes: string[] = [];
+    if (sandbox) {
+      productionNotes.push(
+        'Ambiente sandbox PlugNotas: use para testes de integração; validade fiscal exige produção.',
+      );
+    } else {
+      productionNotes.push(
+        'Produção: cadastre o certificado digital A1 do CNPJ no PlugNotas (painel ou API de certificados).',
+      );
+      productionNotes.push(
+        'Configure API_PUBLIC_URL na API para receber webhooks de autorização (recomendado).',
+      );
+    }
+    if (type === 'nfe') {
+      productionNotes.push(
+        'NF-e: cada item do pedido precisa de produto com NCM de 8 dígitos no cadastro.',
+      );
+    } else {
+      productionNotes.push(
+        'NFS-e: código de serviço e CNAE padrão podem ser ajustados em fiscalConfig.nfse (lista de serviço municipal).',
+      );
+    }
+    return { type, sandbox, ready, checks, productionNotes };
+  }
+
   async emitFromOrder(
     business: ErpBusiness,
     dto: EmitFiscalDto,
@@ -101,6 +184,8 @@ export class ErpFiscalService {
         'Somente pedidos confirmados podem gerar nota fiscal',
       );
     }
+
+    this.assertEmitPrerequisites(business, order, type);
 
     // Registrar empresa no PlugNotas (lazy — apenas quando ainda não registrado)
     await this.ensureEmpresaRegistered(business);
@@ -208,6 +293,134 @@ export class ErpFiscalService {
     this.logger.log(
       `Webhook PlugNotas: doc ${doc.id} → status ${doc.status}`,
     );
+  }
+
+  private assertEmitPrerequisites(
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+    type: 'nfse' | 'nfe',
+  ): void {
+    const errors: string[] = [];
+    for (const c of this.buildBusinessChecks(business, type)) {
+      if (!c.ok) errors.push(c.message);
+    }
+    if (order.party) {
+      const pd = (order.party.document ?? '').replace(/\D/g, '');
+      if (!pd || (pd.length !== 11 && pd.length !== 14)) {
+        errors.push(
+          'Cliente do pedido sem CPF/CNPJ válido — atualize o cadastro do cliente.',
+        );
+      }
+    }
+    if (type === 'nfe') {
+      for (const item of order.items ?? []) {
+        const ncm = (item.product?.ncm ?? '').replace(/\D/g, '');
+        if (ncm.length !== 8) {
+          errors.push(
+            `Produto "${item.product?.name ?? item.productId}": NCM obrigatório (8 dígitos) para NF-e.`,
+          );
+        }
+      }
+    }
+    if (errors.length) {
+      throw new BadRequestException({
+        message: 'Dados fiscais incompletos para emissão.',
+        errors,
+      });
+    }
+  }
+
+  private buildBusinessChecks(
+    business: ErpBusiness,
+    type: 'nfse' | 'nfe',
+  ): FiscalReadinessCheck[] {
+    const checks: FiscalReadinessCheck[] = [];
+    const docDigits = (business.document ?? '').replace(/\D/g, '');
+    checks.push({
+      id: 'emitente_documento',
+      ok: docDigits.length === 11 || docDigits.length === 14,
+      message:
+        docDigits.length === 11 || docDigits.length === 14
+          ? 'CNPJ/CPF do negócio válido.'
+          : 'Informe CNPJ (14 dígitos) ou CPF (11 dígitos) do negócio.',
+    });
+    const nome = (business.legalName ?? business.tradeName ?? '').trim();
+    checks.push({
+      id: 'emitente_razao',
+      ok: nome.length >= 2,
+      message: nome.length >= 2 ? 'Razão social / nome fantasia preenchido.' : 'Informe razão social ou nome fantasia.',
+    });
+    const addr = (business.address ?? {}) as Record<string, string>;
+    const logradouro = (addr['logradouro'] ?? '').trim();
+    const numero = (addr['numero'] ?? '').trim();
+    const cep = (addr['cep'] ?? '').replace(/\D/g, '');
+    checks.push({
+      id: 'emitente_logradouro',
+      ok: logradouro.length >= 3,
+      message:
+        logradouro.length >= 3
+          ? 'Logradouro do emitente informado.'
+          : 'Preencha logradouro do endereço do negócio.',
+    });
+    checks.push({
+      id: 'emitente_numero',
+      ok: numero.length >= 1,
+      message:
+        numero.length >= 1
+          ? 'Número do endereço informado.'
+          : 'Preencha o número do endereço do negócio.',
+    });
+    checks.push({
+      id: 'emitente_cep',
+      ok: cep.length === 8,
+      message:
+        cep.length === 8
+          ? 'CEP do emitente com 8 dígitos.'
+          : 'CEP do emitente deve ter 8 dígitos.',
+    });
+    const ibge = business.cityIbgeCode ?? '';
+    checks.push({
+      id: 'emitente_ibge',
+      ok: /^\d{7}$/.test(ibge),
+      message: /^\d{7}$/.test(ibge)
+        ? 'Código IBGE do município (7 dígitos) informado.'
+        : 'Informe o código IBGE de 7 dígitos do município do emitente.',
+    });
+
+    if (type === 'nfse') {
+      const im = (business.inscricaoMunicipal ?? '').trim();
+      checks.push({
+        id: 'nfse_im',
+        ok: im.length >= 1,
+        message: im.length >= 1
+          ? 'Inscrição municipal informada (NFS-e).'
+          : 'Inscrição municipal é obrigatória para NFS-e.',
+      });
+    } else {
+      const uf = (addr['uf'] ?? '').trim().toUpperCase();
+      checks.push({
+        id: 'nfe_uf',
+        ok: uf.length === 2,
+        message:
+          uf.length === 2
+            ? 'UF do emitente informada (NF-e).'
+            : 'Informe a UF (2 letras) no endereço do negócio para NF-e.',
+      });
+      const ie = (business.inscricaoEstadual ?? '').trim();
+      const mei = business.taxRegime === 'mei';
+      checks.push({
+        id: 'nfe_ie',
+        ok: ie.length >= 1 || mei,
+        message:
+          ie.length >= 1
+            ? 'Inscrição estadual informada (ou confirme ISENTO no cadastro).'
+            : mei
+              ? 'Regime MEI: IE pode ficar em branco; confirme com o seu contador em produção.'
+              : 'Informe inscrição estadual (ou ISENTO) para NF-e.',
+      });
+    }
+
+    return checks;
   }
 
   // ─── Payload builders ───────────────────────────────────────────────
@@ -340,43 +553,45 @@ export class ErpFiscalService {
     }
   }
 
-  /** Registra a empresa no PlugNotas na primeira emissão */
+  /** Registra a empresa no PlugNotas na primeira emissão (falha não bloqueia emissão em sandbox). */
   private async ensureEmpresaRegistered(business: ErpBusiness): Promise<void> {
     const fc = (business.fiscalConfig ?? {}) as Record<string, unknown>;
     if (fc['plugnotasRegistered']) return;
-    if (!business.document) return; // sem CNPJ não registra
-
-    const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
-    const apiBase = this.config.get<string>('fiscal.plugnotasBaseUrl', '');
-    // Monta URL do webhook usando a URL base da API (Railway injeta HOST)
-    const apiHost = process.env.API_PUBLIC_URL ?? '';
-    const webhookUrl = apiHost
-      ? `${apiHost}/api/v1/erp/fiscal/webhook`
-      : undefined;
+    const docDigits = (business.document ?? '').replace(/\D/g, '');
+    if (docDigits.length !== 11 && docDigits.length !== 14) return;
 
     try {
-      await this.plugnotas.registerEmpresa({
-        cpfCnpj: business.document.replace(/\D/g, ''),
-        razaoSocial: business.legalName ?? business.tradeName,
-        nfse: { ativo: true, numero: 1, serie: '1' },
-        nfe: { ativo: true, numero: 1, serie: '1' },
-        config: {
-          producao: !sandbox,
-          ...(webhookUrl ? { webhook: webhookUrl } : {}),
-        },
-      });
+      await this.plugnotas.registerEmpresa(this.buildPlugnotasEmpresaPayload(business));
     } catch (err) {
-      // Falha no registro da empresa não bloqueia a emissão no sandbox
       this.logger.warn(
         `Não foi possível registrar empresa ${business.id} no PlugNotas: ${(err as Error).message}`,
       );
       return;
     }
 
-    // Marcar como registrado para não repetir
     await this.businesses.update(business.id, {
       fiscalConfig: { ...fc, plugnotasRegistered: true },
     });
     business.fiscalConfig = { ...fc, plugnotasRegistered: true };
+  }
+
+  /** Payload `POST /empresa` — alinhar com https://docs.plugnotas.com.br/ */
+  private buildPlugnotasEmpresaPayload(business: ErpBusiness): object {
+    const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
+    const apiHost = process.env.API_PUBLIC_URL ?? '';
+    const webhookUrl = apiHost
+      ? `${apiHost}/api/v1/erp/fiscal/webhook`
+      : undefined;
+
+    return {
+      cpfCnpj: (business.document ?? '').replace(/\D/g, ''),
+      razaoSocial: business.legalName ?? business.tradeName,
+      nfse: { ativo: true, numero: 1, serie: '1' },
+      nfe: { ativo: true, numero: 1, serie: '1' },
+      config: {
+        producao: !sandbox,
+        ...(webhookUrl ? { webhook: webhookUrl } : {}),
+      },
+    };
   }
 }
