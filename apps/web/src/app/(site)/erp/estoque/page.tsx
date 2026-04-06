@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
+import type { ErpListResponse } from "@/lib/erp-list";
 
 type StockBalance = {
   id: string;
@@ -147,13 +148,14 @@ export default function ErpEstoquePage() {
       setMovementsLoading(true);
       setMovementsError(null);
       const currentSkip = reset ? 0 : movSkip;
-      const res = await erpFetch<StockMovement[]>(
+      const res = await erpFetch<ErpListResponse<StockMovement>>(
         `/api/v1/erp/stock/movements?take=${TAKE}&skip=${currentSkip}`,
       );
       if (res.ok && res.data) {
-        setMovements((prev) => (reset ? res.data! : [...prev, ...res.data!]));
-        setMovSkip(currentSkip + res.data.length);
-        setMovHasMore(res.data.length === TAKE);
+        const { items, total } = res.data;
+        setMovements((prev) => (reset ? items : [...prev, ...items]));
+        setMovSkip(currentSkip + items.length);
+        setMovHasMore(currentSkip + items.length < total);
       } else {
         setMovementsError(res.error ?? "Erro ao carregar movimentações.");
       }
@@ -168,8 +170,8 @@ export default function ErpEstoquePage() {
   }, []);
 
   const loadProducts = useCallback(async () => {
-    const res = await erpFetch<Product[]>("/api/v1/erp/products?take=100&skip=0");
-    if (res.ok && res.data) setProducts(res.data);
+    const res = await erpFetch<ErpListResponse<Product>>("/api/v1/erp/products?take=100&skip=0");
+    if (res.ok && res.data) setProducts(res.data.items);
   }, []);
 
   useEffect(() => {

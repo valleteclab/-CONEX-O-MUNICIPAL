@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
+import type { ErpListResponse } from "@/lib/erp-list";
 
 type Product = {
   id: string;
@@ -86,11 +87,14 @@ export default function ErpProdutosPage() {
     setIsLoading(true);
     setError(null);
     const currentSkip = reset ? 0 : skip;
-    const res = await erpFetch<Product[]>(`/api/v1/erp/products?take=${TAKE}&skip=${currentSkip}`);
+    const res = await erpFetch<ErpListResponse<Product>>(
+      `/api/v1/erp/products?take=${TAKE}&skip=${currentSkip}`,
+    );
     if (res.ok && res.data) {
-      setProducts((prev) => (reset ? res.data! : [...prev, ...res.data!]));
-      setSkip(currentSkip + res.data.length);
-      setHasMore(res.data.length === TAKE);
+      const { items, total } = res.data;
+      setProducts((prev) => (reset ? items : [...prev, ...items]));
+      setSkip(currentSkip + items.length);
+      setHasMore(currentSkip + items.length < total);
     } else {
       setError(res.error ?? "Erro ao carregar produtos.");
     }

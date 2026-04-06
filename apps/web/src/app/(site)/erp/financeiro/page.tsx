@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
+import type { ErpListResponse } from "@/lib/erp-list";
 
 type FinanceDoc = {
   id: string;
@@ -153,8 +154,10 @@ export default function ErpFinanceiroPage() {
   const loadAr = useCallback(async () => {
     setArLoading(true);
     setArError(null);
-    const res = await erpFetch<FinanceDoc[]>(`/api/v1/erp/finance/ar?take=${TAKE}&skip=0`);
-    if (res.ok && res.data) setAr(res.data);
+    const res = await erpFetch<ErpListResponse<FinanceDoc>>(
+      `/api/v1/erp/finance/ar?take=${TAKE}&skip=0`,
+    );
+    if (res.ok && res.data) setAr(res.data.items);
     else setArError(res.error ?? "Erro ao carregar contas a receber.");
     setArLoading(false);
   }, []);
@@ -162,8 +165,10 @@ export default function ErpFinanceiroPage() {
   const loadAp = useCallback(async () => {
     setApLoading(true);
     setApError(null);
-    const res = await erpFetch<FinanceDoc[]>(`/api/v1/erp/finance/ap?take=${TAKE}&skip=0`);
-    if (res.ok && res.data) setAp(res.data);
+    const res = await erpFetch<ErpListResponse<FinanceDoc>>(
+      `/api/v1/erp/finance/ap?take=${TAKE}&skip=0`,
+    );
+    if (res.ok && res.data) setAp(res.data.items);
     else setApError(res.error ?? "Erro ao carregar contas a pagar.");
     setApLoading(false);
   }, []);
@@ -171,8 +176,10 @@ export default function ErpFinanceiroPage() {
   const loadCash = useCallback(async () => {
     setCashLoading(true);
     setCashError(null);
-    const res = await erpFetch<CashEntry[]>(`/api/v1/erp/finance/cash?take=${TAKE}&skip=0`);
-    if (res.ok && res.data) setCash(res.data);
+    const res = await erpFetch<ErpListResponse<CashEntry>>(
+      `/api/v1/erp/finance/cash?take=${TAKE}&skip=0`,
+    );
+    if (res.ok && res.data) setCash(res.data.items);
     else setCashError(res.error ?? "Erro ao carregar fluxo de caixa.");
     setCashLoading(false);
   }, []);
@@ -183,8 +190,8 @@ export default function ErpFinanceiroPage() {
   }, []);
 
   const loadParties = useCallback(async () => {
-    const res = await erpFetch<Party[]>("/api/v1/erp/parties?take=100&skip=0");
-    if (res.ok && res.data) setParties(res.data);
+    const res = await erpFetch<ErpListResponse<Party>>("/api/v1/erp/parties?take=100&skip=0");
+    if (res.ok && res.data) setParties(res.data.items);
   }, []);
 
   useEffect(() => {

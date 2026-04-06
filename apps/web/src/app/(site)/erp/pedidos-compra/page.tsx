@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
+import type { ErpListResponse } from "@/lib/erp-list";
 
 type PurchaseOrder = {
   id: string;
@@ -75,13 +76,14 @@ export default function ErpPedidosCompraPage() {
       setIsLoading(true);
       setError(null);
       const currentSkip = reset ? 0 : skip;
-      const res = await erpFetch<PurchaseOrder[]>(
+      const res = await erpFetch<ErpListResponse<PurchaseOrder>>(
         `/api/v1/erp/purchase-orders?take=${TAKE}&skip=${currentSkip}`,
       );
       if (res.ok && res.data) {
-        setOrders((prev) => (reset ? res.data! : [...prev, ...res.data!]));
-        setSkip(currentSkip + res.data.length);
-        setHasMore(res.data.length === TAKE);
+        const { items, total } = res.data;
+        setOrders((prev) => (reset ? items : [...prev, ...items]));
+        setSkip(currentSkip + items.length);
+        setHasMore(currentSkip + items.length < total);
       } else {
         setError(res.error ?? "Erro ao carregar pedidos.");
       }
@@ -92,12 +94,14 @@ export default function ErpPedidosCompraPage() {
 
   const loadSupport = useCallback(async () => {
     const [pRes, parRes] = await Promise.all([
-      erpFetch<Product[]>("/api/v1/erp/products?take=100&skip=0"),
-      erpFetch<Party[]>("/api/v1/erp/parties?take=100&skip=0"),
+      erpFetch<ErpListResponse<Product>>("/api/v1/erp/products?take=100&skip=0"),
+      erpFetch<ErpListResponse<Party>>("/api/v1/erp/parties?take=100&skip=0"),
     ]);
-    if (pRes.ok && pRes.data) setProducts(pRes.data);
+    if (pRes.ok && pRes.data) setProducts(pRes.data.items);
     if (parRes.ok && parRes.data)
-      setSuppliers(parRes.data.filter((p) => p.type === "supplier" || p.type === "both"));
+      setSuppliers(
+        parRes.data.items.filter((p) => p.type === "supplier" || p.type === "both"),
+      );
   }, []);
 
   useEffect(() => {

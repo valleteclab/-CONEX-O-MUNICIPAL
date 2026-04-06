@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { erpFetch } from "@/lib/api-browser";
+import type { ErpListResponse } from "@/lib/erp-list";
 import { cn } from "@/lib/cn";
 
 type ApiProduct = {
@@ -51,9 +52,9 @@ export function PdvPanel() {
     async function load() {
       setIsLoadingProducts(true);
       setLoadError(null);
-      const res = await erpFetch<ApiProduct[]>("/api/v1/erp/products?take=100&skip=0");
-      if (res.ok && res.data) {
-        setProducts(res.data.filter((p) => p.isActive).map(mapProduct));
+      const res = await erpFetch<ErpListResponse<ApiProduct>>("/api/v1/erp/products?take=100&skip=0");
+      if (res.ok && res.data?.items) {
+        setProducts(res.data.items.filter((p) => p.isActive).map(mapProduct));
       } else {
         setLoadError(res.error ?? "Erro ao carregar produtos.");
       }
