@@ -16,6 +16,10 @@ import { AcademyBadgeDefinition } from '../entities/academy-badge-definition.ent
 import { AcademyUserBadge } from '../entities/academy-user-badge.entity';
 import { AcademyLiveSession } from '../entities/academy-live-session.entity';
 import { Tenant } from '../entities/tenant.entity';
+import {
+  youtubeThumbnailUrlFromVideoId,
+  youtubeVideoIdFromUrl,
+} from '../common/youtube-thumb';
 import { AcademyCertificateService } from './academy-certificate.service';
 import { ListAcademyQueryDto } from './dto/list-academy-query.dto';
 import { UpdateEnrollmentProgressDto } from './dto/update-enrollment-progress.dto';
@@ -71,8 +75,12 @@ export class AcademyService {
       .orderBy('c.title', 'ASC')
       .skip(skip)
       .take(take);
+    if (query.category?.trim()) {
+      qb.andWhere('c.category = :cat', { cat: query.category.trim() });
+    }
     const [items, total] = await qb.getManyAndCount();
     await this.attachLessonCounts(items);
+    await this.attachCoverThumbnails(items);
     return { items, total };
   }
 
@@ -87,7 +95,23 @@ export class AcademyService {
       take: n,
     });
     await this.attachLessonCounts(items);
+    await this.attachCoverThumbnails(items);
     return { items };
+  }
+
+  /** Categorias distintas entre cursos publicados (filtros no portal). */
+  async listCategoryLabels(tenantId: string): Promise<{ items: string[] }> {
+    const rows = await this.courses
+      .createQueryBuilder('c')
+      .select('c.category', 'category')
+      .where('c.tenantId = :tenantId', { tenantId })
+      .andWhere('c.isPublished = true')
+      .andWhere('c.category IS NOT NULL')
+      .andWhere("TRIM(c.category) != ''")
+      .groupBy('c.category')
+      .orderBy('c.category', 'ASC')
+      .getRawMany<{ category: string }>();
+    return { items: rows.map((r) => r.category).filter(Boolean) };
   }
 
   /** Expõe `lessonCount` em cada curso (catálogo / trilhas). */
@@ -110,6 +134,30 @@ export class AcademyService {
     }
   }
 
+  /** Miniatura = primeiro vídeo da trilha (menor sort_order). */
+  private async attachCoverThumbnails(courses: AcademyCourse[]): Promise<void> {
+    if (!courses.length) {
+      return;
+    }
+    const ids = courses.map((c) => c.id);
+    const allLessons = await this.lessons.find({
+      where: { courseId: In(ids) },
+      order: { sortOrder: 'ASC', title: 'ASC' },
+    });
+    const firstByCourse = new Map<string, (typeof allLessons)[0]>();
+    for (const l of allLessons) {
+      if (!firstByCourse.has(l.courseId)) {
+        firstByCourse.set(l.courseId, l);
+      }
+    }
+    for (const c of courses) {
+      const l = firstByCourse.get(c.id);
+      const vid = youtubeVideoIdFromUrl(l?.videoUrl ?? null);
+      (c as AcademyCourse & { thumbnailUrl?: string | null }).thumbnailUrl =
+        vid ? youtubeThumbnailUrlFromVideoId(vid) : null;
+    }
+  }
+
   async getCourseBySlug(
     tenantId: string,
     slug: string,
@@ -124,6 +172,9 @@ export class AcademyService {
       where: { courseId: course.id },
       order: { sortOrder: 'ASC', title: 'ASC' },
     });
+    const vid = youtubeVideoIdFromUrl(lessonRows[0]?.videoUrl ?? null);
+    (course as AcademyCourse & { thumbnailUrl?: string | null }).thumbnailUrl =
+      vid ? youtubeThumbnailUrlFromVideoId(vid) : null;
     return { course, lessons: lessonRows };
   }
 

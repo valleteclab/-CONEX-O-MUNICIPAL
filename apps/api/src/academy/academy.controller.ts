@@ -40,6 +40,15 @@ export class AcademyController {
     return this.academy.listFeatured(tenantId, Number.isFinite(take) ? take : 6);
   }
 
+  @Get('courses/categories')
+  @ApiOperation({
+    summary: 'Listar categorias distintas dos cursos publicados (filtros)',
+  })
+  async courseCategories(@Query('tenant') tenantSlug: string | undefined) {
+    const tenantId = await this.academy.resolveTenantId(tenantSlug);
+    return this.academy.listCategoryLabels(tenantId);
+  }
+
   @Get('live-sessions')
   @ApiOperation({ summary: 'Próximas aulas ao vivo publicadas (por município)' })
   async publicLiveSessions(

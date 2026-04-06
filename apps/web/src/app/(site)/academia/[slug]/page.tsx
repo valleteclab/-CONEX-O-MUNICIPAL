@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AcademyLessonTracker } from "@/components/academia/academy-lesson-tracker";
@@ -51,6 +52,19 @@ export default async function AcademiaCursoPage({ params }: Props) {
           ← Voltar à Academia
         </Link>
       </p>
+
+      {course.thumbnailUrl ? (
+        <div className="relative mb-8 aspect-[21/9] w-full overflow-hidden rounded-card border border-marinha-900/8 shadow-card">
+          <Image
+            src={course.thumbnailUrl}
+            alt=""
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+        </div>
+      ) : null}
 
       <Card className="mb-8 p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

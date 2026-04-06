@@ -8,6 +8,8 @@ export type AcademyCourseDto = {
   isFeatured: boolean;
   /** Número de aulas na trilha (quando exposto pela API) */
   lessonCount?: number;
+  /** Capa derivada do primeiro vídeo YouTube da trilha */
+  thumbnailUrl?: string | null;
 };
 
 export type AcademyLessonDto = {

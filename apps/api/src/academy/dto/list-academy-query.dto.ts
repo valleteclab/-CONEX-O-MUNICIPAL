@@ -20,4 +20,12 @@ export class ListAcademyQueryDto {
   @Type(() => Number)
   @Min(0)
   skip?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar por categoria (valor exato, como gravado no curso)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  category?: string;
 }
