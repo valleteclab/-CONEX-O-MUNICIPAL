@@ -323,10 +323,10 @@ export class ErpFiscalService {
       }
     }
     if (errors.length) {
-      throw new BadRequestException({
-        message: 'Dados fiscais incompletos para emissão.',
-        errors,
-      });
+      throw new BadRequestException([
+        'Dados fiscais incompletos para emissão.',
+        ...errors,
+      ]);
     }
   }
 

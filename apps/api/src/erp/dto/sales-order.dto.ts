@@ -47,6 +47,7 @@ export class CreateSalesOrderDto {
 
 export class PatchSalesOrderStatusDto {
   @ApiProperty({ enum: ['draft', 'confirmed', 'cancelled'] })
+  @IsString()
   @IsIn(['draft', 'confirmed', 'cancelled'])
   status!: 'draft' | 'confirmed' | 'cancelled';
 }

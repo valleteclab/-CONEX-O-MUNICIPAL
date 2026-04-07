@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { erpFetch } from "@/lib/api-browser";
@@ -122,9 +123,14 @@ export function ErpFiscalEmitModal({ open, onClose, onSuccess, preSelectedOrderI
 
         <div className="space-y-4 px-6 py-5">
           {error ? (
-            <p className="rounded-btn border border-alerta-500/30 bg-alerta-500/10 px-3 py-2 text-sm text-alerta-600">
-              {error}
-            </p>
+            <div className="rounded-btn border border-alerta-500/30 bg-alerta-500/10 px-3 py-2 text-sm text-alerta-600">
+              <p className="whitespace-pre-line leading-relaxed">{error}</p>
+              <p className="mt-3 text-xs">
+                <Link href="/erp/dados-fiscais" className="font-semibold underline">
+                  Abrir dados fiscais do negócio
+                </Link>
+              </p>
+            </div>
           ) : null}
 
           {result ? (

@@ -22,7 +22,13 @@ type SalesOrder = {
   party?: { name: string };
 };
 
-type Product = { id: string; name: string; sku: string; price: string };
+type Product = {
+  id: string;
+  name: string;
+  sku: string;
+  price: string;
+  kind?: "product" | "service";
+};
 type Party = { id: string; name: string; type: string };
 
 type OrderLine = { productId: string; qty: string; unitPrice: string };
@@ -74,6 +80,7 @@ export default function ErpPedidosVendaPage() {
   const [partyId, setPartyId] = useState("");
   const [lines, setLines] = useState<OrderLine[]>([{ productId: "", qty: "1", unitPrice: "0" }]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusPatchError, setStatusPatchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const businessId = useSelectedBusinessId();
@@ -125,12 +132,15 @@ export default function ErpPedidosVendaPage() {
   }, [businessId]);
 
   const patchStatus = async (id: string, status: "confirmed" | "cancelled") => {
+    setStatusPatchError(null);
     const res = await erpFetch(`/api/v1/erp/sales-orders/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
     if (res.ok) {
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    } else {
+      setStatusPatchError(res.error ?? "Não foi possível alterar o status do pedido.");
     }
   };
 
@@ -254,6 +264,17 @@ export default function ErpPedidosVendaPage() {
         badge="Vendas"
       />
 
+      {statusPatchError && (
+        <div className="mb-4 rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">Não foi possível confirmar ou cancelar</p>
+          <p className="mt-1">{statusPatchError}</p>
+          <p className="mt-2 text-xs text-amber-800">
+            Dica: ao confirmar, o sistema baixa estoque dos itens tipo <strong>produto</strong>. Cadastre
+            entradas em Estoque ou use itens tipo <strong>serviço</strong> para não exigir saldo.
+          </p>
+        </div>
+      )}
+
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card variant="featured">
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Pedidos</p>
@@ -346,6 +367,7 @@ export default function ErpPedidosVendaPage() {
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.sku} — {p.name}
+                    {p.kind === "service" ? " (serviço — sem baixa de estoque)" : ""}
                   </option>
                 ))}
               </select>

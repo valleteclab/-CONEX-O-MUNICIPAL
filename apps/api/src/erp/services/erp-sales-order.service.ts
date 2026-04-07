@@ -176,6 +176,11 @@ export class ErpSalesOrderService {
     }
 
     for (const item of order.items) {
+      const nome = item.product?.name ?? item.productId;
+      if (item.product?.kind === 'service') {
+        continue;
+      }
+
       let balance = await em.findOne(ErpStockBalance, {
         where: {
           businessId: business.id,
@@ -185,10 +190,16 @@ export class ErpSalesOrderService {
         },
       });
       const current = balance ? parseFloat(balance.quantity) : 0;
-      const next = current - parseFloat(item.qty);
+      const need = parseFloat(item.qty);
+      const next = current - need;
       if (next < 0) {
+        if (!balance || current === 0) {
+          throw new BadRequestException(
+            `Sem saldo de estoque para "${nome}" no local padrão. Registre uma entrada em Estoque antes de confirmar, ou cadastre o item como serviço (sem baixa).`,
+          );
+        }
         throw new BadRequestException(
-          `Estoque insuficiente para o produto ${item.product?.name ?? item.productId}`,
+          `Estoque insuficiente para "${nome}". Disponível: ${current}.`,
         );
       }
 

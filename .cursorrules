@@ -1,6 +1,7 @@
 # Conexão Municipal — contexto Cursor
 
 ## Scratchpad
+- **Último commit relevante (main):** `91ac1e0` — ERP cadastro CNPJ Invertexto, `/erp/cadastrar-negocio` + `/erp/dados-fiscais`, PlugNotas após aprovação super admin; env `CNPJ_API_TOKEN`.
 - **ERP web (2026-04):** [X] Listagens `/api/v1/erp/*` (exc. `stock/balances`, `stock/locations`, `GET /erp/businesses`) devolvem `{ items, total }` — cliente Next usa `ErpListResponse<T>` em `apps/web/src/lib/erp-list.ts` e `res.data.items` + paginação por `total`.
 - **ERP fiscal (2026-04):** [X] `PATCH/GET /erp/businesses/:id` perfil emitente; [X] `GET /erp/fiscal/readiness?type=nfse|nfe` + validação pré-emissão em `ErpFiscalService`; [X] página `/erp/dados-fiscais`; produção: certificado A1 no PlugNotas + `PLUGNOTAS_*` + `API_PUBLIC_URL`.
 - **Admin (2026-04):** [X] `/admin/erp` filtros + ações como diretório; [X] `AdminLayout` botão Sair; [X] Academia: YouTube (vídeo ou playlist `list=`); [X] `YoutubePlaylistService` + `YOUTUBE_API_KEY` (Data API v3) ou RSS fallback; trilha = várias `academy_lessons`; catálogo público com `lessonCount`; [X] Academia pública: `thumbnailUrl` (primeiro vídeo), `GET /academy/courses/categories`, filtro `category`, UI cartões + progresso (my-courses).
@@ -69,4 +70,5 @@
 - **ERP API vs web:** rotas de listagem Nest (`products`, `parties`, `sales-orders`, `purchase-orders`, `stock/movements`, `finance/*` paginado) retornam `{ items, total }`. Tratar `res.data` como array no Next causa `*.filter is not a function` e erro genérico de cliente — usar sempre `res.data.items` (e `total` para “carregar mais”).
 - **PlugNotas / NF:** emissão exige dados do emitente na BD (`erp_businesses`: document, address, cityIbgeCode, IM para NFS-e, IE/UF para NF-e); NF-e exige NCM 8 dígitos por item do pedido; certificado A1 em **produção** fica no **PlugNotas**, não no Nest — `GET /erp/fiscal/readiness` só valida cadastro interno.
 - **CNPJ (Invertexto):** `CNPJ_API_TOKEN` + opcional `CNPJ_API_BASE_URL`; nunca commitar tokens reais. Cadastro ERP: `GET /erp/cnpj/:cnpj`, aprovação super admin dispara `registerEmitentePlugnotas` (falha PlugNotas não desfaz aprovação).
+- **Pedidos de venda — confirmar:** `PATCH /erp/sales-orders/:id/status` com `{ status }` dispara baixa de estoque no local padrão; sem saldo → 400. Itens `erp_products.kind === 'service'` não baixam estoque.
 - **Go-live:** ver `docs/GO-LIVE.md` (escopo v1, checklist deploy, fases UI ERP). Home em produção não mostra bloco dev/BackendStatus; rodapé sem link ao design system em `NODE_ENV=production`.

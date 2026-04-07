@@ -2,10 +2,14 @@ import { getPublicApiBaseUrl } from "./api-public";
 import { getAccessToken, getBusinessId, getTenantId } from "./auth-storage";
 
 function formatApiError(data: unknown, raw: string, statusText: string): string {
-  if (data && typeof data === "object" && data !== null && "message" in data) {
-    const m = (data as { message: unknown }).message;
-    if (Array.isArray(m)) return m.map(String).join(", ");
-    if (typeof m === "string") return m;
+  if (data && typeof data === "object" && data !== null) {
+    const d = data as { message?: unknown; errors?: unknown };
+    const lines: string[] = [];
+    if (typeof d.message === "string") lines.push(d.message);
+    else if (Array.isArray(d.message)) lines.push(...d.message.map(String));
+    if (Array.isArray(d.errors) && d.errors.length)
+      lines.push(...d.errors.map(String));
+    if (lines.length) return lines.join("\n");
   }
   return raw || statusText;
 }
