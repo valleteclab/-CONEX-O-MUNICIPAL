@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
@@ -24,7 +25,9 @@ export default function LoginPage() {
         </Link>
       </p>
       <Card className="w-full">
-        <LoginForm />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-card bg-marinha-900/5" />}>
+          <LoginForm />
+        </Suspense>
         <p className="mt-6 border-t border-marinha-900/8 pt-6 text-center text-sm text-marinha-500">
           Não tem conta?{" "}
           <Link href="/cadastro" className="font-semibold text-municipal-700 hover:underline">

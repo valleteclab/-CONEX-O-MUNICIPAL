@@ -24,7 +24,7 @@ export function ErpBusinessSelector() {
     return (
       <div className="mb-4 rounded-btn border border-municipal-200 bg-municipal-50 px-4 py-3 text-sm text-municipal-800">
         Você ainda não possui uma empresa cadastrada na área de gestão.{" "}
-        <a href="/erp/cadastrar-negocio" className="font-semibold underline hover:no-underline">
+        <a href="/area-da-empresa/cadastro" className="font-semibold underline hover:no-underline">
           Cadastrar empresa
         </a>{" "}
         ou{" "}

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
@@ -19,7 +20,9 @@ export default function PlataformaEntrarPage() {
         badge="Equipa plataforma"
       />
       <Card className="w-full">
-        <LoginForm intent="platform" />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-card bg-marinha-900/5" />}>
+          <LoginForm intent="platform" />
+        </Suspense>
         <p className="mt-6 border-t border-marinha-900/8 pt-6 text-center text-sm text-marinha-500">
           É usuário ou empresa no município?{" "}
           <Link href="/login" className="font-semibold text-municipal-700 hover:underline">

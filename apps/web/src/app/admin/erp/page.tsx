@@ -11,6 +11,15 @@ import { cn } from "@/lib/cn";
 type ErpRow = {
   id: string;
   tradeName: string;
+  legalName?: string | null;
+  document?: string | null;
+  responsibleName?: string | null;
+  responsibleEmail?: string | null;
+  responsiblePhone?: string | null;
+  cityIbgeCode?: string | null;
+  inscricaoMunicipal?: string | null;
+  inscricaoEstadual?: string | null;
+  address?: Record<string, string> | null;
   moderationStatus: string;
   isActive: boolean;
   tenant?: { slug: string; name?: string };
@@ -182,6 +191,48 @@ export default function AdminErpPage() {
                   {row.tenant?.name ? `${row.tenant.name} · ` : ""}
                   {row.tenant?.slug ?? "?"}
                 </p>
+                <div className="mt-3 grid gap-2 text-xs text-gray-600 md:grid-cols-2">
+                  <p>
+                    <span className="font-semibold text-gray-800">Responsável:</span>{" "}
+                    {row.responsibleName || "Não informado"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-800">Contato:</span>{" "}
+                    {row.responsibleEmail || "sem e-mail"}
+                    {row.responsiblePhone ? ` · ${row.responsiblePhone}` : ""}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-800">CNPJ:</span>{" "}
+                    {row.document || "Não informado"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-800">Razão social:</span>{" "}
+                    {row.legalName || "Não informada"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-800">Cidade IBGE:</span>{" "}
+                    {row.cityIbgeCode || "Não informada"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-800">Inscrições:</span>{" "}
+                    IM {row.inscricaoMunicipal || "—"} · IE {row.inscricaoEstadual || "—"}
+                  </p>
+                  <p className="md:col-span-2">
+                    <span className="font-semibold text-gray-800">Endereço:</span>{" "}
+                    {row.address?.logradouro || row.address?.city ? (
+                      <>
+                        {[row.address?.logradouro, row.address?.numero, row.address?.bairro]
+                          .filter(Boolean)
+                          .join(", ")}
+                        {row.address?.city || row.address?.uf ?
+                          ` · ${[row.address?.city, row.address?.uf].filter(Boolean).join(" - ")}`
+                        : ""}
+                      </>
+                    ) : (
+                      "Não informado"
+                    )}
+                  </p>
+                </div>
               </div>
               <ErpRowActions row={row} onAction={patchErp} />
             </div>

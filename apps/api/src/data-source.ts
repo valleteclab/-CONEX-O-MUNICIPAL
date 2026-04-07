@@ -28,6 +28,7 @@ import {
   ErpStockBalance,
   ErpStockLocation,
   ErpStockMovement,
+  IbgeCity,
   PasswordResetToken,
   Plan,
   QuotationRequest,
@@ -72,6 +73,7 @@ const entities = [
   AcademyUserGamification,
   AcademyEnrollment,
   DirectoryListing,
+  IbgeCity,
   QuotationRequest,
 ];
 

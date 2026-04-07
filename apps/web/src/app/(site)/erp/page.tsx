@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 const quickActions = [
   {
-    href: "/erp/cadastrar-negocio",
+    href: "/area-da-empresa/cadastro",
     title: "Empresa",
-    desc: "Cadastre ou revise os dados do seu negócio para operar no sistema.",
+    desc: "Inicie um novo cadastro empresarial ou acompanhe a ativação do negócio no sistema.",
   },
   {
     href: "/erp/produtos",

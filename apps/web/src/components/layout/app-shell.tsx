@@ -40,6 +40,7 @@ function isActivePath(
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const isCompanyArea = pathname.startsWith("/area-da-empresa") || pathname.startsWith("/erp");
 
   return (
     <div className="flex min-h-screen flex-col bg-surface font-sans text-marinha-900">
@@ -69,10 +70,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="hidden items-center gap-2 sm:flex">
             <Link
-              href="/erp"
+              href="/area-da-empresa"
               className={cn(
                 "focus-ring inline-flex min-h-[44px] items-center justify-center rounded-btn border-2 border-marinha-900/20 bg-white px-3 py-2 text-sm font-semibold text-marinha-900 shadow-sm transition hover:border-municipal-600/40 hover:bg-surface",
-                isActivePath(pathname, "/erp") && "bg-municipal-600/10 text-municipal-900",
+                isCompanyArea && "bg-municipal-600/10 text-municipal-900",
               )}
             >
               Área da empresa
@@ -154,7 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
             <div className="mt-4 flex flex-col gap-2 border-t border-marinha-900/8 pt-4">
               <Link
-                href="/erp"
+                href="/area-da-empresa"
                 className="rounded-btn border border-marinha-900/15 py-3 text-center text-base font-semibold text-marinha-900"
                 onClick={() => setMenuOpen(false)}
               >

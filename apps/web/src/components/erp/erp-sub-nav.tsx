@@ -15,7 +15,7 @@ const groups: Array<{
   {
     title: "Cadastros",
     items: [
-      { href: "/erp/cadastrar-negocio", label: "Empresa" },
+      { href: "/area-da-empresa/cadastro", label: "Empresa" },
       { href: "/erp/produtos", label: "Produtos" },
       { href: "/erp/clientes-fornecedores", label: "Clientes e fornecedores" },
     ],

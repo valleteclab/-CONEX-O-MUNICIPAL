@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ type LoginFormProps = {
 
 export function LoginForm({ intent = "portal" }: LoginFormProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +71,10 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
       return;
     }
 
-    router.push("/");
+    const redirect = searchParams.get("redirect");
+    const fallback = pathname.startsWith("/area-da-empresa") ? "/erp" : "/";
+    const destination = redirect && redirect.startsWith("/") ? redirect : fallback;
+    router.push(destination);
     router.refresh();
   }
 
@@ -117,6 +122,10 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
         {intent === "platform" ? (
           <Link href="/login" className="font-medium text-marinha-600 hover:underline">
             Entrar como usuário do município
+          </Link>
+        ) : pathname.startsWith("/area-da-empresa") ? (
+          <Link href="/cadastro" className="font-medium text-marinha-600 hover:underline">
+            Criar acesso empresarial
           </Link>
         ) : null}
       </div>

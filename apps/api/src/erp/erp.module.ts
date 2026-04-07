@@ -16,6 +16,10 @@ import { ErpAccountReceivable } from '../entities/erp-account-receivable.entity'
 import { ErpAccountPayable } from '../entities/erp-account-payable.entity';
 import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
 import { ErpFiscalDocument } from '../entities/erp-fiscal-document.entity';
+import { IbgeCity } from '../entities/ibge-city.entity';
+import { Tenant } from '../entities/tenant.entity';
+import { User } from '../entities/user.entity';
+import { UserTenant } from '../entities/user-tenant.entity';
 import { ErpBusinessGuard } from './guards/erp-business.guard';
 import { ErpBusinessController } from './controllers/erp-business.controller';
 import { ErpProductsController } from './controllers/erp-products.controller';
@@ -26,8 +30,11 @@ import { ErpPurchaseOrdersController } from './controllers/erp-purchase-orders.c
 import { ErpFinanceController } from './controllers/erp-finance.controller';
 import { ErpFiscalController } from './controllers/erp-fiscal.controller';
 import { ErpCnpjController } from './controllers/erp-cnpj.controller';
+import { ErpPublicController } from './controllers/erp-public.controller';
 import { ErpBusinessService } from './services/erp-business.service';
 import { CnpjLookupService } from './services/cnpj-lookup.service';
+import { IbgeCityService } from './services/ibge-city.service';
+import { ErpPublicSignupService } from './services/erp-public-signup.service';
 import { ErpProductService } from './services/erp-product.service';
 import { ErpPartyService } from './services/erp-party.service';
 import { ErpStockService } from './services/erp-stock.service';
@@ -56,6 +63,10 @@ import { PlugNotasService } from './services/plugnotas.service';
       ErpAccountPayable,
       ErpCashEntry,
       ErpFiscalDocument,
+      Tenant,
+      User,
+      UserTenant,
+      IbgeCity,
     ]),
   ],
   controllers: [
@@ -68,10 +79,13 @@ import { PlugNotasService } from './services/plugnotas.service';
     ErpFinanceController,
     ErpFiscalController,
     ErpCnpjController,
+    ErpPublicController,
   ],
   providers: [
     ErpBusinessGuard,
     CnpjLookupService,
+    IbgeCityService,
+    ErpPublicSignupService,
     ErpBusinessService,
     ErpProductService,
     ErpPartyService,

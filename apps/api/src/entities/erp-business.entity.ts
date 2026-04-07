@@ -29,6 +29,15 @@ export class ErpBusiness {
   @Column({ name: 'legal_name', type: 'varchar', length: 255, nullable: true })
   legalName: string | null;
 
+  @Column({ name: 'responsible_name', type: 'varchar', length: 200, nullable: true })
+  responsibleName: string | null;
+
+  @Column({ name: 'responsible_email', type: 'varchar', length: 255, nullable: true })
+  responsibleEmail: string | null;
+
+  @Column({ name: 'responsible_phone', type: 'varchar', length: 32, nullable: true })
+  responsiblePhone: string | null;
+
   /** CNPJ/CPF alfanumérico sem máscara opcional */
   @Column({ type: 'varchar', length: 20, nullable: true })
   document: string | null;
