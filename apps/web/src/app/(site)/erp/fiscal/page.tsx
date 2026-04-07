@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ErpFiscalEmitModal } from "@/components/erp/erp-fiscal-emit-modal";
@@ -72,6 +73,10 @@ export default function FiscalPage() {
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
+  const authorizedCount = docs.filter((doc) => doc.status === "authorized").length;
+  const pendingCount = docs.filter((doc) => doc.status === "pending" || doc.status === "processing").length;
+  const rejectedCount = docs.filter((doc) => doc.status === "rejected" || doc.status === "error").length;
+
   const load = useCallback(async (skip = 0) => {
     if (!businessId) {
       setDocs([]);
@@ -119,7 +124,7 @@ export default function FiscalPage() {
     <>
       <PageIntro
         title="Notas Fiscais"
-        description="Emissão e acompanhamento de NFS-e e NF-e via PlugNotas (sandbox)."
+        description="Centralize a emissão, o acompanhamento e os documentos fiscais da empresa em um único painel."
       >
         <div className="mt-3">
           <Button variant="primary" onClick={() => setModalOpen(true)}>
@@ -127,6 +132,46 @@ export default function FiscalPage() {
           </Button>
         </div>
       </PageIntro>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Documentos</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{total}</p>
+          <p className="mt-1 text-sm text-marinha-500">Notas registradas na central fiscal.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Autorizadas</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{authorizedCount}</p>
+          <p className="mt-1 text-sm text-marinha-500">Notas aprovadas e disponíveis para consulta.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Em andamento</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{pendingCount}</p>
+          <p className="mt-1 text-sm text-marinha-500">Documentos aguardando processamento ou retorno.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Atenção</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{rejectedCount}</p>
+          <p className="mt-1 text-sm text-marinha-500">Notas com rejeição ou erro para revisar.</p>
+        </Card>
+      </div>
+
+      <Card className="mb-6 border border-marinha-900/8 bg-surface-card">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-lg text-marinha-900">Central de emissão</h2>
+            <p className="mt-1 text-sm text-marinha-500">
+              Emita novas notas, acompanhe o processamento e consulte os documentos gerados.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge tone="accent">Fiscal</Badge>
+            <Button variant="primary" onClick={() => setModalOpen(true)}>
+              Emitir nota fiscal
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       {loading && (
         <div className="space-y-3">
@@ -148,14 +193,21 @@ export default function FiscalPage() {
       {!loading && !error && docs.length === 0 && (
         <Card>
           <p className="text-sm text-marinha-500">
-            Nenhuma nota emitida ainda. Confirme um pedido de venda e clique em{" "}
-            <strong>Emitir nota fiscal</strong>.
+            Nenhuma nota emitida ainda. Assim que houver uma venda pronta para faturamento, use o botão
+            <strong> Emitir nota fiscal</strong>.
           </p>
         </Card>
       )}
 
       {!loading && docs.length > 0 && (
         <Card className="overflow-x-auto p-0">
+          <div className="flex items-center justify-between gap-3 border-b border-marinha-900/8 px-4 py-4">
+            <div>
+              <h2 className="font-serif text-lg text-marinha-900">Histórico de notas</h2>
+              <p className="mt-1 text-sm text-marinha-500">Consulte status, número, emissão e arquivos de cada documento.</p>
+            </div>
+            <Badge tone="neutral">Documentos</Badge>
+          </div>
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-marinha-900/10 text-left text-xs font-semibold uppercase tracking-wide text-marinha-500">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -80,6 +81,10 @@ export default function ErpPartiesPage() {
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const customerCount = parties.filter((party) => party.type === "customer").length;
+  const supplierCount = parties.filter((party) => party.type === "supplier").length;
+  const bothCount = parties.filter((party) => party.type === "both").length;
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
@@ -170,15 +175,47 @@ export default function ErpPartiesPage() {
     <>
       <PageIntro
         title="Clientes e fornecedores"
-        description="Pessoas físicas e jurídicas vinculadas ao seu negócio para pedidos e financeiro."
+        description="Mantenha seus contatos comerciais organizados para vendas, compras, financeiro e relacionamento com o cliente."
         badge="Cadastros"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Cadastros</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{parties.length}</p>
+          <p className="mt-1 text-sm text-marinha-500">Contatos disponíveis no ERP.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Clientes</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{customerCount}</p>
+          <p className="mt-1 text-sm text-marinha-500">Contatos usados em vendas e atendimento.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Fornecedores</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{supplierCount}</p>
+          <p className="mt-1 text-sm text-marinha-500">Parceiros para compras e abastecimento.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Mistos</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{bothCount}</p>
+          <p className="mt-1 text-sm text-marinha-500">Contatos que compram e também fornecem.</p>
+        </Card>
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-3">
         <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
           Novo cadastro
         </Button>
+        <Badge tone="accent" className="self-center">Relacionamento</Badge>
       </div>
       <Card>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Base de clientes e fornecedores</h2>
+            <p className="mt-1 text-sm text-marinha-500">Centralize aqui os contatos usados em vendas, compras e financeiro.</p>
+          </div>
+          <Badge tone="neutral">Contatos</Badge>
+        </div>
         <ErpDataTable
           columns={columns}
           data={parties}
@@ -199,6 +236,9 @@ export default function ErpPartiesPage() {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       >
+        <p className="mb-4 text-sm text-marinha-500">
+          Cadastre pessoas ou empresas para usar nos pedidos, no financeiro e nas rotinas de relacionamento.
+        </p>
         <div className="grid grid-cols-2 gap-4">
           {field(
             "Tipo *",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -118,6 +119,7 @@ export function PdvPanel() {
   }
 
   const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+  const totalItems = lines.reduce((s, l) => s + l.qty, 0);
 
   const finalizeSale = async () => {
     if (lines.length === 0) return;
@@ -144,7 +146,27 @@ export function PdvPanel() {
 
   return (
     <div className="flex flex-col gap-3 lg:gap-6">
-      {/* Leitor / digitação */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Cupom atual</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{totalItems} item(ns)</p>
+          <p className="mt-1 text-sm text-marinha-500">Itens adicionados no atendimento atual.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Total da venda</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{fmt.format(subtotal)}</p>
+          <p className="mt-1 text-sm text-marinha-500">Valor acumulado do cupom antes da finalização.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Fluxo do caixa</p>
+          <p className="mt-2 flex items-center gap-2 text-lg font-bold text-marinha-900">
+            <Badge tone="accent">PDV</Badge>
+            Atendimento em andamento
+          </p>
+          <p className="mt-1 text-sm text-marinha-500">Bipe ou pesquise itens, confira o cupom e finalize a venda.</p>
+        </Card>
+      </div>
+
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
         <div className="min-w-0 flex-1">
           <label htmlFor="pdv-barcode" className="mb-1 block text-xs font-semibold text-marinha-600">
@@ -172,18 +194,24 @@ export function PdvPanel() {
         {/* Catálogo rápido */}
         <section className="min-w-0 flex-1 space-y-3" aria-label="Catálogo de produtos">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <label htmlFor="pdv-search" className="sr-only">
-              Buscar produto
-            </label>
-            <Input
-              id="pdv-search"
-              type="search"
-              placeholder="Buscar nome, SKU ou EAN…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="w-full sm:max-w-md"
-              autoComplete="off"
-            />
+            <div>
+              <h2 className="font-serif text-lg text-marinha-900">Catálogo rápido</h2>
+              <p className="mt-1 text-sm text-marinha-500">Encontre produtos pelo nome, SKU ou código de barras.</p>
+            </div>
+            <div className="w-full sm:max-w-md">
+              <label htmlFor="pdv-search" className="sr-only">
+                Buscar produto
+              </label>
+              <Input
+                id="pdv-search"
+                type="search"
+                placeholder="Buscar nome, SKU ou EAN…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="w-full"
+                autoComplete="off"
+              />
+            </div>
           </div>
 
           {isLoadingProducts ? (
@@ -234,7 +262,13 @@ export function PdvPanel() {
           aria-label="Cupom"
         >
           <Card variant="featured" className="flex flex-col p-3 sm:p-4">
-            <h2 className="font-serif text-base font-bold text-marinha-900">Cupom</h2>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-serif text-base font-bold text-marinha-900">Cupom</h2>
+                <p className="mt-1 text-xs text-marinha-500">Resumo da venda atual no caixa.</p>
+              </div>
+              <Badge tone="neutral">Venda</Badge>
+            </div>
 
             {lastSaleId && (
               <div className="mt-2 rounded-btn border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
@@ -325,7 +359,7 @@ export function PdvPanel() {
               </Button>
             </div>
             <p className="mt-2 text-[11px] text-marinha-500">
-              NFC-e disponível na integração fiscal (Onda B).
+              A emissão fiscal do atendimento pode ser feita conforme a configuração da empresa.
             </p>
           </Card>
         </aside>

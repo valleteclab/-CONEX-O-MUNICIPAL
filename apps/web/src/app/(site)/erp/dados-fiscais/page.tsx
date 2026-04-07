@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -188,7 +189,7 @@ export default function ErpDadosFiscaisPage() {
       <>
         <PageIntro
           title="Dados fiscais"
-          description="Selecione um negócio no topo da área ERP para configurar emitente e NFS-e/NF-e."
+          description="Selecione uma empresa para completar o cadastro fiscal e preparar a emissão de notas."
           badge="Fiscal"
         />
         <Card className="p-6 text-sm text-marinha-600">Nenhum negócio selecionado.</Card>
@@ -206,9 +207,33 @@ export default function ErpDadosFiscaisPage() {
     <>
       <PageIntro
         title="Dados fiscais do negócio"
-        description="Emitente (CNPJ/CPF, endereço, inscrições, IBGE) e parâmetros de NFS-e. NF-e exige NCM de 8 dígitos em cada produto do pedido. Em produção, o certificado digital A1 do CNPJ deve estar cadastrado no PlugNotas."
+        description="Complete os dados da empresa, endereço e inscrições para habilitar a emissão fiscal com mais segurança."
         badge="Fiscal"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card variant="featured" className="border border-marinha-900/8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Cadastro da empresa</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">
+            {legalName?.trim() ? "Preenchido" : "Pendente"}
+          </p>
+          <p className="mt-1 text-sm text-marinha-500">Razão social, documento e regime tributário.</p>
+        </Card>
+        <Card className="border border-marinha-900/8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Integração fiscal</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">
+            {plugnotasRegistered ? "Preparada" : "Aguardando configuração"}
+          </p>
+          <p className="mt-1 text-sm text-marinha-500">Habilitação da emissão após revisão do cadastro.</p>
+        </Card>
+        <Card className="border border-marinha-900/8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Checklist</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">
+            {readiness?.ready ? "Pronto para emitir" : "Pendências encontradas"}
+          </p>
+          <p className="mt-1 text-sm text-marinha-500">Confira abaixo os itens validados para NFS-e e NF-e.</p>
+        </Card>
+      </div>
 
       {error && (
         <div className="mb-4 rounded-btn border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
@@ -223,8 +248,19 @@ export default function ErpDadosFiscaisPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
-          <h2 className="font-serif text-lg text-marinha-900">Cadastro do emitente</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-serif text-lg text-marinha-900">Cadastro do emitente</h2>
+              <p className="mt-1 text-sm text-marinha-500">
+                Revise os dados oficiais da empresa e salve para manter a emissão fiscal pronta para uso.
+              </p>
+            </div>
+            <Badge tone="accent">Etapa 1</Badge>
+          </div>
           <form onSubmit={handleSave} className="mt-4 space-y-4">
+            <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Dados principais</p>
+              <div className="mt-3 space-y-4">
             <label className="block text-sm font-medium text-marinha-700">
               Razão social
               <input
@@ -257,6 +293,12 @@ export default function ErpDadosFiscaisPage() {
                 ))}
               </select>
             </label>
+              </div>
+            </div>
+
+            <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Inscrições e município</p>
+              <div className="mt-3 space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm font-medium text-marinha-700">
                 Inscrição municipal (NFS-e)
@@ -297,8 +339,12 @@ export default function ErpDadosFiscaisPage() {
               </a>
               .
             </p>
+              </div>
+            </div>
 
-            <h3 className="pt-2 text-sm font-semibold text-marinha-800">Endereço</h3>
+            <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
+              <h3 className="text-sm font-semibold text-marinha-800">Endereço fiscal</h3>
+              <div className="mt-3 space-y-4">
             <label className="block text-sm font-medium text-marinha-700">
               Logradouro
               <input
@@ -354,10 +400,13 @@ export default function ErpDadosFiscaisPage() {
                 />
               </label>
             </div>
+              </div>
+            </div>
 
-            <h3 className="pt-2 text-sm font-semibold text-marinha-800">NFS-e — lista de serviço (padrão)</h3>
-            <p className="text-xs text-marinha-500">
-              Ajuste conforme o município; código de serviço e CNAE impactam a NFS-e local.
+            <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
+            <h3 className="text-sm font-semibold text-marinha-800">Parâmetros de serviço</h3>
+            <p className="mt-1 text-xs text-marinha-500">
+              Ajuste conforme o município; código de serviço, CNAE e alíquota influenciam a emissão.
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block text-sm font-medium text-marinha-700">
@@ -385,6 +434,7 @@ export default function ErpDadosFiscaisPage() {
                 />
               </label>
             </div>
+            </div>
 
             <Button type="submit" disabled={saving} className="mt-2">
               {saving ? "Salvando…" : "Salvar dados fiscais"}
@@ -392,17 +442,14 @@ export default function ErpDadosFiscaisPage() {
           </form>
 
           <div className="mt-6 border-t border-marinha-900/10 pt-6">
-            <h3 className="text-sm font-semibold text-marinha-900">Cadastro PlugNotas (API)</h3>
-            <p className="mt-1 text-xs text-marinha-500">
-              A documentação prevê o cadastro do emitente via API (
-              <code className="rounded bg-marinha-900/10 px-1">POST /empresa</code>
-              ). Preencha CNPJ/CPF e razão social, salve, e registre o emitente — ou isso ocorre
-              automaticamente na primeira emissão de nota.
+            <h3 className="text-sm font-semibold text-marinha-900">Integração fiscal</h3>
+            <p className="mt-1 text-sm text-marinha-500">
+              Depois de salvar os dados da empresa, você pode concluir a habilitação da emissão fiscal.
             </p>
             <p className="mt-2 text-xs text-marinha-600">
-              Estado:{" "}
+              Status atual:{" "}
               <strong>
-                {plugnotasRegistered ? "já registrado nesta base" : "ainda não marcado como registrado"}
+                {plugnotasRegistered ? "integração já preparada" : "integração ainda pendente"}
               </strong>
               .
             </p>
@@ -413,7 +460,7 @@ export default function ErpDadosFiscaisPage() {
                 disabled={registeringPn}
                 onClick={() => void registerPlugnotas(false)}
               >
-                {registeringPn ? "Contactando…" : "Registrar emitente no PlugNotas"}
+                {registeringPn ? "Preparando…" : "Preparar emissão fiscal"}
               </Button>
               <Button
                 type="button"
@@ -422,24 +469,23 @@ export default function ErpDadosFiscaisPage() {
                 onClick={() => {
                   if (
                     confirm(
-                      "Reenviar o cadastro da empresa ao PlugNotas? Use após alterar CNPJ ou dados na conta PlugNotas.",
+                      "Atualizar os dados da empresa na integração fiscal? Use esta opção quando alterar cadastro ou corrigir informações.",
                     )
                   ) {
                     void registerPlugnotas(true);
                   }
                 }}
               >
-                Reenviar (?force)
+                Atualizar integração
               </Button>
             </div>
           </div>
         </Card>
 
         <Card className="p-6">
-          <h2 className="font-serif text-lg text-marinha-900">Prontidão para emissão</h2>
+          <h2 className="font-serif text-lg text-marinha-900">Checklist de emissão</h2>
           <p className="mt-1 text-sm text-marinha-500">
-            Verificação dos dados do emitente na API. Ambiente:{" "}
-            {readiness?.sandbox ? "sandbox" : "produção"}.
+            Veja abaixo o que já está pronto e o que ainda precisa ser ajustado para emitir notas.
           </p>
           <div className="mt-4 flex gap-2">
             <button
@@ -499,7 +545,7 @@ export default function ErpDadosFiscaisPage() {
 
           {readiness && (
             <div className="mt-4 rounded-btn border border-marinha-900/15 bg-marinha-900/5 p-3 text-xs text-marinha-600">
-              <p className="font-semibold text-marinha-800">Notas</p>
+              <p className="font-semibold text-marinha-800">Orientações</p>
               <ul className="mt-1 list-inside list-disc space-y-1">
                 {readiness.productionNotes.map((n) => (
                   <li key={n}>{n}</li>

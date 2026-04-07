@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -34,6 +35,7 @@ type Party = { id: string; name: string };
 type FinanceSummary = {
   arOpen?: string;
   apOpen?: string;
+  cashBalance?: string;
   [key: string]: unknown;
 };
 
@@ -311,41 +313,68 @@ export default function ErpFinanceiroPage() {
     <>
       <PageIntro
         title="Financeiro"
-        description="Contas a receber, a pagar e lançamentos de caixa (visão simplificada Onda A)."
+        description="Acompanhe recebimentos, pagamentos e o movimento do caixa da empresa em um só lugar."
         badge="Financeiro"
       />
 
       {summary && (
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {summary.arOpen !== undefined && (
             <div className="rounded-btn border border-green-200 bg-green-50 p-4">
-              <p className="text-xs text-green-700">A receber (em aberto)</p>
+              <p className="text-xs text-green-700">Total a receber</p>
               <p className="mt-1 text-lg font-bold text-green-800">{fmt(String(summary.arOpen))}</p>
             </div>
           )}
           {summary.apOpen !== undefined && (
             <div className="rounded-btn border border-red-200 bg-red-50 p-4">
-              <p className="text-xs text-red-700">A pagar (em aberto)</p>
+              <p className="text-xs text-red-700">Total a pagar</p>
               <p className="mt-1 text-lg font-bold text-red-800">{fmt(String(summary.apOpen))}</p>
             </div>
           )}
+          {summary.cashBalance !== undefined && (
+            <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
+              <p className="text-xs text-marinha-600">Saldo do caixa</p>
+              <p className="mt-1 text-lg font-bold text-marinha-900">{fmt(String(summary.cashBalance))}</p>
+            </div>
+          )}
+          <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
+            <p className="text-xs text-marinha-600">Rotina financeira</p>
+            <p className="mt-1 text-lg font-bold text-marinha-900">Em acompanhamento</p>
+          </div>
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <Button variant="primary" onClick={() => openFin("ar")} disabled={noBusinessId}>
-          Novo a receber
-        </Button>
-        <Button variant="secondary" onClick={() => openFin("ap")} disabled={noBusinessId}>
-          Novo a pagar
-        </Button>
-        <Button variant="secondary" onClick={openCash} disabled={noBusinessId}>
-          Lançamento de caixa
-        </Button>
-      </div>
+      <Card className="mb-6 border border-marinha-900/8 bg-surface-card">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-lg text-marinha-900">Centro financeiro</h2>
+            <p className="mt-1 text-sm text-marinha-500">
+              Lance recebimentos, despesas e movimentações conforme a rotina diária da empresa.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Badge tone="accent">Lançamentos</Badge>
+            <Button variant="primary" onClick={() => openFin("ar")} disabled={noBusinessId}>
+              Novo recebimento
+            </Button>
+            <Button variant="secondary" onClick={() => openFin("ap")} disabled={noBusinessId}>
+              Nova conta a pagar
+            </Button>
+            <Button variant="secondary" onClick={openCash} disabled={noBusinessId}>
+              Lançar no caixa
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <Card className="mb-6">
-        <h2 className="mb-4 font-serif text-lg font-bold text-marinha-900">Contas a receber</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Contas a receber</h2>
+            <p className="mt-1 text-sm text-marinha-500">Valores previstos de entrada na empresa.</p>
+          </div>
+          <Badge tone="success">Recebimentos</Badge>
+        </div>
         <ErpDataTable
           columns={arColumns}
           data={ar}
@@ -358,7 +387,13 @@ export default function ErpFinanceiroPage() {
       </Card>
 
       <Card className="mb-6">
-        <h2 className="mb-4 font-serif text-lg font-bold text-marinha-900">Contas a pagar</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Contas a pagar</h2>
+            <p className="mt-1 text-sm text-marinha-500">Compromissos financeiros e despesas pendentes.</p>
+          </div>
+          <Badge tone="warning">Pagamentos</Badge>
+        </div>
         <ErpDataTable
           columns={apColumns}
           data={ap}
@@ -371,7 +406,13 @@ export default function ErpFinanceiroPage() {
       </Card>
 
       <Card>
-        <h2 className="mb-4 font-serif text-lg font-bold text-marinha-900">Fluxo de caixa</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Fluxo de caixa</h2>
+            <p className="mt-1 text-sm text-marinha-500">Entradas e saídas registradas no dia a dia da operação.</p>
+          </div>
+          <Badge tone="neutral">Caixa</Badge>
+        </div>
         <ErpDataTable
           columns={cashColumns}
           data={cash}
@@ -385,7 +426,7 @@ export default function ErpFinanceiroPage() {
 
       {/* Modal AR / AP */}
       <ErpFormModal
-        title={openModal === "ar" ? "Novo a receber" : "Novo a pagar"}
+        title={openModal === "ar" ? "Novo recebimento" : "Nova conta a pagar"}
         open={openModal === "ar" || openModal === "ap"}
         onClose={() => setOpenModal(null)}
         onSubmit={() => handleFinSubmit(openModal as "ar" | "ap")}

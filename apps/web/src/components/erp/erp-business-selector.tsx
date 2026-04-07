@@ -23,13 +23,13 @@ export function ErpBusinessSelector() {
   if (businesses.length === 0) {
     return (
       <div className="mb-4 rounded-btn border border-municipal-200 bg-municipal-50 px-4 py-3 text-sm text-municipal-800">
-        Você ainda não possui um negócio cadastrado no ERP.{" "}
+        Você ainda não possui uma empresa cadastrada na área de gestão.{" "}
         <a href="/erp/cadastrar-negocio" className="font-semibold underline hover:no-underline">
-          Cadastrar com CNPJ
+          Cadastrar empresa
         </a>{" "}
         ou{" "}
         <a href="/erp" className="font-semibold underline hover:no-underline">
-          visão geral do ERP
+          voltar para a área da empresa
         </a>
         .
       </div>
@@ -43,14 +43,14 @@ export function ErpBusinessSelector() {
       <div className="mb-4 rounded-btn border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
         {pending.length > 0 && (
           <span>
-            <strong>{pending[0].tradeName}</strong> está em análise pela plataforma. Você receberá
-            uma notificação quando for aprovado.
+            <strong>{pending[0].tradeName}</strong> está em análise. Assim que a empresa for aprovada,
+            ela ficará disponível para operação no ERP.
           </span>
         )}
         {rejected.length > 0 && pending.length === 0 && (
           <span>
-            <strong>{rejected[0].tradeName}</strong> foi rejeitado pela moderação. Entre em contato
-            com a plataforma para mais informações.
+            <strong>{rejected[0].tradeName}</strong> não foi aprovado. Revise os dados da empresa e,
+            se necessário, fale com a plataforma.
           </span>
         )}
       </div>

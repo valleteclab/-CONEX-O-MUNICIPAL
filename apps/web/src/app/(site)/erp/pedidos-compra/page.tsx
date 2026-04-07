@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -245,15 +246,42 @@ export default function ErpPedidosCompraPage() {
     <>
       <PageIntro
         title="Pedidos de compra"
-        description="Pedidos a fornecedores com itens e acompanhamento de status."
+        description="Organize compras, acompanhe fornecedores e registre o recebimento dos itens para abastecer a operação."
         badge="Compras"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Pedidos</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{orders.length} registros</p>
+          <p className="mt-1 text-sm text-marinha-500">Compras em andamento e histórico de abastecimento.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Fornecedores</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{suppliers.length} contatos</p>
+          <p className="mt-1 text-sm text-marinha-500">Fornecedores aptos para novos pedidos.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Itens</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{products.length} produtos</p>
+          <p className="mt-1 text-sm text-marinha-500">Produtos disponíveis para reposição e compra.</p>
+        </Card>
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-3">
         <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
           Novo pedido de compra
         </Button>
+        <Badge tone="accent" className="self-center">Suprimentos</Badge>
       </div>
       <Card>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Pedidos a fornecedores</h2>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe a criação, confirmação e recebimento dos pedidos de compra.</p>
+          </div>
+          <Badge tone="neutral">Compras</Badge>
+        </div>
         <ErpDataTable
           columns={columns}
           data={orders}
@@ -275,6 +303,9 @@ export default function ErpPedidosCompraPage() {
         isSubmitting={isSubmitting}
         submitLabel="Criar pedido"
       >
+        <p className="mb-4 text-sm text-marinha-500">
+          Selecione o fornecedor e monte os itens para registrar a compra no ERP.
+        </p>
         <div className="mb-4 flex flex-col gap-1">
           <label className="text-xs font-medium text-marinha-700">Fornecedor *</label>
           <select

@@ -5,6 +5,7 @@ import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFiscalEmitModal } from "@/components/erp/erp-fiscal-emit-modal";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -249,15 +250,42 @@ export default function ErpPedidosVendaPage() {
     <>
       <PageIntro
         title="Pedidos de venda"
-        description="Inclui pedidos criados no ERP e solicitações vindas do diretório, com origem identificável."
+        description="Acompanhe pedidos criados pela equipe comercial e oportunidades que chegaram pelos canais da plataforma."
         badge="Vendas"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Pedidos</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{orders.length} registros</p>
+          <p className="mt-1 text-sm text-marinha-500">Pedidos em andamento e histórico comercial.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Clientes</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{parties.length} contatos</p>
+          <p className="mt-1 text-sm text-marinha-500">Clientes disponíveis para vincular aos pedidos.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Itens</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{products.length} produtos</p>
+          <p className="mt-1 text-sm text-marinha-500">Catálogo pronto para montar propostas e vendas.</p>
+        </Card>
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-3">
         <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
           Novo pedido
         </Button>
+        <Badge tone="accent" className="self-center">Comercial</Badge>
       </div>
       <Card>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Pedidos e oportunidades</h2>
+            <p className="mt-1 text-sm text-marinha-500">Veja a origem do pedido, acompanhe o status e avance até a emissão fiscal.</p>
+          </div>
+          <Badge tone="neutral">Vendas</Badge>
+        </div>
         <ErpDataTable
           columns={columns}
           data={orders}
@@ -286,6 +314,9 @@ export default function ErpPedidosVendaPage() {
         isSubmitting={isSubmitting}
         submitLabel="Criar pedido"
       >
+        <p className="mb-4 text-sm text-marinha-500">
+          Monte o pedido com cliente, itens e preços para registrar a negociação no ERP.
+        </p>
         <div className="mb-4 flex flex-col gap-1">
           <label className="text-xs font-medium text-marinha-700">Cliente (opcional)</label>
           <select

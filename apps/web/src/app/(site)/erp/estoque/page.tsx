@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -268,9 +269,28 @@ export default function ErpEstoquePage() {
     <>
       <PageIntro
         title="Estoque"
-        description="Locais de armazenamento, saldos por produto e histórico de movimentações."
+        description="Acompanhe saldos, movimentações e locais de armazenamento para manter a operação abastecida."
         badge="Operação"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Saldos</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{balances.length} posições</p>
+          <p className="mt-1 text-sm text-marinha-500">Itens com saldo registrado por local.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Movimentações</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{movements.length} registros</p>
+          <p className="mt-1 text-sm text-marinha-500">Histórico recente de entradas, saídas e ajustes.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Locais</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{locations.length} locais cadastrados</p>
+          <p className="mt-1 text-sm text-marinha-500">Organize estoque por depósito, loja ou almoxarifado.</p>
+        </Card>
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-3">
         <Button
           variant="primary"
@@ -294,10 +314,17 @@ export default function ErpEstoquePage() {
         >
           Novo local
         </Button>
+        <Badge tone="accent" className="self-center">Operação diária</Badge>
       </div>
 
       <Card className="mb-6">
-        <h2 className="mb-4 font-serif text-lg font-bold text-marinha-900">Saldos</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Saldos por produto</h2>
+            <p className="mt-1 text-sm text-marinha-500">Consulte rapidamente onde cada item está armazenado e em qual quantidade.</p>
+          </div>
+          <Badge tone="neutral">Saldo atual</Badge>
+        </div>
         <ErpDataTable
           columns={balanceColumns}
           data={balances}
@@ -310,7 +337,13 @@ export default function ErpEstoquePage() {
       </Card>
 
       <Card>
-        <h2 className="mb-4 font-serif text-lg font-bold text-marinha-900">Movimentações</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Movimentações</h2>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe entradas, saídas e ajustes registrados no estoque.</p>
+          </div>
+          <Badge tone="warning">Histórico</Badge>
+        </div>
         <ErpDataTable
           columns={movementColumns}
           data={movements}

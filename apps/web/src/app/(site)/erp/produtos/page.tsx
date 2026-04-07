@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -159,15 +160,40 @@ export default function ErpProdutosPage() {
     <>
       <PageIntro
         title="Produtos"
-        description="Cadastro de itens para venda ou consumo interno, com SKU, NCM e controle de preço."
+        description="Organize seu catálogo de produtos e serviços com preço, unidade e estoque mínimo para a operação diária."
         badge="Cadastros"
       />
-      <div className="mb-4 flex flex-wrap gap-3">
-        <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
-          Novo produto
-        </Button>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card variant="featured">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Catálogo</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{products.length} itens carregados</p>
+          <p className="mt-1 text-sm text-marinha-500">Produtos e serviços disponíveis no ERP.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Mix de venda</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">Produtos e serviços</p>
+          <p className="mt-1 text-sm text-marinha-500">Cadastre itens físicos e também serviços prestados.</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Ação rápida</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <Badge tone="accent">Cadastro</Badge>
+            <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
+              Novo produto
+            </Button>
+          </div>
+        </Card>
       </div>
+
       <Card>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de produtos e serviços</h2>
+            <p className="mt-1 text-sm text-marinha-500">Use este cadastro como base para vendas, compras, estoque e fiscal.</p>
+          </div>
+          <Badge tone="neutral">Catálogo</Badge>
+        </div>
         <ErpDataTable
           columns={columns}
           data={products}
@@ -188,6 +214,9 @@ export default function ErpProdutosPage() {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       >
+        <p className="mb-4 text-sm text-marinha-500">
+          Preencha as informações principais do item para começar a usar no catálogo e nas rotinas do ERP.
+        </p>
         <div className="grid grid-cols-2 gap-4">
           {field(
             "Tipo",

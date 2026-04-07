@@ -119,8 +119,8 @@ export default function ErpCadastrarNegocioPage() {
   return (
     <>
       <PageIntro
-        title="Cadastrar negócio no ERP"
-        description="Informe o CNPJ para buscar dados na Receita (Invertexto). Envie o pedido; a equipe da plataforma aprova e o sistema registra a empresa no PlugNotas."
+        title="Cadastrar empresa"
+        description="Informe o CNPJ para trazer os dados da empresa, revisar o cadastro e solicitar a liberação da operação no ERP."
         badge="ERP"
       />
 
@@ -139,10 +139,9 @@ export default function ErpCadastrarNegocioPage() {
       )}
 
       <Card className="p-6">
-        <h2 className="font-serif text-lg text-marinha-900">1. Consultar CNPJ</h2>
+        <h2 className="font-serif text-lg text-marinha-900">1. Buscar dados da empresa</h2>
         <p className="mt-1 text-sm text-marinha-500">
-          A API precisa de <code className="rounded bg-marinha-900/10 px-1">CNPJ_API_TOKEN</code>{" "}
-          no servidor.
+          Digite o CNPJ para preencher automaticamente as informações principais do negócio.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <input
@@ -160,7 +159,10 @@ export default function ErpCadastrarNegocioPage() {
 
       {dados && !success && (
         <Card className="mt-6 p-6">
-          <h2 className="font-serif text-lg text-marinha-900">2. Conferir e enviar</h2>
+          <h2 className="font-serif text-lg text-marinha-900">2. Conferir e solicitar liberação</h2>
+          <p className="mt-1 text-sm text-marinha-500">
+            Revise os dados abaixo antes de enviar o cadastro da empresa para análise.
+          </p>
           <div className="mt-3 space-y-3 text-sm">
             <p>
               <span className="text-marinha-500">CNPJ:</span>{" "}
@@ -189,11 +191,11 @@ export default function ErpCadastrarNegocioPage() {
               {dados.endereco.cidade} — {dados.endereco.uf} · CEP {dados.endereco.cep}
             </p>
             <p className="text-xs text-marinha-500">
-              Código IBGE do município não vem nesta consulta — complete em{" "}
+              Depois da aprovação, complete os dados fiscais da empresa em{" "}
               <Link href="/erp/dados-fiscais" className="font-semibold text-municipal-700 underline">
                 Dados fiscais
-              </Link>{" "}
-              após aprovação, para NFS-e/NF-e.
+              </Link>
+              .
             </p>
           </div>
           <Button
@@ -202,7 +204,7 @@ export default function ErpCadastrarNegocioPage() {
             disabled={creating || !tradeName.trim() || !legalName.trim()}
             onClick={() => void enviarCadastro()}
           >
-            {creating ? "Enviando…" : "Solicitar cadastro no ERP"}
+            {creating ? "Enviando…" : "Solicitar liberação da empresa"}
           </Button>
         </Card>
       )}
