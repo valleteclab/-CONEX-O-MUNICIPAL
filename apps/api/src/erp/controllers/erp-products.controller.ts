@@ -14,7 +14,10 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ErpBusinessGuard } from '../guards/erp-business.guard';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
 import { ErpBusiness } from '../../entities/erp-business.entity';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../entities/user.entity';
 import { CreateErpProductDto, UpdateErpProductDto } from '../dto/product.dto';
+import { CreateProductClassificationJobDto } from '../dto/product-classification-job.dto';
 import { ErpProductService } from '../services/erp-product.service';
 
 @ApiTags('erp — produtos')
@@ -63,5 +66,41 @@ export class ErpProductsController {
     @Body() dto: UpdateErpProductDto,
   ) {
     return this.svc.update(business, id, dto);
+  }
+
+  @Post('classification-jobs')
+  @ApiOperation({ summary: 'Criar job assíncrono de classificação fiscal (IA)' })
+  createClassificationJob(
+    @SelectedBusiness() business: ErpBusiness,
+    @CurrentUser() user: User,
+    @Body() dto: CreateProductClassificationJobDto,
+  ) {
+    return this.svc.createClassificationJob({
+      business,
+      requestedByUserId: user.id,
+      filter: {
+        onlyMissingNcm: dto.onlyMissingNcm ?? true,
+        productIds: dto.productIds ?? null,
+      },
+      limit: dto.limit ?? 50,
+    });
+  }
+
+  @Get('classification-jobs/:id')
+  @ApiOperation({ summary: 'Consultar status/resultado do job de classificação fiscal (IA)' })
+  getClassificationJob(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.svc.getClassificationJob(business, id);
+  }
+
+  @Post('classification-jobs/:id/apply')
+  @ApiOperation({ summary: 'Aplicar resultado do job no cadastro (preenche NCM/CFOP/origem)' })
+  applyClassificationJob(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.svc.applyClassificationJob(business, id);
   }
 }

@@ -17,6 +17,11 @@ type Product = {
   sku: string;
   name: string;
   unit: string;
+  barcode?: string | null;
+  ncm?: string | null;
+  cest?: string | null;
+  originCode?: string | null;
+  cfopDefault?: string | null;
   price: string;
   cost: string;
   minStock: string;
@@ -28,6 +33,11 @@ type CreateForm = {
   sku: string;
   name: string;
   unit: string;
+  barcode?: string;
+  ncm?: string;
+  cest?: string;
+  originCode?: string;
+  cfopDefault?: string;
   price: string;
   cost: string;
   minStock: string;
@@ -38,6 +48,11 @@ const EMPTY_FORM: CreateForm = {
   sku: "",
   name: "",
   unit: "UN",
+  barcode: "",
+  ncm: "",
+  cest: "",
+  originCode: "",
+  cfopDefault: "",
   price: "0",
   cost: "0",
   minStock: "0",
@@ -80,6 +95,16 @@ export default function ErpProdutosPage() {
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [classifyOpen, setClassifyOpen] = useState(false);
+  const [classifyOnlyMissing, setClassifyOnlyMissing] = useState(true);
+  const [classifyLimit, setClassifyLimit] = useState(50);
+  const [classifyJobId, setClassifyJobId] = useState<string | null>(null);
+  const [classifyStatus, setClassifyStatus] = useState<string | null>(null);
+  const [classifyResult, setClassifyResult] = useState<any | null>(null);
+  const [classifyError, setClassifyError] = useState<string | null>(null);
+  const [isClassifySubmitting, setIsClassifySubmitting] = useState(false);
+  const [isApplySubmitting, setIsApplySubmitting] = useState(false);
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
@@ -124,11 +149,25 @@ export default function ErpProdutosPage() {
       setFormError("SKU e Nome são obrigatórios.");
       return;
     }
+    if (form.kind === "product") {
+      const n = (form.ncm ?? "").replace(/\D/g, "");
+      if (n && n.length !== 8) {
+        setFormError("NCM deve ter 8 dígitos (ou deixe vazio para classificar depois).");
+        return;
+      }
+    }
     setIsSubmitting(true);
     setFormError(null);
     const res = await erpFetch<Product>("/api/v1/erp/products", {
       method: "POST",
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        barcode: form.barcode?.trim() || undefined,
+        ncm: form.ncm?.trim() || undefined,
+        cest: form.cest?.trim() || undefined,
+        originCode: form.originCode?.trim() || undefined,
+        cfopDefault: form.cfopDefault?.trim() || undefined,
+      }),
     });
     if (res.ok && res.data) {
       setProducts((prev) => [res.data!, ...prev]);
@@ -156,6 +195,76 @@ export default function ErpProdutosPage() {
     />
   );
 
+  const pollJob = useCallback(
+    async (jobId: string) => {
+      const res = await erpFetch<any>(`/api/v1/erp/products/classification-jobs/${jobId}`);
+      if (!res.ok || !res.data) return;
+      setClassifyStatus(res.data.status ?? null);
+      if (res.data.status === "done" || res.data.status === "failed") {
+        setClassifyResult(res.data.result ?? null);
+        if (res.data.status === "failed") {
+          setClassifyError(res.data.error ?? "Job falhou.");
+        }
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!classifyJobId) return;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      await pollJob(classifyJobId);
+    };
+    const t = setInterval(() => void tick(), 2500);
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [classifyJobId, pollJob]);
+
+  const startClassification = async () => {
+    setClassifyError(null);
+    setClassifyResult(null);
+    setClassifyStatus(null);
+    setIsClassifySubmitting(true);
+    const res = await erpFetch<{ id: string }>("/api/v1/erp/products/classification-jobs", {
+      method: "POST",
+      body: JSON.stringify({
+        onlyMissingNcm: classifyOnlyMissing,
+        limit: classifyLimit,
+      }),
+    });
+    setIsClassifySubmitting(false);
+    if (!res.ok || !res.data) {
+      setClassifyError(res.error ?? "Não foi possível iniciar a classificação.");
+      return;
+    }
+    setClassifyJobId(res.data.id);
+  };
+
+  const applyClassification = async () => {
+    if (!classifyJobId) return;
+    setIsApplySubmitting(true);
+    const res = await erpFetch<{ applied: number; skipped: number }>(
+      `/api/v1/erp/products/classification-jobs/${classifyJobId}/apply`,
+      { method: "POST" },
+    );
+    setIsApplySubmitting(false);
+    if (!res.ok || !res.data) {
+      setClassifyError(res.error ?? "Falha ao aplicar classificações.");
+      return;
+    }
+    setClassifyOpen(false);
+    setClassifyJobId(null);
+    setClassifyResult(null);
+    setClassifyStatus(null);
+    setClassifyError(null);
+    void load(true);
+  };
+
   return (
     <>
       <PageIntro
@@ -181,6 +290,13 @@ export default function ErpProdutosPage() {
             <Badge tone="accent">Cadastro</Badge>
             <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
               Novo produto
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setClassifyOpen(true)}
+              disabled={noBusinessId}
+            >
+              Classificar com IA
             </Button>
           </div>
         </Card>
@@ -236,7 +352,87 @@ export default function ErpProdutosPage() {
           {field("Custo (R$)", input("cost", "number"))}
           {field("Estoque mínimo", input("minStock", "number"))}
         </div>
+        <details className="mt-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-4 py-3">
+          <summary className="cursor-pointer text-sm font-semibold text-marinha-800">
+            Fiscal (opcional) — NCM/CFOP/origem
+          </summary>
+          <p className="mt-2 text-xs text-marinha-600">
+            Para NF-e, o NCM (8 dígitos) é obrigatório. Se não souber agora, deixe vazio e use
+            “Classificar com IA”.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-4">
+            <div className="col-span-2">{field("Código de barras (EAN)", input("barcode"))}</div>
+            {field("NCM (8 dígitos)", input("ncm"))}
+            {field("CFOP padrão", input("cfopDefault"))}
+            {field("Origem (0-8)", input("originCode"))}
+            {field("CEST", input("cest"))}
+          </div>
+        </details>
         {formError && <p className="mt-3 text-sm text-red-600">{formError}</p>}
+      </ErpFormModal>
+
+      <ErpFormModal
+        title="Classificar produtos com IA"
+        open={classifyOpen}
+        onClose={() => {
+          setClassifyOpen(false);
+          setClassifyError(null);
+        }}
+        onSubmit={startClassification}
+        isSubmitting={isClassifySubmitting}
+        submitLabel="Iniciar job"
+      >
+        <p className="mb-3 text-sm text-marinha-500">
+          Você pode cadastrar produtos sem classificação fiscal e depois rodar a IA para sugerir NCM/CFOP/origem
+          em lote. O job roda no servidor e você aplica o resultado ao final.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          {field(
+            "Escopo",
+            <select
+              value={classifyOnlyMissing ? "missing" : "all"}
+              onChange={(e) => setClassifyOnlyMissing(e.target.value === "missing")}
+              className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+            >
+              <option value="missing">Somente sem NCM</option>
+              <option value="all">Todos (não recomendado)</option>
+            </select>,
+          )}
+          {field(
+            "Limite",
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={classifyLimit}
+              onChange={(e) => setClassifyLimit(Number(e.target.value || 50))}
+              className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+            />,
+          )}
+        </div>
+
+        {classifyJobId && (
+          <div className="mt-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-4 py-3">
+            <p className="text-sm font-semibold text-marinha-900">
+              Status do job: <span className="font-mono">{classifyStatus ?? "…"}</span>
+            </p>
+            {classifyResult?.stats ? null : null}
+            {classifyResult?.suggestions?.length ? (
+              <p className="mt-2 text-sm text-marinha-700">
+                Sugestões prontas: <strong>{classifyResult.suggestions.length}</strong>
+              </p>
+            ) : null}
+            {classifyStatus === "done" && (
+              <div className="mt-3 flex gap-2">
+                <Button type="button" variant="primary" onClick={applyClassification} disabled={isApplySubmitting}>
+                  {isApplySubmitting ? "Aplicando…" : "Aplicar no cadastro"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {classifyError && <p className="mt-3 whitespace-pre-line text-sm text-red-600">{classifyError}</p>}
       </ErpFormModal>
     </>
   );

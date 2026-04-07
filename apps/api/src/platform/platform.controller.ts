@@ -30,7 +30,9 @@ import { PlatformAdminService } from './platform-admin.service';
 import { PlatformCoursesService } from './platform-courses.service';
 import { PlatformLessonsService } from './platform-lessons.service';
 import { PlatformLiveSessionsService } from './platform-live-sessions.service';
+import { PlatformSettingsService } from './platform-settings.service';
 import { YoutubePlaylistService } from './youtube-playlist.service';
+import { UpdateErpProductClassifierSettingDto } from './dto/update-erp-product-classifier-setting.dto';
 
 @ApiTags('plataforma — super admin')
 @ApiBearerAuth()
@@ -43,6 +45,7 @@ export class PlatformController {
     private readonly platformLessons: PlatformLessonsService,
     private readonly platformLiveSessions: PlatformLiveSessionsService,
     private readonly youtubePlaylist: YoutubePlaylistService,
+    private readonly settings: PlatformSettingsService,
   ) {}
 
   @Get('directory/listings')
@@ -95,6 +98,20 @@ export class PlatformController {
     @Body() dto: AdminModerationActionDto,
   ) {
     return this.platform.applyErpBusinessAction(id, dto);
+  }
+
+  @Get('settings/erp-product-classifier')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Config IA: classificador fiscal de produtos (OpenRouter)' })
+  async getErpProductClassifier() {
+    return this.settings.getErpProductClassifier();
+  }
+
+  @Patch('settings/erp-product-classifier')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Atualizar config IA do classificador fiscal de produtos (OpenRouter)' })
+  async patchErpProductClassifier(@Body() dto: UpdateErpProductClassifierSettingDto) {
+    return this.settings.patchErpProductClassifier(dto);
   }
 
   @Get('academy/courses')

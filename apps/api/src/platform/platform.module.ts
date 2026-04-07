@@ -5,6 +5,7 @@ import { AcademyLesson } from '../entities/academy-lesson.entity';
 import { AcademyLiveSession } from '../entities/academy-live-session.entity';
 import { DirectoryListing } from '../entities/directory-listing.entity';
 import { ErpBusiness } from '../entities/erp-business.entity';
+import { PlatformSetting } from '../entities/platform-setting.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { PlatformController } from './platform.controller';
@@ -12,6 +13,7 @@ import { PlatformAdminService } from './platform-admin.service';
 import { PlatformCoursesService } from './platform-courses.service';
 import { PlatformLessonsService } from './platform-lessons.service';
 import { PlatformLiveSessionsService } from './platform-live-sessions.service';
+import { PlatformSettingsService } from './platform-settings.service';
 import { YoutubePlaylistService } from './youtube-playlist.service';
 import { ErpModule } from '../erp/erp.module';
 
@@ -21,6 +23,7 @@ import { ErpModule } from '../erp/erp.module';
     TypeOrmModule.forFeature([
       DirectoryListing,
       ErpBusiness,
+      PlatformSetting,
       AcademyCourse,
       AcademyLesson,
       AcademyLiveSession,
@@ -33,6 +36,7 @@ import { ErpModule } from '../erp/erp.module';
     PlatformCoursesService,
     PlatformLessonsService,
     PlatformLiveSessionsService,
+    PlatformSettingsService,
     YoutubePlaylistService,
     RolesGuard,
   ],

@@ -39,4 +39,9 @@ export default () => ({
     apiBaseUrl:
       process.env.CNPJ_API_BASE_URL ?? 'https://api.invertexto.com/v1/cnpj',
   },
+  ai: {
+    openrouterApiKey: process.env.OPENROUTER_API_KEY ?? '',
+    openrouterBaseUrl:
+      process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
+  },
 });

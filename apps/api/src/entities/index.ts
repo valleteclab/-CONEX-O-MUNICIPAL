@@ -21,6 +21,8 @@ export * from './erp-account-receivable.entity';
 export * from './erp-account-payable.entity';
 export * from './erp-cash-entry.entity';
 export * from './erp-fiscal-document.entity';
+export * from './platform-setting.entity';
+export * from './erp-product-classification-job.entity';
 export * from './quotation-request.entity';
 export * from './ibge-city.entity';
 export * from './academy-badge-definition.entity';

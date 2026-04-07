@@ -16,6 +16,7 @@ import { ErpAccountReceivable } from '../entities/erp-account-receivable.entity'
 import { ErpAccountPayable } from '../entities/erp-account-payable.entity';
 import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
 import { ErpFiscalDocument } from '../entities/erp-fiscal-document.entity';
+import { ErpProductClassificationJob } from '../entities/erp-product-classification-job.entity';
 import { IbgeCity } from '../entities/ibge-city.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { User } from '../entities/user.entity';
@@ -43,6 +44,8 @@ import { ErpPurchaseOrderService } from './services/erp-purchase-order.service';
 import { ErpFinanceService } from './services/erp-finance.service';
 import { ErpFiscalService } from './services/erp-fiscal.service';
 import { PlugNotasService } from './services/plugnotas.service';
+import { OpenRouterService } from './services/openrouter.service';
+import { ErpProductClassificationWorker } from './services/erp-product-classification.worker';
 
 @Module({
   imports: [
@@ -63,6 +66,7 @@ import { PlugNotasService } from './services/plugnotas.service';
       ErpAccountPayable,
       ErpCashEntry,
       ErpFiscalDocument,
+      ErpProductClassificationJob,
       Tenant,
       User,
       UserTenant,
@@ -86,8 +90,10 @@ import { PlugNotasService } from './services/plugnotas.service';
     CnpjLookupService,
     IbgeCityService,
     ErpPublicSignupService,
+    OpenRouterService,
     ErpBusinessService,
     ErpProductService,
+    ErpProductClassificationWorker,
     ErpPartyService,
     ErpStockService,
     ErpSalesOrderService,
