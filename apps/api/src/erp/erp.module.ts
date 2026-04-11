@@ -46,10 +46,12 @@ import { ErpFiscalService } from './services/erp-fiscal.service';
 import { PlugNotasService } from './services/plugnotas.service';
 import { OpenRouterService } from './services/openrouter.service';
 import { ErpProductClassificationWorker } from './services/erp-product-classification.worker';
+import { PlatformSettingsModule } from '../platform/platform-settings.module';
 
 @Module({
   imports: [
     ConfigModule,
+    PlatformSettingsModule,
     TypeOrmModule.forFeature([
       ErpBusiness,
       ErpBusinessUser,
