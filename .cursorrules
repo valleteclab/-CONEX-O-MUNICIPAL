@@ -1,7 +1,8 @@
 # Conexão Municipal — contexto Cursor
 
 ## Scratchpad
-- **Último commit relevante (main):** `91ac1e0` — ERP cadastro CNPJ Invertexto, `/erp/cadastrar-negocio` + `/erp/dados-fiscais`, PlugNotas após aprovação super admin; env `CNPJ_API_TOKEN`.
+- **Último commit relevante (main):** `7fb2856` — ERP fiscal/financeiro, lançamentos em pedidos, PDV, `/erp/mei`, testes `erp-fiscal` / `erp-order-finance-posting`, `docs/SPEC-ATUAL.md`.
+- **Anterior:** `91ac1e0` — ERP cadastro CNPJ Invertexto, `/erp/cadastrar-negocio` + `/erp/dados-fiscais`, PlugNotas após aprovação super admin; env `CNPJ_API_TOKEN`.
 - **ERP web (2026-04):** [X] Listagens `/api/v1/erp/*` (exc. `stock/balances`, `stock/locations`, `GET /erp/businesses`) devolvem `{ items, total }` — cliente Next usa `ErpListResponse<T>` em `apps/web/src/lib/erp-list.ts` e `res.data.items` + paginação por `total`.
 - **ERP fiscal (2026-04):** [X] `PATCH/GET /erp/businesses/:id` perfil emitente; [X] `GET /erp/fiscal/readiness?type=nfse|nfe` + validação pré-emissão em `ErpFiscalService`; [X] página `/erp/dados-fiscais`; produção: certificado A1 no PlugNotas + `PLUGNOTAS_*` + `API_PUBLIC_URL`.
 - **Admin (2026-04):** [X] `/admin/erp` filtros + ações como diretório; [X] `AdminLayout` botão Sair; [X] Academia: YouTube (vídeo ou playlist `list=`); [X] `YoutubePlaylistService` + `YOUTUBE_API_KEY` (Data API v3) ou RSS fallback; trilha = várias `academy_lessons`; catálogo público com `lessonCount`; [X] Academia pública: `thumbnailUrl` (primeiro vídeo), `GET /academy/courses/categories`, filtro `category`, UI cartões + progresso (my-courses).
