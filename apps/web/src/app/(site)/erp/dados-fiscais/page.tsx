@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
+import { normalizeFiscalDocument } from "@/lib/fiscal-document";
 
 type ErpBusinessDetail = {
   id: string;
@@ -332,12 +333,12 @@ export default function ErpDadosFiscaisPage() {
               />
             </label>
             <label className="block text-sm font-medium text-marinha-700">
-              CNPJ / CPF (somente números)
+              CNPJ / CPF
               <input
                 value={document}
-                onChange={(e) => setDocument(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setDocument(normalizeFiscalDocument(e.target.value))}
                 className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm font-mono"
-                maxLength={14}
+                maxLength={20}
               />
             </label>
             <label className="block text-sm font-medium text-marinha-700">

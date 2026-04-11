@@ -8,6 +8,7 @@ import { DataSource, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpBusinessUser } from '../../entities/erp-business-user.entity';
 import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
+import { normalizeFiscalDocument } from '../../common/fiscal-document';
 import { CreateErpBusinessDto } from '../dto/create-business.dto';
 import { UpdateErpBusinessProfileDto } from '../dto/update-erp-business-profile.dto';
 
@@ -42,7 +43,7 @@ export class ErpBusinessService {
         tenantId,
         tradeName: dto.tradeName.trim(),
         legalName: dto.legalName?.trim() || null,
-        document: dto.document?.replace(/\D/g, '') || null,
+        document: normalizeFiscalDocument(dto.document) || null,
         address: dto.address ?? null,
         cityIbgeCode: dto.cityIbgeCode?.trim() || null,
         taxRegime: dto.taxRegime ?? null,
@@ -100,7 +101,7 @@ export class ErpBusinessService {
       b.legalName = dto.legalName.trim() || null;
     }
     if (dto.document !== undefined) {
-      const d = dto.document.replace(/\D/g, '');
+      const d = normalizeFiscalDocument(dto.document);
       b.document = d || null;
     }
     if (dto.address !== undefined) {

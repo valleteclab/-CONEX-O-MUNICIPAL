@@ -6,6 +6,7 @@ import { DataSource, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpBusinessUser } from '../../entities/erp-business-user.entity';
 import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
+import { isCnpjKind, parseFiscalDocument } from '../../common/fiscal-document';
 import { Tenant } from '../../entities/tenant.entity';
 import { User } from '../../entities/user.entity';
 import { UserTenant } from '../../entities/user-tenant.entity';
@@ -31,7 +32,13 @@ export class ErpPublicSignupService {
   async createSignup(dto: PublicBusinessSignupDto) {
     const tenant = await this.resolveDefaultTenant();
     const email = dto.responsibleEmail.toLowerCase().trim();
-    const document = dto.document.replace(/\D/g, '');
+    const parsedDocument = parseFiscalDocument(dto.document);
+    if (!parsedDocument.isValid || !isCnpjKind(parsedDocument.kind)) {
+      throw new BadRequestException(
+        'Informe um CNPJ valido para cadastrar a empresa.',
+      );
+    }
+    const document = parsedDocument.normalized;
 
     const existingBusiness = await this.businesses.findOne({ where: { tenantId: tenant.id, document } });
     if (existingBusiness) {

@@ -9,7 +9,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-/** Campos opcionais para PATCH — preencher dados fiscais do emitente antes de NF-e/NFS-e. */
+/** Campos opcionais para PATCH; preencher dados fiscais do emitente antes de NF-e/NFS-e. */
 export class UpdateErpBusinessProfileDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -18,26 +18,28 @@ export class UpdateErpBusinessProfileDto {
   @MaxLength(255)
   legalName?: string;
 
-  /** CNPJ/CPF — apenas dígitos */
+  /** CNPJ/CPF; aceita CNPJ alfanumerico. */
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   @MaxLength(20)
   document?: string;
 
-  /** Endereço do emitente: logradouro, numero, complemento, bairro, cep, uf */
+  /** Endereco do emitente: logradouro, numero, complemento, bairro, cep, uf. */
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
   address?: Record<string, string>;
 
-  @ApiPropertyOptional({ description: 'Inscrição municipal (NFS-e)' })
+  @ApiPropertyOptional({ description: 'Inscricao municipal (NFS-e)' })
   @IsOptional()
   @IsString()
   @MaxLength(32)
   inscricaoMunicipal?: string;
 
-  @ApiPropertyOptional({ description: 'Inscrição estadual (NF-e); use ISENTO se aplicável' })
+  @ApiPropertyOptional({
+    description: 'Inscricao estadual (NF-e); use ISENTO se aplicavel',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(32)
@@ -62,16 +64,16 @@ export class UpdateErpBusinessProfileDto {
   ])
   taxRegime?: string;
 
-  /** Código IBGE do município (7 dígitos) */
+  /** Codigo IBGE do municipio (7 digitos). */
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  @Matches(/^\d{7}$/, { message: 'cityIbgeCode deve ter 7 dígitos (IBGE)' })
+  @Matches(/^\d{7}$/, { message: 'cityIbgeCode deve ter 7 digitos (IBGE)' })
   cityIbgeCode?: string;
 
   /**
    * Mesclado com o JSON existente. Ex.: nfse: { serviceCode, cnae, issAliquota },
-   * plugnotasRegistered pode ser false para forçar re-registro após mudança de CNPJ.
+   * plugnotasRegistered pode ser false para forcar re-registro apos mudanca de CNPJ.
    */
   @ApiPropertyOptional()
   @IsOptional()

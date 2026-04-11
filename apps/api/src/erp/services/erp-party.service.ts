@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { normalizeFiscalDocument } from '../../common/fiscal-document';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpParty } from '../../entities/erp-party.entity';
 import { CreateErpPartyDto, UpdateErpPartyDto } from '../dto/party.dto';
@@ -33,7 +34,7 @@ export class ErpPartyService {
       type: dto.type,
       name: dto.name.trim(),
       legalName: dto.legalName?.trim() || null,
-      document: dto.document?.replace(/\D/g, '') || null,
+      document: normalizeFiscalDocument(dto.document) || null,
       email: dto.email?.trim().toLowerCase() || null,
       phone: dto.phone?.trim() || null,
       stateRegistration: dto.stateRegistration?.trim() || null,
@@ -72,7 +73,7 @@ export class ErpPartyService {
       row.legalName = dto.legalName?.trim() || null;
     }
     if (dto.document !== undefined) {
-      row.document = dto.document?.replace(/\D/g, '') || null;
+      row.document = normalizeFiscalDocument(dto.document) || null;
     }
     if (dto.email !== undefined) {
       row.email = dto.email?.trim().toLowerCase() || null;

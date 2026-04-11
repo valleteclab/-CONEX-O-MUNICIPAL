@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 
 export class CreateErpBusinessDto {
-  @ApiProperty({ example: 'Comércio Exemplo Ltda' })
+  @ApiProperty({ example: 'Comercio Exemplo Ltda' })
   @IsString()
   @MinLength(2)
   @MaxLength(255)
@@ -21,18 +21,24 @@ export class CreateErpBusinessDto {
   @MaxLength(255)
   legalName?: string;
 
-  @ApiPropertyOptional({ description: 'CNPJ/CPF sem máscara' })
+  @ApiPropertyOptional({
+    description: 'CNPJ/CPF sem mascara; aceita CNPJ alfanumerico',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(20)
   document?: string;
 
-  @ApiPropertyOptional({ description: 'Endereço do estabelecimento (ex.: consulta CNPJ)' })
+  @ApiPropertyOptional({
+    description: 'Endereco do estabelecimento (ex.: consulta CNPJ)',
+  })
   @IsOptional()
   @IsObject()
   address?: Record<string, string>;
 
-  @ApiPropertyOptional({ description: 'Código IBGE do município (7 dígitos), se já souber' })
+  @ApiPropertyOptional({
+    description: 'Codigo IBGE do municipio (7 digitos), se ja souber',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(10)
