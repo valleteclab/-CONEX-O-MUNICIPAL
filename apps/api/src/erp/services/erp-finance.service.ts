@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, IsNull, Repository } from 'typeorm';
 import { ErpAccountPayable } from '../../entities/erp-account-payable.entity';
 import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpBusiness } from '../../entities/erp-business.entity';
@@ -10,6 +10,7 @@ import {
   CreateAccountPayableDto,
   CreateAccountReceivableDto,
   CreateCashEntryDto,
+  FinanceListQueryDto,
   FinanceSummaryQueryDto,
   PatchFinanceStatusDto,
 } from '../dto/finance.dto';
@@ -28,15 +29,14 @@ export class ErpFinanceService {
     private readonly parties: Repository<ErpParty>,
   ) {}
 
-  // ——— Contas a receber ———
-
   async listAr(
     business: ErpBusiness,
     take = 50,
     skip = 0,
+    query?: FinanceListQueryDto,
   ): Promise<{ items: ErpAccountReceivable[]; total: number }> {
     const [items, total] = await this.ar.findAndCount({
-      where: { businessId: business.id, tenantId: business.tenantId },
+      where: this.buildFinanceWhere(business, query),
       order: { dueDate: 'ASC' },
       take: Math.min(take, 100),
       skip,
@@ -73,21 +73,20 @@ export class ErpFinanceService {
       where: { id, businessId: business.id, tenantId: business.tenantId },
     });
     if (!row) {
-      throw new NotFoundException('Título a receber não encontrado');
+      throw new NotFoundException('Titulo a receber nao encontrado');
     }
     row.status = dto.status;
     return this.ar.save(row);
   }
 
-  // ——— Contas a pagar ———
-
   async listAp(
     business: ErpBusiness,
     take = 50,
     skip = 0,
+    query?: FinanceListQueryDto,
   ): Promise<{ items: ErpAccountPayable[]; total: number }> {
     const [items, total] = await this.ap.findAndCount({
-      where: { businessId: business.id, tenantId: business.tenantId },
+      where: this.buildFinanceWhere(business, query),
       order: { dueDate: 'ASC' },
       take: Math.min(take, 100),
       skip,
@@ -124,13 +123,11 @@ export class ErpFinanceService {
       where: { id, businessId: business.id, tenantId: business.tenantId },
     });
     if (!row) {
-      throw new NotFoundException('Título a pagar não encontrado');
+      throw new NotFoundException('Titulo a pagar nao encontrado');
     }
     row.status = dto.status;
     return this.ap.save(row);
   }
-
-  // ——— Caixa ———
 
   async listCash(
     business: ErpBusiness,
@@ -235,7 +232,26 @@ export class ErpFinanceService {
       },
     });
     if (!p) {
-      throw new NotFoundException('Parte (cliente/fornecedor) inválida');
+      throw new NotFoundException('Parte (cliente/fornecedor) invalida');
     }
+  }
+
+  private buildFinanceWhere(
+    business: ErpBusiness,
+    query?: FinanceListQueryDto,
+  ): Record<string, unknown> {
+    const where: Record<string, unknown> = {
+      businessId: business.id,
+      tenantId: business.tenantId,
+    };
+    if (query?.status) {
+      where.status = query.status;
+    }
+    if (query?.origin === 'manual') {
+      where.linkRef = IsNull();
+    } else if (query?.origin) {
+      where.linkRef = query.origin;
+    }
+    return where;
   }
 }

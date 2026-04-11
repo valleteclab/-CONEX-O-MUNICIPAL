@@ -300,7 +300,9 @@ export default function FiscalPage() {
       <ErpFiscalEmitModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSuccess={() => { setModalOpen(false); void load(); }}
+        onSuccess={() => {
+          void load();
+        }}
       />
     </>
   );

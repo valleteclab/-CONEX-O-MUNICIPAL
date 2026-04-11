@@ -43,7 +43,6 @@ export function SuperAdminPanel() {
   const [loading, setLoading] = useState(true);
 
   const [aiCfg, setAiCfg] = useState<ErpProductClassifierSetting | null>(null);
-  const [aiCfgLoading, setAiCfgLoading] = useState(false);
   const [aiCfgSaving, setAiCfgSaving] = useState(false);
   const [aiCfgMsg, setAiCfgMsg] = useState<string | null>(null);
 

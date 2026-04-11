@@ -18,6 +18,7 @@ type ErpDataTableProps<T> = {
   onLoadMore?: () => void;
   hasMore?: boolean;
   keyExtractor: (row: T) => string;
+  rowClassName?: (row: T) => string | undefined;
 };
 
 function SkeletonRow({ cols }: { cols: number }) {
@@ -42,6 +43,7 @@ export function ErpDataTable<T>({
   onLoadMore,
   hasMore,
   keyExtractor,
+  rowClassName,
 }: ErpDataTableProps<T>) {
   return (
     <div className="overflow-x-auto rounded-btn border border-marinha-900/8 bg-white/50">
@@ -86,7 +88,7 @@ export function ErpDataTable<T>({
             data.map((row) => (
               <tr
                 key={keyExtractor(row)}
-                className="border-b border-marinha-900/5 last:border-0 hover:bg-marinha-900/[0.02]"
+                className={`border-b border-marinha-900/5 last:border-0 hover:bg-marinha-900/[0.02] ${rowClassName?.(row) ?? ""}`}
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-marinha-800">

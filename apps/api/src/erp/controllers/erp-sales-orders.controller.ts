@@ -46,7 +46,9 @@ export class ErpSalesOrdersController {
     @SelectedBusiness() business: ErpBusiness,
     @Body() dto: CreateSalesOrderDto,
   ) {
-    return this.svc.create(business, dto);
+    return this.svc.create(business, dto, {
+      source: dto.source,
+    });
   }
 
   @Get(':id')

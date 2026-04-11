@@ -43,6 +43,29 @@ type CreateForm = {
   minStock: string;
 };
 
+type ClassificationSuggestion = {
+  productId: string;
+  ncm?: string | null;
+  cfopDefault?: string | null;
+  originCode?: string | null;
+  cest?: string | null;
+};
+
+type ClassificationJobResult = {
+  suggestions?: ClassificationSuggestion[];
+  stats?: {
+    total?: number;
+    classified?: number;
+    skipped?: number;
+  };
+};
+
+type ClassificationJobPayload = {
+  status?: string;
+  error?: string | null;
+  result?: ClassificationJobResult | null;
+};
+
 const EMPTY_FORM: CreateForm = {
   kind: "product",
   sku: "",
@@ -101,7 +124,7 @@ export default function ErpProdutosPage() {
   const [classifyLimit, setClassifyLimit] = useState(50);
   const [classifyJobId, setClassifyJobId] = useState<string | null>(null);
   const [classifyStatus, setClassifyStatus] = useState<string | null>(null);
-  const [classifyResult, setClassifyResult] = useState<any | null>(null);
+  const [classifyResult, setClassifyResult] = useState<ClassificationJobResult | null>(null);
   const [classifyError, setClassifyError] = useState<string | null>(null);
   const [isClassifySubmitting, setIsClassifySubmitting] = useState(false);
   const [isApplySubmitting, setIsApplySubmitting] = useState(false);
@@ -197,7 +220,9 @@ export default function ErpProdutosPage() {
 
   const pollJob = useCallback(
     async (jobId: string) => {
-      const res = await erpFetch<any>(`/api/v1/erp/products/classification-jobs/${jobId}`);
+      const res = await erpFetch<ClassificationJobPayload>(
+        `/api/v1/erp/products/classification-jobs/${jobId}`,
+      );
       if (!res.ok || !res.data) return;
       setClassifyStatus(res.data.status ?? null);
       if (res.data.status === "done" || res.data.status === "failed") {

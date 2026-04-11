@@ -106,3 +106,15 @@ export class FinanceSummaryQueryDto {
   @IsDateString()
   to?: string;
 }
+
+export class FinanceListQueryDto {
+  @ApiPropertyOptional({ enum: ['open', 'paid', 'cancelled'] })
+  @IsOptional()
+  @IsIn(['open', 'paid', 'cancelled'])
+  status?: 'open' | 'paid' | 'cancelled';
+
+  @ApiPropertyOptional({ enum: ['manual', 'sales_order', 'purchase_order'] })
+  @IsOptional()
+  @IsIn(['manual', 'sales_order', 'purchase_order'])
+  origin?: 'manual' | 'sales_order' | 'purchase_order';
+}

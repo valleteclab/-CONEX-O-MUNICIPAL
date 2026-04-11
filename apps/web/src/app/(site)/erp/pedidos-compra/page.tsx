@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
@@ -53,7 +54,7 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
-export default function ErpPedidosCompraPage() {
+function ErpPedidosCompraContent() {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +68,13 @@ export default function ErpPedidosCompraPage() {
   const [supplierPartyId, setSupplierPartyId] = useState("");
   const [lines, setLines] = useState<OrderLine[]>([{ productId: "", qty: "1", unitPrice: "0" }]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusPatchError, setStatusPatchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
+  const searchParams = useSearchParams();
+  const focusOrderId = searchParams.get("focus");
 
   const load = useCallback(
     async (reset = false) => {
@@ -120,13 +124,16 @@ export default function ErpPedidosCompraPage() {
   }, [businessId]);
 
   const patchStatus = async (id: string, status: "confirmed" | "received" | "cancelled") => {
+    setStatusPatchError(null);
     const res = await erpFetch(`/api/v1/erp/purchase-orders/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
-    if (res.ok) {
-      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    if (!res.ok) {
+      setStatusPatchError(res.error ?? "Não foi possível atualizar o pedido de compra.");
+      return;
     }
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
   const addLine = () =>
@@ -249,6 +256,12 @@ export default function ErpPedidosCompraPage() {
         description="Organize compras, acompanhe fornecedores e registre o recebimento dos itens para abastecer a operação."
         badge="Compras"
       />
+      {statusPatchError && (
+        <div className="mb-4 rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">Não foi possível atualizar o pedido</p>
+          <p className="mt-1">{statusPatchError}</p>
+        </div>
+      )}
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card variant="featured">
@@ -274,6 +287,15 @@ export default function ErpPedidosCompraPage() {
         </Button>
         <Badge tone="accent" className="self-center">Suprimentos</Badge>
       </div>
+      <div className="mb-4 rounded-btn border border-cerrado-500/25 bg-cerrado-500/10 px-4 py-3 text-sm text-marinha-700">
+        Ao marcar um pedido como <strong>recebido</strong>, o sistema lança a entrada no estoque e cria
+        automaticamente um título em <strong>Contas a pagar</strong>.
+      </div>
+      {focusOrderId && (
+        <div className="mb-4 rounded-btn border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          Pedido em foco: <span className="font-mono font-semibold">{shortId(focusOrderId)}</span>
+        </div>
+      )}
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
@@ -292,6 +314,9 @@ export default function ErpPedidosCompraPage() {
           keyExtractor={(r) => r.id}
           hasMore={hasMore}
           onLoadMore={() => load(false)}
+          rowClassName={(r) =>
+            r.id === focusOrderId ? "bg-blue-50 ring-1 ring-inset ring-blue-200" : undefined
+          }
         />
       </Card>
 
@@ -305,6 +330,9 @@ export default function ErpPedidosCompraPage() {
       >
         <p className="mb-4 text-sm text-marinha-500">
           Selecione o fornecedor e monte os itens para registrar a compra no ERP.
+        </p>
+        <p className="mb-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-3 py-2 text-xs text-marinha-600">
+          Quando o pedido for recebido, o estoque e o financeiro serão atualizados automaticamente.
         </p>
         <div className="mb-4 flex flex-col gap-1">
           <label className="text-xs font-medium text-marinha-700">Fornecedor *</label>
@@ -381,5 +409,13 @@ export default function ErpPedidosCompraPage() {
         {formError && <p className="text-sm text-red-600">{formError}</p>}
       </ErpFormModal>
     </>
+  );
+}
+
+export default function ErpPedidosCompraPage() {
+  return (
+    <Suspense fallback={null}>
+      <ErpPedidosCompraContent />
+    </Suspense>
   );
 }

@@ -16,6 +16,15 @@ export interface PlugNotasDocumentResponse {
   [key: string]: unknown;
 }
 
+export interface PlugNotasCertificateResponse {
+  message?: string;
+  data?: {
+    id?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 @Injectable()
 export class PlugNotasService {
   private readonly logger = new Logger(PlugNotasService.name);
@@ -88,6 +97,78 @@ export class PlugNotasService {
   /** Emitir NF-e — aceita array de notas */
   async emitNfe(payload: object[]): Promise<PlugNotasDocumentResponse[]> {
     return this.request<PlugNotasDocumentResponse[]>('POST', '/nfe', payload);
+  }
+
+  private authHeaders(): Record<string, string> {
+    return {
+      'x-api-key': this.apiKey,
+    };
+  }
+
+  /** Emitir NFC-e — aceita array de notas */
+  async emitNfce(payload: object[]): Promise<PlugNotasDocumentResponse[]> {
+    return this.request<PlugNotasDocumentResponse[]>('POST', '/nfce', payload);
+  }
+
+  async uploadCertificate(params: {
+    password: string;
+    filename: string;
+    contentType?: string;
+    buffer: Buffer;
+    email?: string;
+  }): Promise<PlugNotasCertificateResponse> {
+    const url = `${this.baseUrl}/certificado`;
+    this.logger.debug(`PlugNotas POST ${url}`);
+
+    const form = new FormData();
+    form.append('senha', params.password);
+    if (params.email?.trim()) {
+      form.append('email', params.email.trim());
+    }
+    form.append(
+      'arquivo',
+      new Blob([Uint8Array.from(params.buffer)], {
+        type: params.contentType || 'application/octet-stream',
+      }),
+      params.filename,
+    );
+
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: this.authHeaders(),
+        body: form,
+      });
+    } catch (err) {
+      this.logger.error('PlugNotas certificate upload network error', err);
+      throw new BadGatewayException('Falha de comunicacao com o PlugNotas');
+    }
+
+    const text = await res.text().catch(() => '');
+    if (!res.ok) {
+      this.logger.warn(`PlugNotas ${res.status}: ${text}`);
+      let msg = `PlugNotas retornou ${res.status}`;
+      try {
+        const parsed = JSON.parse(text) as {
+          error?: { message?: string };
+          message?: string;
+        };
+        msg = parsed.error?.message ?? parsed.message ?? msg;
+      } catch {
+        // keep default
+      }
+      throw new BadGatewayException(msg);
+    }
+
+    if (!text) {
+      return {};
+    }
+    try {
+      return JSON.parse(text) as PlugNotasCertificateResponse;
+    } catch {
+      return { message: text };
+    }
   }
 
   /** Consultar status de um documento */

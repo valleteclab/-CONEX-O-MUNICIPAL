@@ -23,12 +23,13 @@ export async function apiFetch<T>(
     return { ok: false, status: 0, error: "NEXT_PUBLIC_API_BASE_URL não definido" };
   }
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
   let res: Response;
   try {
     res = await fetch(url, {
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...init?.headers,
       },
     });

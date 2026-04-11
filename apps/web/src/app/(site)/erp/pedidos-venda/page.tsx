@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFiscalEmitModal } from "@/components/erp/erp-fiscal-emit-modal";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
@@ -61,11 +62,12 @@ const STATUS_COLOR: Record<string, string> = {
 
 const SOURCE_LABEL: Record<string, string> = {
   erp: "ERP",
+  pdv: "PDV",
   portal_diretorio: "Diretório",
   portal_cotacoes: "Cotações",
 };
 
-export default function ErpPedidosVendaPage() {
+function ErpPedidosVendaContent() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,8 @@ export default function ErpPedidosVendaPage() {
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
+  const searchParams = useSearchParams();
+  const focusOrderId = searchParams.get("focus");
 
   const load = useCallback(
     async (reset = false) => {
@@ -299,6 +303,16 @@ export default function ErpPedidosVendaPage() {
         </Button>
         <Badge tone="accent" className="self-center">Comercial</Badge>
       </div>
+      <div className="mb-4 rounded-btn border border-municipal-600/20 bg-municipal-600/5 px-4 py-3 text-sm text-marinha-700">
+        Ao confirmar um pedido com cliente vinculado, o sistema baixa o estoque dos itens do tipo
+        <strong> produto</strong> e cria automaticamente um título em
+        <strong> Contas a receber</strong>.
+      </div>
+      {focusOrderId && (
+        <div className="mb-4 rounded-btn border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          Pedido em foco: <span className="font-mono font-semibold">{shortId(focusOrderId)}</span>
+        </div>
+      )}
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
@@ -317,6 +331,9 @@ export default function ErpPedidosVendaPage() {
           keyExtractor={(r) => r.id}
           hasMore={hasMore}
           onLoadMore={() => load(false)}
+          rowClassName={(r) =>
+            r.id === focusOrderId ? "bg-blue-50 ring-1 ring-inset ring-blue-200" : undefined
+          }
         />
       </Card>
 
@@ -337,6 +354,10 @@ export default function ErpPedidosVendaPage() {
       >
         <p className="mb-4 text-sm text-marinha-500">
           Monte o pedido com cliente, itens e preços para registrar a negociação no ERP.
+        </p>
+        <p className="mb-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-3 py-2 text-xs text-marinha-600">
+          Se você selecionar um cliente, a confirmação do pedido poderá gerar automaticamente o título
+          financeiro correspondente.
         </p>
         <div className="mb-4 flex flex-col gap-1">
           <label className="text-xs font-medium text-marinha-700">Cliente (opcional)</label>
@@ -418,5 +439,13 @@ export default function ErpPedidosVendaPage() {
         {formError && <p className="text-sm text-red-600">{formError}</p>}
       </ErpFormModal>
     </>
+  );
+}
+
+export default function ErpPedidosVendaPage() {
+  return (
+    <Suspense fallback={null}>
+      <ErpPedidosVendaContent />
+    </Suspense>
   );
 }

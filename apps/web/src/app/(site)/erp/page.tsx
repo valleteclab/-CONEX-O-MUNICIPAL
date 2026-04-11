@@ -39,9 +39,20 @@ const quickActions = [
     title: "Financeiro",
     desc: "Controle recebimentos, pagamentos e movimentações de caixa.",
   },
+  {
+    href: "/erp/mei",
+    title: "Central MEI",
+    desc: "Acesse DAS, declaracao anual e atalhos oficiais para a rotina do MEI.",
+  },
 ];
 
 const operationAreas = [
+  {
+    href: "/erp/mei",
+    title: "Central MEI",
+    desc: "Organize a rotina mensal do MEI com atalhos oficiais e orientacoes seguras.",
+    badge: "MEI",
+  },
   {
     href: "/erp/pdv",
     title: "Frente de caixa",

@@ -33,6 +33,7 @@ const groups: Array<{
   {
     title: "Fiscal",
     items: [
+      { href: "/erp/mei", label: "Central MEI" },
       { href: "/erp/dados-fiscais", label: "Dados fiscais" },
       { href: "/erp/fiscal", label: "Notas fiscais" },
     ],

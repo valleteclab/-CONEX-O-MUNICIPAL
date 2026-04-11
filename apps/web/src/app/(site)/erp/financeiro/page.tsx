@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
@@ -11,12 +12,17 @@ import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
 import type { ErpListResponse } from "@/lib/erp-list";
 
+type FinanceStatus = "open" | "paid" | "cancelled";
+type FinanceOrigin = "manual" | "sales_order" | "purchase_order";
+
 type FinanceDoc = {
   id: string;
   partyId: string;
   dueDate: string;
   amount: string;
-  status: "open" | "paid" | "cancelled";
+  status: FinanceStatus;
+  linkRef?: string | null;
+  linkId?: string | null;
   note: string | null;
   party?: { name: string };
 };
@@ -30,13 +36,31 @@ type CashEntry = {
   description: string | null;
 };
 
-type Party = { id: string; name: string };
+type Party = {
+  id: string;
+  name: string;
+  type?: string;
+};
 
 type FinanceSummary = {
-  arOpen?: string;
-  apOpen?: string;
-  cashBalance?: string;
-  [key: string]: unknown;
+  period: {
+    from: string | null;
+    to: string | null;
+  };
+  cash: {
+    entries: number;
+    totalIn: string;
+    totalOut: string;
+    balance: string;
+  };
+  receivables: {
+    openCount: number;
+    openAmount: string;
+  };
+  payables: {
+    openCount: number;
+    openAmount: string;
+  };
 };
 
 const TAKE = 50;
@@ -49,24 +73,84 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("pt-BR");
 }
 
-const FIN_STATUS_LABEL: Record<string, string> = {
+function shortId(id: string) {
+  return id.slice(0, 8).toUpperCase();
+}
+
+const FIN_STATUS_LABEL: Record<FinanceStatus, string> = {
   open: "Em aberto",
   paid: "Pago",
   cancelled: "Cancelado",
 };
 
-const FIN_STATUS_COLOR: Record<string, string> = {
+const FIN_STATUS_COLOR: Record<FinanceStatus, string> = {
   open: "bg-yellow-100 text-yellow-700",
   paid: "bg-green-100 text-green-700",
   cancelled: "bg-marinha-100 text-marinha-500",
 };
 
+const FIN_LINK_LABEL: Record<Exclude<FinanceOrigin, "manual">, string> = {
+  sales_order: "Pedido de venda",
+  purchase_order: "Pedido de compra",
+};
+
+function buildFinanceHref(linkRef: string, linkId: string) {
+  if (linkRef === "sales_order") {
+    return `/erp/pedidos-venda?focus=${linkId}`;
+  }
+  if (linkRef === "purchase_order") {
+    return `/erp/pedidos-compra?focus=${linkId}`;
+  }
+  return null;
+}
+
+function buildFinanceQuery(params: {
+  status?: FinanceStatus | "";
+  origin?: FinanceOrigin | "";
+}) {
+  const search = new URLSearchParams({
+    take: String(TAKE),
+    skip: "0",
+  });
+  if (params.status) {
+    search.set("status", params.status);
+  }
+  if (params.origin) {
+    search.set("origin", params.origin);
+  }
+  return search.toString();
+}
+
 function makeFinColumns(
   partyLabel: string,
+  actionLabel: string,
   onStatus: (id: string, status: "paid" | "cancelled") => void,
 ): ErpColumn<FinanceDoc>[] {
   return [
     { key: "party", label: partyLabel, render: (r) => r.party?.name ?? "—" },
+    {
+      key: "origin",
+      label: "Origem",
+      render: (r) => {
+        if (!r.linkRef || !r.linkId) {
+          return <span className="text-xs text-marinha-400">Manual</span>;
+        }
+        const href = buildFinanceHref(r.linkRef, r.linkId);
+        const label = FIN_LINK_LABEL[r.linkRef as Exclude<FinanceOrigin, "manual">] ?? r.linkRef;
+        return (
+          <div className="text-xs text-marinha-600">
+            <p className="font-medium text-marinha-800">{label}</p>
+            {href ? (
+              <Link href={href} className="font-mono text-municipal-700 underline">
+                {shortId(r.linkId)}
+              </Link>
+            ) : (
+              <p className="font-mono">{shortId(r.linkId)}</p>
+            )}
+          </div>
+        );
+      },
+    },
     { key: "dueDate", label: "Vencimento", render: (r) => fmtDate(r.dueDate) },
     { key: "amount", label: "Valor", render: (r) => fmt(r.amount) },
     {
@@ -90,7 +174,7 @@ function makeFinColumns(
               onClick={() => onStatus(r.id, "paid")}
               className="rounded-btn bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
             >
-              Recebido
+              {actionLabel}
             </button>
             <button
               onClick={() => onStatus(r.id, "cancelled")}
@@ -129,7 +213,8 @@ export default function ErpFinanceiroPage() {
   const [ap, setAp] = useState<FinanceDoc[]>([]);
   const [cash, setCash] = useState<CashEntry[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
-  const [parties, setParties] = useState<Party[]>([]);
+  const [customerParties, setCustomerParties] = useState<Party[]>([]);
+  const [supplierParties, setSupplierParties] = useState<Party[]>([]);
 
   const [arLoading, setArLoading] = useState(false);
   const [apLoading, setApLoading] = useState(false);
@@ -137,6 +222,11 @@ export default function ErpFinanceiroPage() {
   const [arError, setArError] = useState<string | null>(null);
   const [apError, setApError] = useState<string | null>(null);
   const [cashError, setCashError] = useState<string | null>(null);
+
+  const [arStatusFilter, setArStatusFilter] = useState<FinanceStatus | "">("");
+  const [apStatusFilter, setApStatusFilter] = useState<FinanceStatus | "">("");
+  const [arOriginFilter, setArOriginFilter] = useState<FinanceOrigin | "">("");
+  const [apOriginFilter, setApOriginFilter] = useState<FinanceOrigin | "">("");
 
   const [openModal, setOpenModal] = useState<Modal>(null);
   const [finForm, setFinForm] = useState({ partyId: "", dueDate: "", amount: "", note: "" });
@@ -148,6 +238,7 @@ export default function ErpFinanceiroPage() {
     description: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const businessId = useSelectedBusinessId();
@@ -156,24 +247,28 @@ export default function ErpFinanceiroPage() {
   const loadAr = useCallback(async () => {
     setArLoading(true);
     setArError(null);
-    const res = await erpFetch<ErpListResponse<FinanceDoc>>(
-      `/api/v1/erp/finance/ar?take=${TAKE}&skip=0`,
-    );
+    const query = buildFinanceQuery({
+      status: arStatusFilter,
+      origin: arOriginFilter,
+    });
+    const res = await erpFetch<ErpListResponse<FinanceDoc>>(`/api/v1/erp/finance/ar?${query}`);
     if (res.ok && res.data) setAr(res.data.items);
     else setArError(res.error ?? "Erro ao carregar contas a receber.");
     setArLoading(false);
-  }, []);
+  }, [arOriginFilter, arStatusFilter]);
 
   const loadAp = useCallback(async () => {
     setApLoading(true);
     setApError(null);
-    const res = await erpFetch<ErpListResponse<FinanceDoc>>(
-      `/api/v1/erp/finance/ap?take=${TAKE}&skip=0`,
-    );
+    const query = buildFinanceQuery({
+      status: apStatusFilter,
+      origin: apOriginFilter,
+    });
+    const res = await erpFetch<ErpListResponse<FinanceDoc>>(`/api/v1/erp/finance/ap?${query}`);
     if (res.ok && res.data) setAp(res.data.items);
     else setApError(res.error ?? "Erro ao carregar contas a pagar.");
     setApLoading(false);
-  }, []);
+  }, [apOriginFilter, apStatusFilter]);
 
   const loadCash = useCallback(async () => {
     setCashLoading(true);
@@ -193,7 +288,13 @@ export default function ErpFinanceiroPage() {
 
   const loadParties = useCallback(async () => {
     const res = await erpFetch<ErpListResponse<Party>>("/api/v1/erp/parties?take=100&skip=0");
-    if (res.ok && res.data) setParties(res.data.items);
+    if (!res.ok || !res.data) return;
+    setCustomerParties(
+      res.data.items.filter((party) => party.type === "customer" || party.type === "both"),
+    );
+    setSupplierParties(
+      res.data.items.filter((party) => party.type === "supplier" || party.type === "both"),
+    );
   }, []);
 
   useEffect(() => {
@@ -202,31 +303,53 @@ export default function ErpFinanceiroPage() {
       setAp([]);
       setCash([]);
       setSummary(null);
-      setParties([]);
+      setCustomerParties([]);
+      setSupplierParties([]);
       return;
     }
-    loadAr();
-    loadAp();
-    loadCash();
-    loadSummary();
-    loadParties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId]);
+    void loadSummary();
+    void loadParties();
+  }, [businessId, loadParties, loadSummary, noBusinessId]);
+
+  useEffect(() => {
+    if (noBusinessId) return;
+    void loadAr();
+  }, [loadAr, noBusinessId]);
+
+  useEffect(() => {
+    if (noBusinessId) return;
+    void loadAp();
+  }, [loadAp, noBusinessId]);
+
+  useEffect(() => {
+    if (noBusinessId) return;
+    void loadCash();
+  }, [loadCash, noBusinessId]);
 
   const patchArStatus = async (id: string, status: "paid" | "cancelled") => {
+    setStatusError(null);
     const res = await erpFetch(`/api/v1/erp/finance/ar/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
-    if (res.ok) setAr((prev) => prev.map((d) => (d.id === id ? { ...d, status } : d)));
+    if (!res.ok) {
+      setStatusError(res.error ?? "Erro ao atualizar conta a receber.");
+      return;
+    }
+    void Promise.all([loadAr(), loadSummary()]);
   };
 
   const patchApStatus = async (id: string, status: "paid" | "cancelled") => {
+    setStatusError(null);
     const res = await erpFetch(`/api/v1/erp/finance/ap/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
-    if (res.ok) setAp((prev) => prev.map((d) => (d.id === id ? { ...d, status } : d)));
+    if (!res.ok) {
+      setStatusError(res.error ?? "Erro ao atualizar conta a pagar.");
+      return;
+    }
+    void Promise.all([loadAp(), loadSummary()]);
   };
 
   const handleFinSubmit = async (endpoint: "ar" | "ap") => {
@@ -246,9 +369,8 @@ export default function ErpFinanceiroPage() {
       }),
     });
     if (res.ok && res.data) {
-      if (endpoint === "ar") setAr((prev) => [res.data!, ...prev]);
-      else setAp((prev) => [res.data!, ...prev]);
       setOpenModal(null);
+      await Promise.all([endpoint === "ar" ? loadAr() : loadAp(), loadSummary()]);
     } else {
       setFormError(res.error ?? "Erro ao criar lançamento.");
     }
@@ -273,8 +395,8 @@ export default function ErpFinanceiroPage() {
       }),
     });
     if (res.ok && res.data) {
-      setCash((prev) => [res.data!, ...prev]);
       setOpenModal(null);
+      await Promise.all([loadCash(), loadSummary()]);
     } else {
       setFormError(res.error ?? "Erro ao criar lançamento.");
     }
@@ -284,6 +406,7 @@ export default function ErpFinanceiroPage() {
   const openFin = (type: "ar" | "ap") => {
     setFinForm({ partyId: "", dueDate: "", amount: "", note: "" });
     setFormError(null);
+    setStatusError(null);
     setOpenModal(type);
   };
 
@@ -296,6 +419,7 @@ export default function ErpFinanceiroPage() {
       description: "",
     });
     setFormError(null);
+    setStatusError(null);
     setOpenModal("cash");
   };
 
@@ -306,40 +430,75 @@ export default function ErpFinanceiroPage() {
     </div>
   );
 
-  const arColumns = makeFinColumns("Cliente", patchArStatus);
-  const apColumns = makeFinColumns("Fornecedor", patchApStatus);
+  const filterSelect = (
+    value: string,
+    onChange: (value: string) => void,
+    options: Array<{ value: string; label: string }>,
+  ) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+
+  const arColumns = makeFinColumns("Cliente", "Receber", patchArStatus);
+  const apColumns = makeFinColumns("Fornecedor", "Pagar", patchApStatus);
+  const modalParties = openModal === "ar" ? customerParties : supplierParties;
 
   return (
     <>
       <PageIntro
         title="Financeiro"
-        description="Acompanhe recebimentos, pagamentos e o movimento do caixa da empresa em um só lugar."
+        description="Acompanhe recebimentos, pagamentos e o movimento do caixa da empresa em um so lugar."
         badge="Financeiro"
       />
 
+      {statusError && (
+        <div className="mb-4 rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {statusError}
+        </div>
+      )}
+
       {summary && (
         <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {summary.arOpen !== undefined && (
-            <div className="rounded-btn border border-green-200 bg-green-50 p-4">
-              <p className="text-xs text-green-700">Total a receber</p>
-              <p className="mt-1 text-lg font-bold text-green-800">{fmt(String(summary.arOpen))}</p>
-            </div>
-          )}
-          {summary.apOpen !== undefined && (
-            <div className="rounded-btn border border-red-200 bg-red-50 p-4">
-              <p className="text-xs text-red-700">Total a pagar</p>
-              <p className="mt-1 text-lg font-bold text-red-800">{fmt(String(summary.apOpen))}</p>
-            </div>
-          )}
-          {summary.cashBalance !== undefined && (
-            <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
-              <p className="text-xs text-marinha-600">Saldo do caixa</p>
-              <p className="mt-1 text-lg font-bold text-marinha-900">{fmt(String(summary.cashBalance))}</p>
-            </div>
-          )}
+          <div className="rounded-btn border border-green-200 bg-green-50 p-4">
+            <p className="text-xs text-green-700">Total a receber</p>
+            <p className="mt-1 text-lg font-bold text-green-800">
+              {fmt(summary.receivables.openAmount)}
+            </p>
+            <p className="mt-1 text-xs text-green-700">
+              {summary.receivables.openCount} titulo(s) em aberto
+            </p>
+          </div>
+          <div className="rounded-btn border border-red-200 bg-red-50 p-4">
+            <p className="text-xs text-red-700">Total a pagar</p>
+            <p className="mt-1 text-lg font-bold text-red-800">
+              {fmt(summary.payables.openAmount)}
+            </p>
+            <p className="mt-1 text-xs text-red-700">
+              {summary.payables.openCount} titulo(s) em aberto
+            </p>
+          </div>
+          <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
+            <p className="text-xs text-marinha-600">Saldo do caixa</p>
+            <p className="mt-1 text-lg font-bold text-marinha-900">{fmt(summary.cash.balance)}</p>
+            <p className="mt-1 text-xs text-marinha-500">
+              {summary.cash.entries} lancamento(s) no periodo
+            </p>
+          </div>
           <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
             <p className="text-xs text-marinha-600">Rotina financeira</p>
-            <p className="mt-1 text-lg font-bold text-marinha-900">Em acompanhamento</p>
+            <p className="mt-1 text-lg font-bold text-marinha-900">
+              {fmt(summary.cash.totalIn)} / {fmt(summary.cash.totalOut)}
+            </p>
+            <p className="mt-1 text-xs text-marinha-500">Entradas / saidas do periodo</p>
           </div>
         </div>
       )}
@@ -349,11 +508,11 @@ export default function ErpFinanceiroPage() {
           <div>
             <h2 className="font-serif text-lg text-marinha-900">Centro financeiro</h2>
             <p className="mt-1 text-sm text-marinha-500">
-              Lance recebimentos, despesas e movimentações conforme a rotina diária da empresa.
+              Lance recebimentos, despesas e movimentacoes conforme a rotina diaria da empresa.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Badge tone="accent">Lançamentos</Badge>
+            <Badge tone="accent">Lancamentos</Badge>
             <Button variant="primary" onClick={() => openFin("ar")} disabled={noBusinessId}>
               Novo recebimento
             </Button>
@@ -361,7 +520,7 @@ export default function ErpFinanceiroPage() {
               Nova conta a pagar
             </Button>
             <Button variant="secondary" onClick={openCash} disabled={noBusinessId}>
-              Lançar no caixa
+              Lancar no caixa
             </Button>
           </div>
         </div>
@@ -374,6 +533,25 @@ export default function ErpFinanceiroPage() {
             <p className="mt-1 text-sm text-marinha-500">Valores previstos de entrada na empresa.</p>
           </div>
           <Badge tone="success">Recebimentos</Badge>
+        </div>
+        <div className="mb-4 grid gap-3 md:grid-cols-2">
+          {field(
+            "Filtrar por status",
+            filterSelect(arStatusFilter, (value) => setArStatusFilter(value as FinanceStatus | ""), [
+              { value: "", label: "Todos os status" },
+              { value: "open", label: "Em aberto" },
+              { value: "paid", label: "Pago" },
+              { value: "cancelled", label: "Cancelado" },
+            ]),
+          )}
+          {field(
+            "Filtrar por origem",
+            filterSelect(arOriginFilter, (value) => setArOriginFilter(value as FinanceOrigin | ""), [
+              { value: "", label: "Todas as origens" },
+              { value: "manual", label: "Manual" },
+              { value: "sales_order", label: "Pedido de venda" },
+            ]),
+          )}
         </div>
         <ErpDataTable
           columns={arColumns}
@@ -393,6 +571,25 @@ export default function ErpFinanceiroPage() {
             <p className="mt-1 text-sm text-marinha-500">Compromissos financeiros e despesas pendentes.</p>
           </div>
           <Badge tone="warning">Pagamentos</Badge>
+        </div>
+        <div className="mb-4 grid gap-3 md:grid-cols-2">
+          {field(
+            "Filtrar por status",
+            filterSelect(apStatusFilter, (value) => setApStatusFilter(value as FinanceStatus | ""), [
+              { value: "", label: "Todos os status" },
+              { value: "open", label: "Em aberto" },
+              { value: "paid", label: "Pago" },
+              { value: "cancelled", label: "Cancelado" },
+            ]),
+          )}
+          {field(
+            "Filtrar por origem",
+            filterSelect(apOriginFilter, (value) => setApOriginFilter(value as FinanceOrigin | ""), [
+              { value: "", label: "Todas as origens" },
+              { value: "manual", label: "Manual" },
+              { value: "purchase_order", label: "Pedido de compra" },
+            ]),
+          )}
         </div>
         <ErpDataTable
           columns={apColumns}
@@ -418,13 +615,12 @@ export default function ErpFinanceiroPage() {
           data={cash}
           isLoading={cashLoading}
           error={cashError}
-          emptyMessage="Nenhum lançamento de caixa."
+          emptyMessage="Nenhum lancamento de caixa."
           onRetry={loadCash}
           keyExtractor={(r) => r.id}
         />
       </Card>
 
-      {/* Modal AR / AP */}
       <ErpFormModal
         title={openModal === "ar" ? "Novo recebimento" : "Nova conta a pagar"}
         open={openModal === "ar" || openModal === "ap"}
@@ -441,7 +637,7 @@ export default function ErpFinanceiroPage() {
               className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
             >
               <option value="">— Selecione —</option>
-              {parties.map((p) => (
+              {modalParties.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -469,7 +665,7 @@ export default function ErpFinanceiroPage() {
             />,
           )}
           {field(
-            "Observação",
+            "Observacao",
             <input
               type="text"
               value={finForm.note}
@@ -481,9 +677,8 @@ export default function ErpFinanceiroPage() {
         {formError && <p className="mt-3 text-sm text-red-600">{formError}</p>}
       </ErpFormModal>
 
-      {/* Modal Caixa */}
       <ErpFormModal
-        title="Lançamento de caixa"
+        title="Lancamento de caixa"
         open={openModal === "cash"}
         onClose={() => setOpenModal(null)}
         onSubmit={handleCashSubmit}
@@ -535,7 +730,7 @@ export default function ErpFinanceiroPage() {
           )}
           <div className="col-span-2">
             {field(
-              "Descrição",
+              "Descricao",
               <input
                 type="text"
                 value={cashForm.description}

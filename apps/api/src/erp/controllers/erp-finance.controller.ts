@@ -18,6 +18,7 @@ import {
   CreateAccountPayableDto,
   CreateAccountReceivableDto,
   CreateCashEntryDto,
+  FinanceListQueryDto,
   FinanceSummaryQueryDto,
   PatchFinanceStatusDto,
 } from '../dto/finance.dto';
@@ -46,10 +47,11 @@ export class ErpFinanceController {
     @SelectedBusiness() business: ErpBusiness,
     @Query('take') takeStr?: string,
     @Query('skip') skipStr?: string,
+    @Query() query?: FinanceListQueryDto,
   ) {
     const take = Math.min(100, Math.max(1, parseInt(takeStr ?? '50', 10) || 50));
     const skip = Math.max(0, parseInt(skipStr ?? '0', 10) || 0);
-    return this.svc.listAr(business, take, skip);
+    return this.svc.listAr(business, take, skip, query);
   }
 
   @Post('ar')
@@ -77,10 +79,11 @@ export class ErpFinanceController {
     @SelectedBusiness() business: ErpBusiness,
     @Query('take') takeStr?: string,
     @Query('skip') skipStr?: string,
+    @Query() query?: FinanceListQueryDto,
   ) {
     const take = Math.min(100, Math.max(1, parseInt(takeStr ?? '50', 10) || 50));
     const skip = Math.max(0, parseInt(skipStr ?? '0', 10) || 0);
-    return this.svc.listAp(business, take, skip);
+    return this.svc.listAp(business, take, skip, query);
   }
 
   @Post('ap')

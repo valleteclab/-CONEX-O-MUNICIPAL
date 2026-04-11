@@ -14,55 +14,65 @@ import { ErpSalesOrderItem } from './erp-sales-order-item.entity';
 
 export type ErpSalesOrderStatus = 'draft' | 'confirmed' | 'cancelled';
 
-/** Origem do pedido: manual no ERP, vitrine do diretório ou central de cotações. */
-export type ErpSalesOrderSource = 'erp' | 'portal_diretorio' | 'portal_cotacoes';
+/** Origem do pedido: manual no ERP, PDV, vitrine do diretorio ou central de cotacoes. */
+export type ErpSalesOrderSource =
+  | 'erp'
+  | 'pdv'
+  | 'portal_diretorio'
+  | 'portal_cotacoes';
 
 @Entity({ name: 'erp_sales_orders' })
 export class ErpSalesOrder {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string;
+  tenantId!: string;
 
   @Column({ name: 'business_id', type: 'uuid' })
-  businessId: string;
+  businessId!: string;
 
   @ManyToOne(() => ErpBusiness, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'business_id' })
-  business: ErpBusiness;
+  business!: ErpBusiness;
 
   @Column({ name: 'party_id', type: 'uuid', nullable: true })
-  partyId: string | null;
+  partyId!: string | null;
 
   @ManyToOne(() => ErpParty, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'party_id' })
-  party: ErpParty | null;
+  party!: ErpParty | null;
 
   @Column({ type: 'varchar', length: 24, default: 'draft' })
-  status: ErpSalesOrderStatus;
+  status!: ErpSalesOrderStatus;
 
-  @Column({ name: 'total_amount', type: 'decimal', precision: 18, scale: 4, default: 0 })
-  totalAmount: string;
+  @Column({
+    name: 'total_amount',
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0,
+  })
+  totalAmount!: string;
 
   @Column({ type: 'text', nullable: true })
-  note: string | null;
+  note!: string | null;
 
   @Column({ type: 'varchar', length: 32, default: 'erp' })
-  source: ErpSalesOrderSource;
+  source!: ErpSalesOrderSource;
 
   @Column({ name: 'portal_request_id', type: 'uuid', nullable: true })
-  portalRequestId: string | null;
+  portalRequestId!: string | null;
 
   @Column({ name: 'stock_posted_at', type: 'timestamptz', nullable: true })
-  stockPostedAt: Date | null;
+  stockPostedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
-  @OneToMany(() => ErpSalesOrderItem, (i) => i.order)
-  items: ErpSalesOrderItem[];
+  @OneToMany(() => ErpSalesOrderItem, (item) => item.order)
+  items!: ErpSalesOrderItem[];
 }

@@ -24,7 +24,7 @@ type ErpBusinessDetail = {
 type FiscalReadinessCheck = { id: string; ok: boolean; message: string };
 
 type ReadinessPayload = {
-  type: "nfse" | "nfe";
+  type: "nfse" | "nfe" | "nfce";
   sandbox: boolean;
   ready: boolean;
   checks: FiscalReadinessCheck[];
@@ -61,12 +61,19 @@ export default function ErpDadosFiscaisPage() {
   const [nfseServiceCode, setNfseServiceCode] = useState("01.07");
   const [nfseCnae, setNfseCnae] = useState("6201500");
   const [nfseIssAliquota, setNfseIssAliquota] = useState("2");
+  const [plugnotasCertificateId, setPlugnotasCertificateId] = useState("");
+  const [nfceCscId, setNfceCscId] = useState("");
+  const [nfceCscCode, setNfceCscCode] = useState("");
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [certificatePassword, setCertificatePassword] = useState("");
+  const [certificateEmail, setCertificateEmail] = useState("");
 
-  const [readinessType, setReadinessType] = useState<"nfse" | "nfe">("nfse");
+  const [readinessType, setReadinessType] = useState<"nfse" | "nfe" | "nfce">("nfse");
   const [readiness, setReadiness] = useState<ReadinessPayload | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [plugnotasRegistered, setPlugnotasRegistered] = useState(false);
   const [registeringPn, setRegisteringPn] = useState(false);
+  const [uploadingCertificate, setUploadingCertificate] = useState(false);
 
   const loadBusiness = useCallback(async () => {
     if (!businessId) {
@@ -96,9 +103,14 @@ export default function ErpDadosFiscaisPage() {
     setTaxRegime(b.taxRegime ?? "mei");
     setCityIbgeCode(b.cityIbgeCode ?? "");
     const nfse = (b.fiscalConfig?.nfse ?? {}) as Record<string, unknown>;
+    const nfce = (b.fiscalConfig?.nfce ?? {}) as Record<string, unknown>;
     setNfseServiceCode(String(nfse.serviceCode ?? "01.07"));
     setNfseCnae(String(nfse.cnae ?? "6201500"));
     setNfseIssAliquota(String(nfse.issAliquota ?? "2"));
+    setPlugnotasCertificateId(String(b.fiscalConfig?.plugnotasCertificateId ?? ""));
+    setCertificateEmail(String((b.fiscalConfig?.plugnotasCertificateMeta as Record<string, unknown> | undefined)?.email ?? b.fiscalConfig?.responsibleEmail ?? ""));
+    setNfceCscId(String(nfce.cscId ?? ""));
+    setNfceCscCode(String(nfce.cscCode ?? ""));
     setPlugnotasRegistered(Boolean(b.fiscalConfig?.plugnotasRegistered));
   }, [businessId]);
 
@@ -144,10 +156,15 @@ export default function ErpDadosFiscaisPage() {
         taxRegime,
         cityIbgeCode: cityIbgeCode.trim() || undefined,
         fiscalConfig: {
+          plugnotasCertificateId: plugnotasCertificateId.trim() || undefined,
           nfse: {
             serviceCode: nfseServiceCode.trim(),
             cnae: nfseCnae.trim(),
             issAliquota: Number(nfseIssAliquota.replace(",", ".")) || 0,
+          },
+          nfce: {
+            cscId: nfceCscId.trim() || undefined,
+            cscCode: nfceCscCode.trim() || undefined,
           },
         },
       }),
@@ -182,6 +199,50 @@ export default function ErpDadosFiscaisPage() {
       setPlugnotasRegistered(true);
     }
     void loadReadiness();
+  }
+
+  async function handleCertificateUpload() {
+    if (!certificateFile) {
+      setError("Selecione o arquivo do certificado A1.");
+      return;
+    }
+    if (!certificatePassword.trim()) {
+      setError("Informe a senha do certificado.");
+      return;
+    }
+
+    setUploadingCertificate(true);
+    setError(null);
+    setSavedMsg(null);
+
+    const form = new FormData();
+    form.append("file", certificateFile);
+    form.append("password", certificatePassword.trim());
+    if (certificateEmail.trim()) {
+      form.append("email", certificateEmail.trim());
+    }
+
+    const res = await erpFetch<{
+      ok: boolean;
+      certificateId: string;
+      emitenteSynced: boolean;
+      message: string;
+    }>("/api/v1/erp/fiscal/certificate", {
+      method: "POST",
+      body: form,
+    });
+
+    setUploadingCertificate(false);
+    if (!res.ok || !res.data) {
+      setError(res.error ?? "Falha ao enviar o certificado.");
+      return;
+    }
+
+    setSavedMsg(res.data.message);
+    setCertificatePassword("");
+    setCertificateFile(null);
+    await loadBusiness();
+    await loadReadiness();
   }
 
   if (!businessId) {
@@ -231,7 +292,7 @@ export default function ErpDadosFiscaisPage() {
           <p className="mt-2 text-lg font-bold text-marinha-900">
             {readiness?.ready ? "Pronto para emitir" : "Pendências encontradas"}
           </p>
-          <p className="mt-1 text-sm text-marinha-500">Confira abaixo os itens validados para NFS-e e NF-e.</p>
+          <p className="mt-1 text-sm text-marinha-500">Confira abaixo os itens validados para NFS-e, NF-e e NFC-e.</p>
         </Card>
       </div>
 
@@ -436,6 +497,83 @@ export default function ErpDadosFiscaisPage() {
             </div>
             </div>
 
+            <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
+              <h3 className="text-sm font-semibold text-marinha-800">PlugNotas e NFC-e</h3>
+              <p className="mt-1 text-xs text-marinha-500">
+                Envie o certificado A1 do cliente para o PlugNotas e informe os dados CSC da NFC-e para preparar a emissao em producao.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm font-medium text-marinha-700">
+                  Certificado A1 (.pfx ou .p12)
+                  <input
+                    type="file"
+                    accept=".pfx,.p12,application/x-pkcs12"
+                    onChange={(e) => setCertificateFile(e.target.files?.[0] ?? null)}
+                    className="mt-1 block w-full rounded-btn border border-marinha-900/20 bg-white px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-marinha-700">
+                  Senha do certificado
+                  <input
+                    type="password"
+                    value={certificatePassword}
+                    onChange={(e) => setCertificatePassword(e.target.value)}
+                    className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
+                    placeholder="Senha do A1"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-marinha-700">
+                  E-mail para aviso de vencimento
+                  <input
+                    type="email"
+                    value={certificateEmail}
+                    onChange={(e) => setCertificateEmail(e.target.value)}
+                    className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
+                    placeholder="fiscal@empresa.com.br"
+                  />
+                </label>
+                <div className="rounded-btn border border-marinha-900/10 bg-white px-3 py-3 text-sm text-marinha-700">
+                  <p className="font-semibold text-marinha-900">Certificado vinculado</p>
+                  <p className="mt-1 font-mono text-xs">
+                    {plugnotasCertificateId || "Nenhum certificado enviado ainda"}
+                  </p>
+                  <p className="mt-2 text-xs text-marinha-500">
+                    O upload e enviado ao PlugNotas e o ID retornado fica salvo no cadastro fiscal do negocio.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={uploadingCertificate}
+                  onClick={() => void handleCertificateUpload()}
+                >
+                  {uploadingCertificate ? "Enviando certificado..." : "Enviar certificado para o PlugNotas"}
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm font-medium text-marinha-700">
+                  CSC ID (NFC-e)
+                  <input
+                    value={nfceCscId}
+                    onChange={(e) => setNfceCscId(e.target.value)}
+                    className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
+                    placeholder="1"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-marinha-700">
+                  CSC codigo (NFC-e)
+                  <input
+                    value={nfceCscCode}
+                    onChange={(e) => setNfceCscCode(e.target.value)}
+                    className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm font-mono"
+                    placeholder="Codigo fornecido pela SEFAZ"
+                  />
+                </label>
+              </div>
+            </div>
+
             <Button type="submit" disabled={saving} className="mt-2">
               {saving ? "Salvando…" : "Salvar dados fiscais"}
             </Button>
@@ -509,6 +647,17 @@ export default function ErpDadosFiscaisPage() {
               }`}
             >
               NF-e
+            </button>
+            <button
+              type="button"
+              onClick={() => setReadinessType("nfce")}
+              className={`rounded-btn px-3 py-1.5 text-sm font-semibold ${
+                readinessType === "nfce" ?
+                  "bg-municipal-600 text-white"
+                : "bg-marinha-900/10 text-marinha-700"
+              }`}
+            >
+              NFC-e
             </button>
             <Button
               type="button"

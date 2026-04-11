@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ErpFiscalEmitModal } from "@/components/erp/erp-fiscal-emit-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { erpFetch } from "@/lib/api-browser";
-import type { ErpListResponse } from "@/lib/erp-list";
 import { cn } from "@/lib/cn";
+import type { ErpListResponse } from "@/lib/erp-list";
+
+type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix" | "other";
 
 type ApiProduct = {
   id: string;
@@ -18,21 +21,43 @@ type ApiProduct = {
   isActive: boolean;
 };
 
-type Product = { id: string; name: string; price: number; barcode: string; sku: string };
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  barcode: string;
+  sku: string;
+};
 
-type Line = { product: Product; qty: number };
+type Line = {
+  product: Product;
+  qty: number;
+};
 
-type SaleResult = { id: string };
+type SaleResult = {
+  id: string;
+};
 
-const fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const fmt = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
 
-function mapProduct(p: ApiProduct): Product {
+const PAYMENT_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
+  { value: "cash", label: "Dinheiro" },
+  { value: "pix", label: "PIX" },
+  { value: "credit_card", label: "Cartao de credito" },
+  { value: "debit_card", label: "Cartao de debito" },
+  { value: "other", label: "Outro" },
+];
+
+function mapProduct(product: ApiProduct): Product {
   return {
-    id: p.id,
-    name: p.name,
-    price: Number(p.price),
-    barcode: p.barcode ?? "",
-    sku: p.sku,
+    id: product.id,
+    name: product.name,
+    price: Number(product.price),
+    barcode: product.barcode ?? "",
+    sku: product.sku,
   };
 }
 
@@ -41,51 +66,61 @@ export function PdvPanel() {
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [q, setQ] = useState("");
+  const [query, setQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [lines, setLines] = useState<Line[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saleError, setSaleError] = useState<string | null>(null);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [fiscalModalOpen, setFiscalModalOpen] = useState(false);
 
   useEffect(() => {
-    async function load() {
+    async function loadProducts() {
       setIsLoadingProducts(true);
       setLoadError(null);
-      const res = await erpFetch<ErpListResponse<ApiProduct>>("/api/v1/erp/products?take=100&skip=0");
+      const res = await erpFetch<ErpListResponse<ApiProduct>>(
+        "/api/v1/erp/products?take=100&skip=0",
+      );
       if (res.ok && res.data?.items) {
-        setProducts(res.data.items.filter((p) => p.isActive).map(mapProduct));
+        setProducts(res.data.items.filter((item) => item.isActive).map(mapProduct));
       } else {
         setLoadError(res.error ?? "Erro ao carregar produtos.");
       }
       setIsLoadingProducts(false);
     }
-    load();
+
+    void loadProducts();
   }, []);
 
-  const byBarcode = useMemo(
-    () => Object.fromEntries(products.filter((p) => p.barcode).map((p) => [p.barcode, p])),
+  const productsByBarcode = useMemo(
+    () =>
+      Object.fromEntries(
+        products.filter((product) => product.barcode).map((product) => [product.barcode, product]),
+      ),
     [products],
   );
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return products;
+  const filteredProducts = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return products;
     return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(s) ||
-        p.sku.toLowerCase().includes(s) ||
-        (p.barcode && p.barcode.includes(s.replace(/\D/g, ""))),
+      (product) =>
+        product.name.toLowerCase().includes(normalized) ||
+        product.sku.toLowerCase().includes(normalized) ||
+        (product.barcode && product.barcode.includes(normalized.replace(/\D/g, ""))),
     );
-  }, [products, q]);
+  }, [products, query]);
 
-  const addLine = useCallback((p: Product) => {
+  const addLine = useCallback((product: Product) => {
     setLines((prev) => {
-      const i = prev.findIndex((l) => l.product.id === p.id);
-      if (i === -1) return [...prev, { product: p, qty: 1 }];
+      const index = prev.findIndex((line) => line.product.id === product.id);
+      if (index === -1) {
+        return [...prev, { product, qty: 1 }];
+      }
       const next = [...prev];
-      next[i] = { ...next[i], qty: next[i].qty + 1 };
+      next[index] = { ...next[index], qty: next[index].qty + 1 };
       return next;
     });
     setLastSaleId(null);
@@ -94,276 +129,406 @@ export function PdvPanel() {
   function tryAddByBarcode(raw: string) {
     const digits = raw.replace(/\D/g, "");
     if (digits.length < 4) return false;
-    const p = byBarcode[digits];
-    if (p) {
-      addLine(p);
-      setBarcodeInput("");
-      return true;
-    }
-    return false;
+    const product = productsByBarcode[digits];
+    if (!product) return false;
+    addLine(product);
+    setBarcodeInput("");
+    return true;
   }
 
-  function onBarcodeKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      tryAddByBarcode(barcodeInput);
-    }
+  function onBarcodeKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    tryAddByBarcode(barcodeInput);
   }
 
   function setQty(productId: string, qty: number) {
     if (qty < 1) {
-      setLines((prev) => prev.filter((l) => l.product.id !== productId));
+      setLines((prev) => prev.filter((line) => line.product.id !== productId));
       return;
     }
-    setLines((prev) => prev.map((l) => (l.product.id === productId ? { ...l, qty } : l)));
+    setLines((prev) =>
+      prev.map((line) =>
+        line.product.id === productId ? { ...line, qty } : line,
+      ),
+    );
   }
 
-  const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
-  const totalItems = lines.reduce((s, l) => s + l.qty, 0);
+  const subtotal = lines.reduce(
+    (sum, line) => sum + line.product.price * line.qty,
+    0,
+  );
+  const totalItems = lines.reduce((sum, line) => sum + line.qty, 0);
 
-  const finalizeSale = async () => {
+  const finalizeSale = useCallback(async () => {
     if (lines.length === 0) return;
+
     setIsSaving(true);
     setSaleError(null);
-    const res = await erpFetch<SaleResult>("/api/v1/erp/sales-orders", {
+    setLastSaleId(null);
+
+    const createRes = await erpFetch<SaleResult>("/api/v1/erp/sales-orders", {
       method: "POST",
       body: JSON.stringify({
-        items: lines.map((l) => ({
-          productId: l.product.id,
-          qty: String(l.qty),
-          unitPrice: String(l.product.price),
+        source: "pdv",
+        items: lines.map((line) => ({
+          productId: line.product.id,
+          qty: String(line.qty),
+          unitPrice: String(line.product.price),
         })),
       }),
     });
-    if (res.ok && res.data) {
-      setLastSaleId(res.data.id);
-      setLines([]);
-    } else {
-      setSaleError(res.error ?? "Erro ao registrar venda.");
+
+    if (!createRes.ok || !createRes.data) {
+      setSaleError(createRes.error ?? "Erro ao registrar venda.");
+      setIsSaving(false);
+      return;
     }
+
+    const confirmRes = await erpFetch<SaleResult>(
+      `/api/v1/erp/sales-orders/${createRes.data.id}/status`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status: "confirmed" }),
+      },
+    );
+
+    if (!confirmRes.ok || !confirmRes.data) {
+      setSaleError(
+        confirmRes.error ??
+          `Venda criada como pedido ${createRes.data.id.slice(0, 8).toUpperCase()}, mas nao foi possivel confirmar automaticamente.`,
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    setLastSaleId(confirmRes.data.id);
+    setLines([]);
     setIsSaving(false);
-  };
+    setFiscalModalOpen(true);
+  }, [lines]);
 
   return (
-    <div className="flex flex-col gap-3 lg:gap-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card variant="featured">
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Cupom atual</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{totalItems} item(ns)</p>
-          <p className="mt-1 text-sm text-marinha-500">Itens adicionados no atendimento atual.</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Total da venda</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{fmt.format(subtotal)}</p>
-          <p className="mt-1 text-sm text-marinha-500">Valor acumulado do cupom antes da finalização.</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Fluxo do caixa</p>
-          <p className="mt-2 flex items-center gap-2 text-lg font-bold text-marinha-900">
-            <Badge tone="accent">PDV</Badge>
-            Atendimento em andamento
-          </p>
-          <p className="mt-1 text-sm text-marinha-500">Bipe ou pesquise itens, confira o cupom e finalize a venda.</p>
-        </Card>
-      </div>
+    <>
+      <div className="flex flex-col gap-3 lg:gap-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card variant="featured">
+            <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">
+              Cupom atual
+            </p>
+            <p className="mt-2 text-lg font-bold text-marinha-900">
+              {totalItems} item(ns)
+            </p>
+            <p className="mt-1 text-sm text-marinha-500">
+              Itens adicionados no atendimento atual.
+            </p>
+          </Card>
+          <Card>
+            <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">
+              Total da venda
+            </p>
+            <p className="mt-2 text-lg font-bold text-marinha-900">
+              {fmt.format(subtotal)}
+            </p>
+            <p className="mt-1 text-sm text-marinha-500">
+              Valor acumulado do cupom antes da confirmacao.
+            </p>
+          </Card>
+          <Card>
+            <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">
+              Fluxo do caixa
+            </p>
+            <p className="mt-2 flex items-center gap-2 text-lg font-bold text-marinha-900">
+              <Badge tone="accent">PDV</Badge>
+              Venda confirmada + NFC-e
+            </p>
+            <p className="mt-1 text-sm text-marinha-500">
+              Finalize a venda, confirme o pedido e siga direto para a emissao
+              do cupom fiscal.
+            </p>
+          </Card>
+        </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
-        <div className="min-w-0 flex-1">
-          <label htmlFor="pdv-barcode" className="mb-1 block text-xs font-semibold text-marinha-600">
-            Código de barras
-          </label>
-          <Input
-            id="pdv-barcode"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="Bipe ou digite + Enter"
-            value={barcodeInput}
-            onChange={(e) => setBarcodeInput(e.target.value)}
-            onKeyDown={onBarcodeKeyDown}
-            className="min-h-[44px] font-mono text-base tracking-wide"
-          />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
+          <div className="min-w-0 flex-1">
+            <label
+              htmlFor="pdv-barcode"
+              className="mb-1 block text-xs font-semibold text-marinha-600"
+            >
+              Codigo de barras
+            </label>
+            <Input
+              id="pdv-barcode"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="Bipe ou digite + Enter"
+              value={barcodeInput}
+              onChange={(event) => setBarcodeInput(event.target.value)}
+              onKeyDown={onBarcodeKeyDown}
+              className="min-h-[44px] font-mono text-base tracking-wide"
+            />
+          </div>
+          <div className="w-full sm:max-w-xs">
+            <label className="mb-1 block text-xs font-semibold text-marinha-600">
+              Pagamento
+            </label>
+            <select
+              value={paymentMethod}
+              onChange={(event) =>
+                setPaymentMethod(event.target.value as PaymentMethod)
+              }
+              className="focus-ring min-h-[44px] w-full rounded-btn border border-marinha-900/20 bg-white px-3 py-2 text-sm text-marinha-900"
+            >
+              {PAYMENT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6",
+            "min-h-0 lg:min-h-[min(70vh,720px)]",
+          )}
+        >
+          <section className="min-w-0 flex-1 space-y-3" aria-label="Catalogo de produtos">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-serif text-lg text-marinha-900">
+                  Catalogo rapido
+                </h2>
+                <p className="mt-1 text-sm text-marinha-500">
+                  Encontre produtos pelo nome, SKU ou codigo de barras.
+                </p>
+              </div>
+              <div className="w-full sm:max-w-md">
+                <label htmlFor="pdv-search" className="sr-only">
+                  Buscar produto
+                </label>
+                <Input
+                  id="pdv-search"
+                  type="search"
+                  placeholder="Buscar nome, SKU ou EAN..."
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="w-full"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            {isLoadingProducts ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-[72px] animate-pulse rounded-btn bg-marinha-900/8"
+                  />
+                ))}
+              </div>
+            ) : loadError ? (
+              <p className="text-sm text-red-600">{loadError}</p>
+            ) : (
+              <div
+                className={cn(
+                  "grid gap-2 sm:gap-3",
+                  "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4",
+                )}
+              >
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => addLine(product)}
+                    className={cn(
+                      "focus-ring flex min-h-[52px] flex-col items-start justify-center rounded-btn border border-marinha-900/10",
+                      "bg-surface-card p-3 text-left shadow-card transition hover:border-municipal-600/35 hover:shadow-card-hover",
+                      "active:scale-[0.99] touch-manipulation",
+                    )}
+                  >
+                    <span className="font-mono text-[10px] leading-none text-marinha-500">
+                      {product.sku}
+                    </span>
+                    <span className="mt-1 text-sm font-semibold leading-tight text-marinha-900">
+                      {product.name}
+                    </span>
+                    <span className="mt-1 text-sm font-bold text-municipal-800">
+                      {fmt.format(product.price)}
+                    </span>
+                  </button>
+                ))}
+                {filteredProducts.length === 0 && (
+                  <p className="col-span-full text-sm text-marinha-500">
+                    {products.length === 0
+                      ? "Nenhum produto ativo cadastrado. Adicione produtos no modulo Produtos."
+                      : "Nenhum produto encontrado para esta busca."}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <aside
+            className={cn(
+              "w-full shrink-0 lg:sticky lg:top-24 lg:w-[min(100%,22rem)] xl:w-[26rem]",
+            )}
+            aria-label="Cupom"
+          >
+            <Card variant="featured" className="flex flex-col p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-serif text-base font-bold text-marinha-900">
+                    Cupom
+                  </h2>
+                  <p className="mt-1 text-xs text-marinha-500">
+                    Resumo da venda atual no caixa.
+                  </p>
+                </div>
+                <Badge tone="neutral">Venda</Badge>
+              </div>
+
+              {lastSaleId && (
+                <div className="mt-2 space-y-2 rounded-btn border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
+                  <p>
+                    Venda confirmada. Pedido{" "}
+                    <span className="font-mono font-bold">
+                      {lastSaleId.slice(0, 8).toUpperCase()}
+                    </span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="min-h-[36px]"
+                      onClick={() => setFiscalModalOpen(true)}
+                    >
+                      Emitir NFC-e
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <ul
+                className={cn(
+                  "mt-2 space-y-1",
+                  "max-h-[min(52vh,320px)] overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible",
+                )}
+              >
+                {lines.length === 0 ? (
+                  <li className="rounded-btn border border-dashed border-marinha-900/15 py-6 text-center text-xs text-marinha-500">
+                    Bipe o codigo ou toque nos produtos
+                  </li>
+                ) : (
+                  lines.map(({ product, qty }) => (
+                    <li
+                      key={product.id}
+                      className="flex items-center gap-1.5 rounded border border-marinha-900/10 bg-white/90 px-1.5 py-1"
+                    >
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <p className="font-mono text-[10px] text-marinha-500">
+                          {product.sku}
+                        </p>
+                        <p className="truncate text-xs font-medium text-marinha-900">
+                          {product.name}
+                        </p>
+                        <p className="text-[11px] tabular-nums text-marinha-600">
+                          {fmt.format(product.price)}{" "}
+                          <span className="text-marinha-400">x</span> {qty}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          className="focus-ring flex h-8 w-8 items-center justify-center rounded border border-marinha-900/15 text-sm font-bold touch-manipulation"
+                          onClick={() => setQty(product.id, qty - 1)}
+                          aria-label="Diminuir quantidade"
+                        >
+                          -
+                        </button>
+                        <span className="w-6 text-center text-xs font-bold tabular-nums">
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          className="focus-ring flex h-8 w-8 items-center justify-center rounded border border-marinha-900/15 text-sm font-bold touch-manipulation"
+                          onClick={() => setQty(product.id, qty + 1)}
+                          aria-label="Aumentar quantidade"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+
+              <div className="mt-2 space-y-1 border-t border-marinha-900/10 pt-2">
+                <div className="flex justify-between text-xs text-marinha-600">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums">{fmt.format(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-marinha-600">
+                  <span>Pagamento</span>
+                  <span>
+                    {
+                      PAYMENT_OPTIONS.find((option) => option.value === paymentMethod)
+                        ?.label
+                    }
+                  </span>
+                </div>
+                <div className="flex justify-between font-serif text-lg font-bold text-marinha-900">
+                  <span>Total</span>
+                  <span className="tabular-nums text-municipal-800">
+                    {fmt.format(subtotal)}
+                  </span>
+                </div>
+              </div>
+
+              {saleError && <p className="mt-2 text-xs text-red-600">{saleError}</p>}
+
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="secondary"
+                  className="min-h-[44px] flex-1 touch-manipulation"
+                  type="button"
+                  disabled={lines.length === 0 || isSaving}
+                  onClick={() => {
+                    setLines([]);
+                    setLastSaleId(null);
+                  }}
+                >
+                  Limpar
+                </Button>
+                <Button
+                  variant="primary"
+                  className="min-h-[44px] flex-1 touch-manipulation"
+                  type="button"
+                  disabled={lines.length === 0 || isSaving}
+                  onClick={() => void finalizeSale()}
+                >
+                  {isSaving ? "Confirmando..." : "Finalizar venda"}
+                </Button>
+              </div>
+
+              <p className="mt-2 text-[11px] text-marinha-500">
+                Ao finalizar, o pedido e confirmado no ERP e fica pronto para
+                emitir NFC-e.
+              </p>
+            </Card>
+          </aside>
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6",
-          "min-h-0 lg:min-h-[min(70vh,720px)]",
-        )}
-      >
-        {/* Catálogo rápido */}
-        <section className="min-w-0 flex-1 space-y-3" aria-label="Catálogo de produtos">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-serif text-lg text-marinha-900">Catálogo rápido</h2>
-              <p className="mt-1 text-sm text-marinha-500">Encontre produtos pelo nome, SKU ou código de barras.</p>
-            </div>
-            <div className="w-full sm:max-w-md">
-              <label htmlFor="pdv-search" className="sr-only">
-                Buscar produto
-              </label>
-              <Input
-                id="pdv-search"
-                type="search"
-                placeholder="Buscar nome, SKU ou EAN…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="w-full"
-                autoComplete="off"
-              />
-            </div>
-          </div>
-
-          {isLoadingProducts ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-[72px] animate-pulse rounded-btn bg-marinha-900/8" />
-              ))}
-            </div>
-          ) : loadError ? (
-            <p className="text-sm text-red-600">{loadError}</p>
-          ) : (
-            <div
-              className={cn(
-                "grid gap-2 sm:gap-3",
-                "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4",
-              )}
-            >
-              {filtered.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => addLine(p)}
-                  className={cn(
-                    "focus-ring flex min-h-[52px] flex-col items-start justify-center rounded-btn border border-marinha-900/10",
-                    "bg-surface-card p-3 text-left shadow-card transition hover:border-municipal-600/35 hover:shadow-card-hover",
-                    "active:scale-[0.99] touch-manipulation",
-                  )}
-                >
-                  <span className="font-mono text-[10px] leading-none text-marinha-500">{p.sku}</span>
-                  <span className="mt-1 text-sm font-semibold leading-tight text-marinha-900">{p.name}</span>
-                  <span className="mt-1 text-sm font-bold text-municipal-800">{fmt.format(p.price)}</span>
-                </button>
-              ))}
-              {filtered.length === 0 && (
-                <p className="col-span-full text-sm text-marinha-500">
-                  {products.length === 0
-                    ? "Nenhum produto ativo cadastrado. Adicione produtos no módulo Produtos."
-                    : "Nenhum produto encontrado para esta busca."}
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-
-        {/* Cupom */}
-        <aside
-          className={cn("w-full shrink-0 lg:sticky lg:top-24 lg:w-[min(100%,22rem)] xl:w-[26rem]")}
-          aria-label="Cupom"
-        >
-          <Card variant="featured" className="flex flex-col p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-serif text-base font-bold text-marinha-900">Cupom</h2>
-                <p className="mt-1 text-xs text-marinha-500">Resumo da venda atual no caixa.</p>
-              </div>
-              <Badge tone="neutral">Venda</Badge>
-            </div>
-
-            {lastSaleId && (
-              <div className="mt-2 rounded-btn border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
-                Venda registrada! Pedido{" "}
-                <span className="font-mono font-bold">{lastSaleId.slice(0, 8).toUpperCase()}</span>
-              </div>
-            )}
-
-            <ul
-              className={cn(
-                "mt-2 space-y-1",
-                "max-h-[min(52vh,320px)] overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible",
-              )}
-            >
-              {lines.length === 0 ? (
-                <li className="rounded-btn border border-dashed border-marinha-900/15 py-6 text-center text-xs text-marinha-500">
-                  Bipe o código ou toque nos produtos
-                </li>
-              ) : (
-                lines.map(({ product, qty }) => (
-                  <li
-                    key={product.id}
-                    className="flex items-center gap-1.5 rounded border border-marinha-900/10 bg-white/90 px-1.5 py-1"
-                  >
-                    <div className="min-w-0 flex-1 leading-tight">
-                      <p className="font-mono text-[10px] text-marinha-500">{product.sku}</p>
-                      <p className="truncate text-xs font-medium text-marinha-900">{product.name}</p>
-                      <p className="text-[11px] tabular-nums text-marinha-600">
-                        {fmt.format(product.price)} <span className="text-marinha-400">×</span>{" "}
-                        {qty}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        className="focus-ring flex h-8 w-8 items-center justify-center rounded border border-marinha-900/15 text-sm font-bold touch-manipulation"
-                        onClick={() => setQty(product.id, qty - 1)}
-                        aria-label="Diminuir quantidade"
-                      >
-                        −
-                      </button>
-                      <span className="w-6 text-center text-xs font-bold tabular-nums">{qty}</span>
-                      <button
-                        type="button"
-                        className="focus-ring flex h-8 w-8 items-center justify-center rounded border border-marinha-900/15 text-sm font-bold touch-manipulation"
-                        onClick={() => setQty(product.id, qty + 1)}
-                        aria-label="Aumentar quantidade"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </li>
-                ))
-              )}
-            </ul>
-
-            <div className="mt-2 space-y-1 border-t border-marinha-900/10 pt-2">
-              <div className="flex justify-between text-xs text-marinha-600">
-                <span>Subtotal</span>
-                <span className="tabular-nums">{fmt.format(subtotal)}</span>
-              </div>
-              <div className="flex justify-between font-serif text-lg font-bold text-marinha-900">
-                <span>Total</span>
-                <span className="tabular-nums text-municipal-800">{fmt.format(subtotal)}</span>
-              </div>
-            </div>
-
-            {saleError && <p className="mt-2 text-xs text-red-600">{saleError}</p>}
-
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <Button
-                variant="secondary"
-                className="min-h-[44px] flex-1 touch-manipulation"
-                type="button"
-                disabled={lines.length === 0 || isSaving}
-                onClick={() => { setLines([]); setLastSaleId(null); }}
-              >
-                Limpar
-              </Button>
-              <Button
-                variant="primary"
-                className="min-h-[44px] flex-1 touch-manipulation"
-                type="button"
-                disabled={lines.length === 0 || isSaving}
-                onClick={finalizeSale}
-              >
-                {isSaving ? "Salvando…" : "Finalizar venda"}
-              </Button>
-            </div>
-            <p className="mt-2 text-[11px] text-marinha-500">
-              A emissão fiscal do atendimento pode ser feita conforme a configuração da empresa.
-            </p>
-          </Card>
-        </aside>
-      </div>
-    </div>
+      <ErpFiscalEmitModal
+        open={fiscalModalOpen}
+        onClose={() => setFiscalModalOpen(false)}
+        preSelectedOrderId={lastSaleId}
+        preSelectedType="nfce"
+        preSelectedPaymentMethod={paymentMethod}
+      />
+    </>
   );
 }

@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsDateString,
   IsIn,
   IsNumberString,
   IsOptional,
@@ -31,6 +30,13 @@ export class CreateSalesOrderDto {
   @IsOptional()
   @IsUUID()
   partyId?: string;
+
+  @ApiPropertyOptional({
+    enum: ['erp', 'pdv', 'portal_diretorio', 'portal_cotacoes'],
+  })
+  @IsOptional()
+  @IsIn(['erp', 'pdv', 'portal_diretorio', 'portal_cotacoes'])
+  source?: 'erp' | 'pdv' | 'portal_diretorio' | 'portal_cotacoes';
 
   @ApiProperty({ type: [SalesOrderLineDto] })
   @IsArray()

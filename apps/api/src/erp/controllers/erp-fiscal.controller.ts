@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,14 +9,19 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
   ApiHeader,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ErpBusinessGuard } from '../guards/erp-business.guard';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
@@ -58,13 +64,14 @@ export class ErpFiscalController {
   @Get('readiness')
   @ApiOperation({
     summary:
-      'Checklist de dados do emitente para NFS-e ou NF-e (query type=nfse|nfe)',
+      'Checklist de dados do emitente para NFS-e, NF-e ou NFC-e (query type=nfse|nfe|nfce)',
   })
   readiness(
     @SelectedBusiness() business: ErpBusiness,
     @Query('type') typeStr?: string,
   ) {
-    const type = typeStr === 'nfe' ? 'nfe' : 'nfse';
+    const type =
+      typeStr === 'nfe' ? 'nfe' : typeStr === 'nfce' ? 'nfce' : 'nfse';
     return this.svc.getEmitReadiness(business, type);
   }
 
@@ -78,6 +85,51 @@ export class ErpFiscalController {
     @Body() dto: EmitFiscalDto,
   ) {
     return this.svc.emitFromOrder(business, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Post('certificate')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'password'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        password: { type: 'string' },
+        email: { type: 'string' },
+      },
+    },
+  })
+  @ApiOperation({
+    summary:
+      'Enviar certificado A1 (.pfx/.p12) para o PlugNotas e sincronizar o emitente',
+  })
+  uploadCertificate(
+    @SelectedBusiness() business: ErpBusiness,
+    @UploadedFile()
+    file?: {
+      originalname: string;
+      mimetype: string;
+      buffer: Buffer;
+      size: number;
+    },
+    @Body('password') password?: string,
+    @Body('email') email?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Arquivo do certificado nao enviado');
+    }
+    return this.svc.uploadCertificate(business, {
+      password: password ?? '',
+      email,
+      filename: file.originalname,
+      contentType: file.mimetype,
+      buffer: file.buffer,
+    });
   }
 
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)

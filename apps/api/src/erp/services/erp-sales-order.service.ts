@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
+import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpParty } from '../../entities/erp-party.entity';
 import { ErpProduct } from '../../entities/erp-product.entity';
 import { ErpStockBalance } from '../../entities/erp-stock-balance.entity';
@@ -146,6 +147,7 @@ export class ErpSalesOrderService {
       }
       if (dto.status === 'confirmed' && row.status === 'draft') {
         await this.postStock(em, business, row);
+        await this.postReceivable(em, business, row);
         row.stockPostedAt = new Date();
       }
       row.status = dto.status;
@@ -231,5 +233,41 @@ export class ErpSalesOrderService {
       }
       await em.save(balance);
     }
+  }
+
+  private async postReceivable(
+    em: EntityManager,
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+  ): Promise<void> {
+    if (!order.partyId) {
+      return;
+    }
+
+    const existing = await em.findOne(ErpAccountReceivable, {
+      where: {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        linkRef: 'sales_order',
+        linkId: order.id,
+      },
+    });
+    if (existing) {
+      return;
+    }
+
+    await em.save(
+      em.create(ErpAccountReceivable, {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        partyId: order.partyId,
+        dueDate: order.createdAt.toISOString().slice(0, 10),
+        amount: dec(order.totalAmount),
+        status: 'open',
+        linkRef: 'sales_order',
+        linkId: order.id,
+        note: `Gerado automaticamente do pedido de venda ${order.id}`,
+      }),
+    );
   }
 }
