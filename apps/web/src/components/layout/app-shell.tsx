@@ -13,8 +13,9 @@ type MainNavItem = {
 
 const mainNav: MainNavItem[] = [
   { href: "/", label: "Início" },
-  { href: "/diretorio", label: "Diretório" },
-  { href: "/cotacoes", label: "Cotações" },
+  { href: "/diretorio", label: "Negócios" },
+  { href: "/marketplace", label: "Marketplace" },
+  { href: "/oportunidades", label: "Oportunidades" },
   { href: "/academia", label: "Academia" },
 ];
 
@@ -27,10 +28,7 @@ function navLinkClass(active: boolean) {
   );
 }
 
-function isActivePath(
-  pathname: string,
-  href: string,
-) {
+function isActivePath(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/";
   }
@@ -53,10 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Conexão Municipal
           </Link>
 
-          <nav
-            className="hidden items-center gap-0.5 md:flex"
-            aria-label="Principal"
-          >
+          <nav className="hidden items-center gap-0.5 md:flex" aria-label="Principal">
             {mainNav.map((item) => (
               <Link
                 key={item.href}
@@ -122,11 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               strokeWidth="2"
               aria-hidden
             >
-              {menuOpen ? (
-                <path d="M18 6L6 18M6 6l12 12" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              )}
+              {menuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
           </button>
         </div>
@@ -187,9 +178,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ) : null}
       </header>
 
-      <main className="w-full flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        {children}
-      </main>
+      <main className="w-full flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">{children}</main>
 
       <SiteFooter />
     </div>

@@ -1,22 +1,30 @@
 # Conexão Municipal
 
-Monorepo: `apps/web` (Next.js), `apps/api` (NestJS), `packages/shared`.
+Monorepo com `apps/web` (Next.js), `apps/api` (NestJS) e `packages/shared`.
+
+## Produto
+
+O projeto está organizado em dois pilares:
+
+- `Operação do negócio`: ERP para MEI e pequenas empresas, com comércio, serviços e fiscal.
+- `Geração de negócios`: diretório, presença digital, marketplace local e oportunidades.
 
 ## Documentação
 
-- [SDD-ConexaoMunicipal.md](./SDD-ConexaoMunicipal.md) — **v2.0** (inclui **ERP empresarial nativo** para MEI/pequenas empresas: §5.4, §6.7, ondas A/B/C)
-- [docs/GO-LIVE.md](./docs/GO-LIVE.md) — escopo de liberação (v1), checklist de deploy e roadmap da UI do ERP
+- [SDD-ConexaoMunicipal.md](./SDD-ConexaoMunicipal.md) — visão ampla da plataforma e arquitetura.
+- [docs/SPEC-ATUAL.md](./docs/SPEC-ATUAL.md) — leitura atual do produto e do que já está implementado.
+- [docs/GO-LIVE.md](./docs/GO-LIVE.md) — escopo operacional de liberação.
 
 ## Comandos
 
 ```bash
 npm install
 npm run docker:up
-cp apps/api/.env.example apps/api/.env   # ajuste JWT_SECRET
+cp apps/api/.env.example apps/api/.env
 npm run dev:api
 npm run dev:web
 ```
 
-- PostgreSQL: `localhost:5432` user `conexao` / `conexao_dev` database `conexao_municipal`.
-- API: `http://localhost:3001/api/v1/health` — Swagger: `http://localhost:3001/docs`
-- Auth: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me` (Bearer)
+- PostgreSQL: `localhost:5432` user `conexao` / `conexao_dev` database `conexao_municipal`
+- API: `http://localhost:3001/api/v1/health`
+- Swagger: `http://localhost:3001/docs`

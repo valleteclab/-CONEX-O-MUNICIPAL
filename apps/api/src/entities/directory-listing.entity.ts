@@ -41,6 +41,23 @@ export class DirectoryListing {
   @Column({ type: 'varchar', length: 16, default: 'perfil' })
   modo: DirectoryListingModo;
 
+  @Column({ name: 'public_headline', type: 'varchar', length: 180, nullable: true })
+  publicHeadline: string | null;
+
+  @Column({ name: 'contact_info', type: 'jsonb', default: {} })
+  contactInfo: Record<string, unknown>;
+
+  @Column({ type: 'jsonb', default: [] })
+  services: string[];
+
+  @Column({ type: 'jsonb', default: [] })
+  offerings: Array<{
+    title: string;
+    kind: 'product' | 'service';
+    price?: string | null;
+    description?: string | null;
+  }>;
+
   @Column({ name: 'owner_user_id', type: 'uuid' })
   ownerUserId: string;
 
