@@ -63,7 +63,7 @@ export function QuotationCreateForm() {
     return (
       <p className="text-sm text-marinha-600">
         Para publicar uma oportunidade,{" "}
-        <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
+        <Link href="/entrar?intent=portal" className="font-semibold text-municipal-700 hover:underline">
           entre na sua conta
         </Link>
         . Depois você acompanha tudo em{" "}

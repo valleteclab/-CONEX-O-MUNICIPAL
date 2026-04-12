@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api-browser";
+import { buildEntrarHref } from "@/lib/auth-routes";
 import {
   isCnpjKind,
   parseFiscalDocument,
@@ -272,7 +273,10 @@ export default function AreaDaEmpresaCadastroPage() {
       ) : null}
       {success ? (
         <div className="mb-4 rounded-btn border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-900">
-          {success} <Link href="/area-da-empresa/entrar" className="font-semibold underline">Entrar com o responsavel</Link>
+          {success}{" "}
+          <Link href={buildEntrarHref("empresa")} className="font-semibold underline">
+            Entrar com o responsavel
+          </Link>
         </div>
       ) : null}
 

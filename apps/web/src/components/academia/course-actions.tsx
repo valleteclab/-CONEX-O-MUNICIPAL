@@ -42,7 +42,7 @@ export function CourseActions({ courseId }: Props) {
   if (!getAccessToken()) {
     return (
       <p className="text-sm text-marinha-600">
-        <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
+        <Link href="/entrar?intent=portal" className="font-semibold text-municipal-700 hover:underline">
           Entre
         </Link>{" "}
         para se matricular e acompanhar o progresso.

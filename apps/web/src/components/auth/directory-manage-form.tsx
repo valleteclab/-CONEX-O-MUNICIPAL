@@ -190,7 +190,7 @@ export function DirectoryManageForm({ initialItems }: { initialItems: DirectoryL
       <Card>
         <p className="text-sm text-marinha-600">
           Para gerenciar sua presença digital,{" "}
-          <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
+          <Link href="/entrar?intent=portal" className="font-semibold text-municipal-700 hover:underline">
             entre na sua conta
           </Link>
           .

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Card } from "@/components/ui/card";
+import { buildEntrarHref } from "@/lib/auth-routes";
 
 export const metadata: Metadata = {
   title: "Área da empresa — Conexão Municipal",
@@ -119,7 +120,7 @@ export default function AreaDaEmpresaPage() {
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
-                href="/area-da-empresa/entrar"
+                href={buildEntrarHref("empresa")}
                 className="focus-ring inline-flex min-h-[44px] items-center justify-center rounded-btn bg-municipal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-municipal-700"
               >
                 Entrar

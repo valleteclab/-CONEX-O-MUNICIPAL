@@ -129,7 +129,7 @@ export function SuperAdminPanel() {
           Use a entrada dedicada à equipe da plataforma — não é o mesmo link que empresas e cidadãos usam no topo do site.
         </p>
         <Link
-          href="/plataforma/entrar"
+          href="/entrar?intent=platform"
           className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-btn bg-municipal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-municipal-700"
         >
           Abrir página de entrada (super admin)

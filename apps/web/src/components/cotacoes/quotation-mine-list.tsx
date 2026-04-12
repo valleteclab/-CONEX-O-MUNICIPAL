@@ -54,7 +54,7 @@ export function QuotationMineList() {
   if (!getAccessToken()) {
     return (
       <p className="text-sm text-marinha-600">
-        <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
+        <Link href="/entrar?intent=portal" className="font-semibold text-municipal-700 hover:underline">
           Entre na sua conta
         </Link>{" "}
         para ver as suas oportunidades.

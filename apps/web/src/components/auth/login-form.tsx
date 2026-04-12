@@ -1,12 +1,13 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiAuthFetch, apiFetch } from "@/lib/api-browser";
 import { setTokens } from "@/lib/auth-storage";
+import { buildEntrarHref, getAuthDestination } from "@/lib/auth-routes";
 
 type LoginResponse = {
   accessToken: string;
@@ -19,16 +20,15 @@ type AuthMeResponse = {
   role: string;
 };
 
-export type LoginFormIntent = "portal" | "platform";
+export type LoginFormIntent = "portal" | "empresa" | "platform";
 
 type LoginFormProps = {
-  /** `portal` = usuários do município / empresas (entrada normal). `platform` = só equipe super admin. */
+  /** `portal` = usuarios do portal. `empresa` = area da empresa. `platform` = so equipe interna. */
   intent?: LoginFormIntent;
 };
 
 export function LoginForm({ intent = "portal" }: LoginFormProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +39,9 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     let res: Awaited<ReturnType<typeof apiFetch<LoginResponse>>>;
+
     try {
       res = await apiFetch<LoginResponse>("/api/v1/auth/login", {
         method: "POST",
@@ -48,35 +50,47 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
     } finally {
       setLoading(false);
     }
+
     if (!res.ok || !res.data) {
       setError(res.error || "Falha no login");
       return;
     }
+
     setTokens(res.data.accessToken, res.data.refreshToken, res.data.tenantId);
 
     if (intent === "platform") {
       const me = await apiAuthFetch<AuthMeResponse>("/api/v1/auth/me");
+
       if (!me.ok || !me.data) {
-        setError(me.error || "Não foi possível confirmar o perfil.");
+        setError(me.error || "Nao foi possivel confirmar o perfil.");
         return;
       }
+
       if (me.data.role !== "super_admin") {
         setError(
-          "Esta entrada é só para super administradores da plataforma. Sua sessão está ativa (conta de município ou empresa): use o menu do site para continuar, ou encerre a sessão se entrou aqui por engano.",
+          "Esta entrada e so para super administradores da plataforma. Sua sessao foi iniciada, mas voce deve continuar pelo acesso normal do portal.",
         );
         return;
       }
+
       router.push("/admin");
       router.refresh();
       return;
     }
 
     const redirect = searchParams.get("redirect");
-    const fallback = pathname.startsWith("/area-da-empresa") ? "/erp" : "/";
+    const fallback = getAuthDestination(intent);
     const destination = redirect && redirect.startsWith("/") ? redirect : fallback;
     router.push(destination);
     router.refresh();
   }
+
+  const submitLabel =
+    intent === "platform"
+      ? "Entrar na gestao"
+      : intent === "empresa"
+        ? "Entrar na area da empresa"
+        : "Entrar no portal";
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
@@ -85,6 +99,7 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
           {error}
         </p>
       ) : null}
+
       <div>
         <label htmlFor="email" className="mb-1 block text-sm font-medium">
           E-mail
@@ -100,6 +115,7 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
           placeholder="seu@email.com"
         />
       </div>
+
       <div>
         <label htmlFor="password" className="mb-1 block text-sm font-medium">
           Senha
@@ -112,25 +128,31 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder="Digite sua senha"
         />
       </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <Link href="/recuperar-senha" className="font-medium text-municipal-700 hover:underline">
+        <Link
+          href={`/recuperar-senha?intent=${intent}`}
+          className="font-medium text-municipal-700 hover:underline"
+        >
           Esqueci minha senha
         </Link>
+
         {intent === "platform" ? (
-          <Link href="/login" className="font-medium text-marinha-600 hover:underline">
-            Entrar como usuário do município
+          <Link href={buildEntrarHref("portal")} className="font-medium text-marinha-600 hover:underline">
+            Entrar como usuario do portal
           </Link>
-        ) : pathname.startsWith("/area-da-empresa") ? (
+        ) : intent === "empresa" ? (
           <Link href="/cadastro" className="font-medium text-marinha-600 hover:underline">
             Criar acesso empresarial
           </Link>
         ) : null}
       </div>
+
       <Button variant="primary" className="w-full" type="submit" disabled={loading}>
-        {loading ? "Entrando…" : "Entrar"}
+        {loading ? "Entrando..." : submitLabel}
       </Button>
     </form>
   );

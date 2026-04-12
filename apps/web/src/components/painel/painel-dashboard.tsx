@@ -75,7 +75,7 @@ export function PainelDashboard() {
   if (!getAccessToken()) {
     return (
       <p className="text-sm text-marinha-600">
-        <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
+        <Link href="/entrar?intent=portal" className="font-semibold text-municipal-700 hover:underline">
           Entre
         </Link>{" "}
         com uma conta de <strong>gestor</strong> ou <strong>administrador</strong> para ver os indicadores.
@@ -101,7 +101,7 @@ export function PainelDashboard() {
         <p>{error}</p>
         <p>
           <Link
-            href="/plataforma/entrar"
+            href="/entrar?intent=platform"
             className="font-semibold text-municipal-800 underline hover:text-municipal-900"
           >
             Ir para Área da plataforma (super admin)

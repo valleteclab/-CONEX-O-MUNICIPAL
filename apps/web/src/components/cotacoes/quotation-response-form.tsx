@@ -18,7 +18,7 @@ export function QuotationResponseForm({ quotationId }: { quotationId: string }) 
   if (!getAccessToken()) {
     return (
       <p className="text-xs text-marinha-500">
-        <Link href="/login" className="font-semibold text-municipal-700 hover:underline">
+        <Link href="/entrar?intent=portal" className="font-semibold text-municipal-700 hover:underline">
           Entre
         </Link>{" "}
         para responder esta oportunidade.
