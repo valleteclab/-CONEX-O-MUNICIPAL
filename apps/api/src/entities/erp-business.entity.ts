@@ -72,6 +72,18 @@ export class ErpBusiness {
   @Column({ name: 'fiscal_config', type: 'jsonb', default: '{}' })
   fiscalConfig: Record<string, unknown>;
 
+  @Column({ name: 'segment_preset_key', type: 'varchar', length: 40, nullable: true })
+  segmentPresetKey: string | null;
+
+  @Column({ name: 'segment_preset_version', type: 'int', nullable: true })
+  segmentPresetVersion: number | null;
+
+  @Column({ name: 'segment_onboarding_answers', type: 'jsonb', default: '{}' })
+  segmentOnboardingAnswers: Record<string, string | number | boolean>;
+
+  @Column({ name: 'segment_preset_applied', default: false })
+  segmentPresetApplied: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

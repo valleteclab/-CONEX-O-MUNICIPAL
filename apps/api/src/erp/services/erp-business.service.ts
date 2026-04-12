@@ -10,7 +10,9 @@ import { ErpBusinessUser } from '../../entities/erp-business-user.entity';
 import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
 import { normalizeFiscalDocument } from '../../common/fiscal-document';
 import { CreateErpBusinessDto } from '../dto/create-business.dto';
+import { BusinessSegmentSelectionDto } from '../dto/business-segment-preset.dto';
 import { UpdateErpBusinessProfileDto } from '../dto/update-erp-business-profile.dto';
+import { BusinessSegmentPresetService } from './business-segment-preset.service';
 
 @Injectable()
 export class ErpBusinessService {
@@ -20,6 +22,7 @@ export class ErpBusinessService {
     private readonly businesses: Repository<ErpBusiness>,
     @InjectRepository(ErpBusinessUser)
     private readonly members: Repository<ErpBusinessUser>,
+    private readonly segmentPresets: BusinessSegmentPresetService,
   ) {}
 
   async listForUser(userId: string, tenantId: string): Promise<ErpBusiness[]> {
@@ -48,6 +51,10 @@ export class ErpBusinessService {
         cityIbgeCode: dto.cityIbgeCode?.trim() || null,
         taxRegime: dto.taxRegime ?? null,
         fiscalConfig: { ...(dto.fiscalConfig ?? {}) },
+        segmentPresetKey: dto.segmentPresetKey ?? null,
+        segmentPresetVersion: null,
+        segmentOnboardingAnswers: dto.onboardingAnswers ?? {},
+        segmentPresetApplied: false,
         moderationStatus: 'pending',
         isActive: false,
       });
@@ -67,6 +74,17 @@ export class ErpBusinessService {
           isDefault: true,
         }),
       );
+
+      if (dto.segmentPresetKey && dto.applyPresetNow !== false) {
+        await this.segmentPresets.applyPreset({
+          manager: em,
+          business: b,
+          ownerUserId: userId,
+          segmentPresetKey: dto.segmentPresetKey,
+          onboardingAnswers: dto.onboardingAnswers,
+        });
+      }
+
       return b;
     });
   }
@@ -124,5 +142,25 @@ export class ErpBusinessService {
     }
 
     return this.businesses.save(b);
+  }
+
+  async applySegmentPreset(
+    userId: string,
+    tenantId: string,
+    businessId: string,
+    dto: BusinessSegmentSelectionDto,
+  ) {
+    const business = await this.findOneForUser(userId, tenantId, businessId);
+    return this.dataSource.transaction(async (em) => {
+      const managedBusiness = await em.findOneByOrFail(ErpBusiness, { id: business.id });
+      return this.segmentPresets.applyPreset({
+        manager: em,
+        business: managedBusiness,
+        ownerUserId: userId,
+        segmentPresetKey: dto.segmentPresetKey,
+        onboardingAnswers: dto.onboardingAnswers,
+        forceReapply: true,
+      });
+    });
   }
 }

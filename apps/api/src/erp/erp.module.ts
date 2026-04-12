@@ -22,6 +22,7 @@ import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
 import { ErpFiscalDocument } from '../entities/erp-fiscal-document.entity';
 import { ErpProductClassificationJob } from '../entities/erp-product-classification-job.entity';
 import { IbgeCity } from '../entities/ibge-city.entity';
+import { DirectoryListing } from '../entities/directory-listing.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { User } from '../entities/user.entity';
 import { UserTenant } from '../entities/user-tenant.entity';
@@ -42,6 +43,7 @@ import { ErpBusinessService } from './services/erp-business.service';
 import { CnpjLookupService } from './services/cnpj-lookup.service';
 import { IbgeCityService } from './services/ibge-city.service';
 import { ErpPublicSignupService } from './services/erp-public-signup.service';
+import { BusinessSegmentPresetService } from './services/business-segment-preset.service';
 import { ErpProductService } from './services/erp-product.service';
 import { ErpPartyService } from './services/erp-party.service';
 import { ErpStockService } from './services/erp-stock.service';
@@ -81,6 +83,7 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
       ErpCashEntry,
       ErpFiscalDocument,
       ErpProductClassificationJob,
+      DirectoryListing,
       Tenant,
       User,
       UserTenant,
@@ -106,6 +109,7 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
     CnpjLookupService,
     IbgeCityService,
     ErpPublicSignupService,
+    BusinessSegmentPresetService,
     OpenRouterService,
     ErpBusinessService,
     ErpProductService,

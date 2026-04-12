@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsIn,
   IsObject,
   IsOptional,
@@ -7,6 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { BusinessSegmentPresetKey } from '../types/business-segment-preset.types';
 
 export class CreateErpBusinessDto {
   @ApiProperty({ example: 'Comercio Exemplo Ltda' })
@@ -69,4 +71,39 @@ export class CreateErpBusinessDto {
   @IsOptional()
   @IsObject()
   fiscalConfig?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    enum: [
+      'beauty_salon',
+      'bakery',
+      'mini_market',
+      'auto_repair',
+      'bike_repair',
+      'locksmith',
+    ],
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn([
+    'beauty_salon',
+    'bakery',
+    'mini_market',
+    'auto_repair',
+    'bike_repair',
+    'locksmith',
+  ])
+  segmentPresetKey?: BusinessSegmentPresetKey;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  onboardingAnswers?: Record<string, string | number | boolean>;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  applyPresetNow?: boolean;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,10 @@ import {
   parseFiscalDocument,
   supportsCurrentCnpjLookup,
 } from "@/lib/fiscal-document";
+import type {
+  BusinessSegmentPreset,
+  PresetApplicationSummary,
+} from "@/types/business-segment";
 
 type DadosCnpj = {
   cnpj: string;
@@ -47,12 +51,25 @@ type SignupResponse = {
   businessId: string;
   moderationStatus: string;
   message: string;
+  presetApplication?: PresetApplicationSummary | null;
 };
+
+function presetBadgeLabel(operationType: BusinessSegmentPreset["operationType"]) {
+  switch (operationType) {
+    case "service":
+      return "Serviços";
+    case "commerce":
+      return "Comércio";
+    default:
+      return "Misto";
+  }
+}
 
 export default function AreaDaEmpresaCadastroPage() {
   const [cnpjInput, setCnpjInput] = useState("");
   const [loadingCnpj, setLoadingCnpj] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingPresets, setLoadingPresets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -61,6 +78,10 @@ export default function AreaDaEmpresaCadastroPage() {
   const [cities, setCities] = useState<CityOption[]>([]);
   const [cityQuery, setCityQuery] = useState("");
   const [selectedCityCode, setSelectedCityCode] = useState("");
+  const [presets, setPresets] = useState<BusinessSegmentPreset[]>([]);
+  const [selectedPresetKey, setSelectedPresetKey] = useState("");
+  const [presetAnswers, setPresetAnswers] = useState<Record<string, string>>({});
+  const [presetApplication, setPresetApplication] = useState<PresetApplicationSummary | null>(null);
 
   const [responsibleName, setResponsibleName] = useState("");
   const [responsibleEmail, setResponsibleEmail] = useState("");
@@ -77,6 +98,32 @@ export default function AreaDaEmpresaCadastroPage() {
   const [bairro, setBairro] = useState("");
   const [cep, setCep] = useState("");
   const [uf, setUf] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function loadPresets() {
+      setLoadingPresets(true);
+      const response = await apiFetch<BusinessSegmentPreset[]>("/api/v1/erp/public/business-segment-presets");
+      if (active) {
+        if (response.ok && response.data) {
+          setPresets(response.data);
+          if (!selectedPresetKey && response.data[0]) {
+            setSelectedPresetKey(response.data[0].key);
+          }
+        }
+        setLoadingPresets(false);
+      }
+    }
+    void loadPresets();
+    return () => {
+      active = false;
+    };
+  }, [selectedPresetKey]);
+
+  const selectedPreset = useMemo(
+    () => presets.find((preset) => preset.key === selectedPresetKey) ?? null,
+    [presets, selectedPresetKey],
+  );
 
   const cityLabel = useMemo(() => {
     const selected = cities.find((city) => city.code === selectedCityCode);
@@ -99,10 +146,23 @@ export default function AreaDaEmpresaCadastroPage() {
     setUf(payload.endereco.uf);
   }
 
+  function changePreset(nextKey: string) {
+    setSelectedPresetKey(nextKey);
+    setPresetAnswers({});
+  }
+
+  function updatePresetAnswer(questionKey: string, value: string) {
+    setPresetAnswers((current) => ({
+      ...current,
+      [questionKey]: value,
+    }));
+  }
+
   async function consultarCnpj() {
     setError(null);
     setInfo(null);
     setSuccess(null);
+    setPresetApplication(null);
     setDados(null);
 
     const parsed = parseFiscalDocument(cnpjInput);
@@ -190,11 +250,16 @@ export default function AreaDaEmpresaCadastroPage() {
       setError("Selecione uma cidade valida com codigo IBGE.");
       return;
     }
+    if (!selectedPresetKey) {
+      setError("Escolha um segmento oficial para continuar.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
     setInfo(null);
     setSuccess(null);
+    setPresetApplication(null);
 
     const fiscalConfig: Record<string, unknown> = {};
     if (dados) {
@@ -219,6 +284,9 @@ export default function AreaDaEmpresaCadastroPage() {
         inscricaoEstadual: inscricaoEstadual.trim() || undefined,
         cityIbgeCode: selectedCityCode,
         taxRegime,
+        segmentPresetKey: selectedPresetKey,
+        onboardingAnswers: presetAnswers,
+        applyPresetNow: true,
         address: {
           logradouro: logradouro.trim(),
           numero: numero.trim(),
@@ -240,6 +308,7 @@ export default function AreaDaEmpresaCadastroPage() {
     }
 
     setSuccess(response.data.message);
+    setPresetApplication(response.data.presetApplication ?? null);
   }
 
   const canSubmit =
@@ -252,6 +321,7 @@ export default function AreaDaEmpresaCadastroPage() {
     !!tradeName.trim() &&
     !!legalName.trim() &&
     !!selectedCityCode &&
+    !!selectedPresetKey &&
     !!logradouro.trim() &&
     !!numero.trim() &&
     !!cep.trim() &&
@@ -261,7 +331,7 @@ export default function AreaDaEmpresaCadastroPage() {
     <>
       <PageIntro
         title="Cadastro empresarial completo"
-        description="Preencha os dados da empresa, do responsavel e da cidade IBGE para solicitar a liberacao do ERP com prontidao fiscal."
+        description="Escolha o segmento do negócio, preencha os dados da empresa e solicite a liberação do ERP com um kit inicial já sugerido."
         badge="Area da empresa"
       />
 
@@ -283,7 +353,89 @@ export default function AreaDaEmpresaCadastroPage() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
         <div className="space-y-6">
           <Card className="p-6">
-            <h2 className="font-serif text-lg text-marinha-900">1. Buscar dados pelo CNPJ</h2>
+            <h2 className="font-serif text-lg text-marinha-900">1. Escolher o tipo de negócio</h2>
+            <p className="mt-1 text-sm text-marinha-500">
+              O preset organiza o ERP e a vitrine inicial para o seu segmento, mas tudo continua editável depois.
+            </p>
+            {loadingPresets ? (
+              <p className="mt-4 text-sm text-marinha-500">Carregando segmentos...</p>
+            ) : (
+              <>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {presets.map((preset) => (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => changePreset(preset.key)}
+                      className={`rounded-card border p-4 text-left transition ${
+                        selectedPresetKey === preset.key
+                          ? "border-municipal-600 bg-municipal-600/5"
+                          : "border-marinha-900/10 hover:border-municipal-600/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="font-semibold text-marinha-900">{preset.name}</h3>
+                        <span className="rounded-full bg-marinha-900/5 px-2 py-1 text-xs font-semibold text-marinha-700">
+                          {presetBadgeLabel(preset.operationType)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-marinha-600">{preset.summary}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedPreset ? (
+                  <div className="mt-4 rounded-card border border-marinha-900/10 bg-surface px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Onboarding guiado</p>
+                    <div className="mt-3 grid gap-4">
+                      {selectedPreset.onboardingQuestions.map((question) => (
+                        <div key={question.key}>
+                          <label className="mb-1 block text-sm font-medium text-marinha-800">{question.label}</label>
+                          {question.type === "boolean" ? (
+                            <select
+                              value={presetAnswers[question.key] ?? ""}
+                              onChange={(e) => updatePresetAnswer(question.key, e.target.value)}
+                              className="focus-ring min-h-[44px] w-full rounded-btn border-2 border-marinha-900/25 bg-white px-3 py-2 text-sm text-marinha-900"
+                            >
+                              <option value="">Selecione</option>
+                              <option value="true">Sim</option>
+                              <option value="false">Não</option>
+                            </select>
+                          ) : question.type === "single_select" ? (
+                            <select
+                              value={presetAnswers[question.key] ?? ""}
+                              onChange={(e) => updatePresetAnswer(question.key, e.target.value)}
+                              className="focus-ring min-h-[44px] w-full rounded-btn border-2 border-marinha-900/25 bg-white px-3 py-2 text-sm text-marinha-900"
+                            >
+                              <option value="">Selecione</option>
+                              {question.options?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <Input
+                              value={presetAnswers[question.key] ?? ""}
+                              onChange={(e) => updatePresetAnswer(question.key, e.target.value)}
+                              placeholder="Informe um número"
+                              inputMode="numeric"
+                            />
+                          )}
+                          {question.helperText ? (
+                            <p className="mt-1 text-xs text-marinha-500">{question.helperText}</p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="font-serif text-lg text-marinha-900">2. Buscar dados pelo CNPJ</h2>
             <p className="mt-1 text-sm text-marinha-500">
               Consulte a Receita para preencher automaticamente os dados principais da empresa.
             </p>
@@ -300,7 +452,7 @@ export default function AreaDaEmpresaCadastroPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-serif text-lg text-marinha-900">2. Responsavel pelo ERP</h2>
+            <h2 className="font-serif text-lg text-marinha-900">3. Responsavel pelo ERP</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className="mb-1 block text-sm font-medium">Nome completo</label>
@@ -322,7 +474,7 @@ export default function AreaDaEmpresaCadastroPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-serif text-lg text-marinha-900">3. Dados fiscais da empresa</h2>
+            <h2 className="font-serif text-lg text-marinha-900">4. Dados fiscais da empresa</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nome fantasia</label>
@@ -385,7 +537,7 @@ export default function AreaDaEmpresaCadastroPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-serif text-lg text-marinha-900">4. Endereco fiscal</h2>
+            <h2 className="font-serif text-lg text-marinha-900">5. Endereco fiscal</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className="mb-1 block text-sm font-medium">Logradouro</label>
@@ -423,13 +575,25 @@ export default function AreaDaEmpresaCadastroPage() {
                 O cadastro fica <strong className="text-marinha-900">pendente</strong> ate a prefeitura aprovar a empresa.
               </p>
               <p>
-                Apos a aprovacao, o responsavel entra com o e-mail cadastrado e passa a operar o ERP normalmente.
+                O segmento escolhido cria um kit inicial de ERP e vitrine publica para acelerar o primeiro acesso.
               </p>
               <p>
-                O preenchimento correto de CNPJ, cidade IBGE e inscricoes reduz retrabalho e acelera a emissao fiscal.
+                Depois da aprovacao, voce podera revisar tudo: catalogo, foco operacional, textos e canais publicos.
               </p>
             </div>
           </Card>
+
+          {selectedPreset ? (
+            <Card className="p-6">
+              <h2 className="font-serif text-lg text-marinha-900">Preset selecionado</h2>
+              <p className="mt-2 text-sm text-marinha-600">{selectedPreset.summary}</p>
+              <div className="mt-4 space-y-2 text-sm text-marinha-600">
+                <p><span className="text-marinha-500">ERP:</span> {selectedPreset.erpFocus.join(", ")}</p>
+                <p><span className="text-marinha-500">Categoria pública:</span> {selectedPreset.directorySuggestion.category}</p>
+                <p><span className="text-marinha-500">Serviços sugeridos:</span> {selectedPreset.directorySuggestion.services.join(", ")}</p>
+              </div>
+            </Card>
+          ) : null}
 
           {dados ? (
             <Card className="p-6">
@@ -439,6 +603,29 @@ export default function AreaDaEmpresaCadastroPage() {
                 <p><span className="text-marinha-500">Situacao:</span> {dados.situacao.nome}</p>
                 <p><span className="text-marinha-500">Atividade principal:</span> {dados.atividade_principal.descricao}</p>
                 <p><span className="text-marinha-500">Endereco:</span> {dados.endereco.cidade} - {dados.endereco.uf}, CEP {dados.endereco.cep}</p>
+              </div>
+            </Card>
+          ) : null}
+
+          {presetApplication ? (
+            <Card className="p-6">
+              <h2 className="font-serif text-lg text-marinha-900">Pré-pronto aplicado</h2>
+              <div className="mt-4 space-y-3 text-sm text-marinha-600">
+                <p>
+                  <span className="text-marinha-500">Itens criados:</span> {presetApplication.createdProducts.length}
+                </p>
+                <p>
+                  <span className="text-marinha-500">Vitrine inicial:</span> /{presetApplication.directoryListing.slug}
+                </p>
+                <p>
+                  <span className="text-marinha-500">Foco sugerido:</span> {presetApplication.erpFocus.join(", ")}
+                </p>
+                <p className="font-medium text-marinha-800">Pendências para revisão:</p>
+                <ul className="space-y-1 text-sm text-marinha-600">
+                  {presetApplication.pendingReview.map((item) => (
+                    <li key={item}>• {item}</li>
+                  ))}
+                </ul>
               </div>
             </Card>
           ) : null}

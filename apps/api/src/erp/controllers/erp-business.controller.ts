@@ -13,16 +13,33 @@ import { CurrentTenantId } from '../../common/decorators/current-tenant-id.decor
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { BusinessSegmentSelectionDto } from '../dto/business-segment-preset.dto';
 import { CreateErpBusinessDto } from '../dto/create-business.dto';
 import { UpdateErpBusinessProfileDto } from '../dto/update-erp-business-profile.dto';
 import { ErpBusinessService } from '../services/erp-business.service';
+import { BusinessSegmentPresetService } from '../services/business-segment-preset.service';
 
 @ApiTags('erp — negócios')
 @Controller('erp/businesses')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ErpBusinessController {
-  constructor(private readonly svc: ErpBusinessService) {}
+  constructor(
+    private readonly svc: ErpBusinessService,
+    private readonly segmentPresets: BusinessSegmentPresetService,
+  ) {}
+
+  @Get('segment-presets')
+  @ApiOperation({ summary: 'Listar presets oficiais de segmento para onboarding do negócio' })
+  listSegmentPresets() {
+    return this.segmentPresets.listAll();
+  }
+
+  @Get('segment-presets/:key')
+  @ApiOperation({ summary: 'Detalhar um preset oficial de segmento' })
+  findSegmentPreset(@Param('key') key: string) {
+    return this.segmentPresets.findOne(key as any);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Listar negócios do usuário no tenant (município)' })
@@ -68,5 +85,18 @@ export class ErpBusinessController {
     @Body() dto: UpdateErpBusinessProfileDto,
   ) {
     return this.svc.updateProfile(user.id, tenantId, id, dto);
+  }
+
+  @Post(':id/segment-preset')
+  @ApiOperation({
+    summary: 'Aplicar ou reaplicar preset oficial de segmento em um negócio existente',
+  })
+  applySegmentPreset(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: BusinessSegmentSelectionDto,
+  ) {
+    return this.svc.applySegmentPreset(user.id, tenantId, id, dto);
   }
 }

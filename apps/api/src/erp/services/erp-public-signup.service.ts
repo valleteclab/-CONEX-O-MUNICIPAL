@@ -12,6 +12,7 @@ import { User } from '../../entities/user.entity';
 import { UserTenant } from '../../entities/user-tenant.entity';
 import { PublicBusinessSignupDto } from '../dto/public-business-signup.dto';
 import { IbgeCityService } from './ibge-city.service';
+import { BusinessSegmentPresetService } from './business-segment-preset.service';
 
 @Injectable()
 export class ErpPublicSignupService {
@@ -27,6 +28,7 @@ export class ErpPublicSignupService {
     private readonly userTenants: Repository<UserTenant>,
     @InjectRepository(ErpBusiness)
     private readonly businesses: Repository<ErpBusiness>,
+    private readonly segmentPresets: BusinessSegmentPresetService,
   ) {}
 
   async createSignup(dto: PublicBusinessSignupDto) {
@@ -104,6 +106,10 @@ export class ErpPublicSignupService {
             submittedAt: new Date().toISOString(),
           },
         },
+        segmentPresetKey: dto.segmentPresetKey ?? null,
+        segmentPresetVersion: null,
+        segmentOnboardingAnswers: dto.onboardingAnswers ?? {},
+        segmentPresetApplied: false,
         moderationStatus: 'pending',
         isActive: false,
       });
@@ -126,14 +132,29 @@ export class ErpPublicSignupService {
         }),
       );
 
-      return createdBusiness;
+      let presetApplication: Record<string, unknown> | null = null;
+      if (dto.segmentPresetKey && dto.applyPresetNow !== false) {
+        presetApplication = await this.segmentPresets.applyPreset({
+          manager: em,
+          business: createdBusiness,
+          ownerUserId: user.id,
+          segmentPresetKey: dto.segmentPresetKey,
+          onboardingAnswers: dto.onboardingAnswers,
+        });
+      }
+
+      return {
+        business: createdBusiness,
+        presetApplication,
+      };
     });
 
     return {
-      businessId: business.id,
-      moderationStatus: business.moderationStatus,
+      businessId: business.business.id,
+      moderationStatus: business.business.moderationStatus,
       message:
         'Cadastro recebido com sucesso. A equipe da plataforma vai analisar os dados da empresa antes de liberar o ERP.',
+      presetApplication: business.presetApplication,
     };
   }
 

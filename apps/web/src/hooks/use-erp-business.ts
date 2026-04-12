@@ -11,6 +11,11 @@ export type ErpBusiness = {
   document: string | null;
   moderationStatus: "pending" | "approved" | "rejected";
   isActive: boolean;
+  segmentPresetKey: string | null;
+  segmentPresetVersion: number | null;
+  segmentPresetApplied: boolean;
+  segmentOnboardingAnswers: Record<string, string | number | boolean>;
+  fiscalConfig: Record<string, unknown>;
 };
 
 type UseErpBusinessReturn = {
