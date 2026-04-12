@@ -18,7 +18,7 @@ const groups: NavGroup[] = [
     key: "negocio",
     label: "Meu negocio",
     items: [
-      { href: "/erp", label: "Dashboard", desc: "Resumo da operacao e atalhos principais.", exact: true },
+      { href: "/erp", label: "Inicio", desc: "Resumo do dia e atalhos principais.", exact: true },
       { href: "/area-da-empresa/cadastro", label: "Empresa", desc: "Dados cadastrais e perfil do negocio." },
       { href: "/dashboard/meu-negocio", label: "Presenca digital", desc: "Perfil publico, catalogo e contatos." },
     ],
@@ -27,10 +27,10 @@ const groups: NavGroup[] = [
     key: "cadastros",
     label: "Cadastros",
     items: [
-      { href: "/erp/produtos", label: "Produtos", desc: "Catalogo, XML e classificacao fiscal." },
-      { href: "/erp/clientes-fornecedores", label: "Clientes e fornecedores", desc: "Relacionamentos comerciais." },
+      { href: "/erp/produtos", label: "Produtos", desc: "Cadastro de itens, importacao XML e ajustes." },
+      { href: "/erp/clientes-fornecedores", label: "Clientes e fornecedores", desc: "Cadastro de clientes e parceiros." },
       { href: "/erp/estoque", label: "Estoque", desc: "Saldos, alertas e movimentacoes." },
-      { href: "/erp/dados-fiscais", label: "Dados fiscais", desc: "Cadastro do emitente e readiness fiscal." },
+      { href: "/erp/dados-fiscais", label: "Dados fiscais", desc: "Informacoes para emissao de notas." },
     ],
   },
   {
@@ -38,7 +38,7 @@ const groups: NavGroup[] = [
     label: "Vendas",
     items: [
       { href: "/erp/pedidos-venda", label: "Pedidos de venda", desc: "Pedidos, confirmacoes e faturamento." },
-      { href: "/erp/pdv", label: "PDV", desc: "Caixa rapido com recibo e NFC-e." },
+      { href: "/erp/pdv", label: "PDV", desc: "Caixa rapido para vender e imprimir recibo." },
       { href: "/erp/orcamentos", label: "Orcamentos", desc: "Propostas antes de converter em venda." },
       { href: "/erp/ordens-servico", label: "Ordens de servico", desc: "Execucao e acompanhamento operacional." },
     ],
@@ -49,8 +49,8 @@ const groups: NavGroup[] = [
     items: [
       { href: "/erp/financeiro", label: "Resumo financeiro", desc: "Caixa, contas a receber e a pagar." },
       { href: "/erp/pedidos-compra", label: "Compras", desc: "Compras, recebimento e abastecimento." },
-      { href: "/erp/fiscal", label: "Notas fiscais", desc: "Emissao e acompanhamento fiscal." },
-      { href: "/erp/mei", label: "Central MEI", desc: "Rotinas e orientacoes para o MEI." },
+      { href: "/erp/fiscal", label: "Notas fiscais", desc: "Emitir, acompanhar e consultar notas." },
+      { href: "/erp/mei", label: "Central MEI", desc: "Rotinas e informacoes do MEI." },
     ],
   },
 ];
@@ -93,7 +93,7 @@ export function ErpTopNav() {
 
           <div className="flex min-w-0 flex-1 flex-col gap-3 xl:max-w-[720px] xl:items-end">
             <div className="w-full rounded-full border border-marinha-900/8 bg-surface px-4 py-2.5 text-sm text-marinha-400 shadow-sm">
-              Pesquisar modulos, rotinas e atalhos...
+              Pesquisar paginas e atalhos...
             </div>
             {isLoading ? (
               <div className="h-10 w-full animate-pulse rounded-btn bg-marinha-900/10 xl:w-80" />
@@ -103,11 +103,11 @@ export function ErpTopNav() {
               </div>
             ) : businesses.length === 0 ? (
               <div className="w-full rounded-btn border border-municipal-200 bg-municipal-50 px-4 py-2 text-sm text-municipal-800 xl:w-auto">
-                Cadastre uma empresa para operar no ERP.
+                Cadastre uma empresa para começar a usar o ERP.
               </div>
             ) : !hasApproved ? (
               <div className="w-full rounded-btn border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800 xl:w-auto">
-                Sua empresa ainda esta em analise antes de operar no ERP.
+                Sua empresa ainda esta em analise.
               </div>
             ) : (
               <div className="flex w-full flex-col gap-2 xl:w-auto xl:flex-row xl:items-center">
@@ -192,7 +192,7 @@ export function ErpTopNav() {
                 Alertas
               </Button>
               <Button variant="secondary" className="min-h-[40px] rounded-full px-4 py-2">
-                Configuracoes
+                Ajustes
               </Button>
             </div>
           </div>

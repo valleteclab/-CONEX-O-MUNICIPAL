@@ -36,7 +36,7 @@ const baseQuickCards: QuickCard[] = [
   {
     href: "/erp/produtos",
     title: "Produtos",
-    desc: "Catalogo, XML e ajustes do cadastro.",
+    desc: "Cadastro de itens, importacao XML e ajustes.",
     badge: "Catalogo",
   },
   {
@@ -60,7 +60,7 @@ const baseQuickCards: QuickCard[] = [
   {
     href: "/erp/fiscal",
     title: "Fiscal",
-    desc: "Documentos emitidos e readiness fiscal.",
+    desc: "Notas emitidas e situacao fiscal.",
     badge: "Fiscal",
   },
 ];
@@ -277,20 +277,20 @@ export function ErpHomePanel() {
                 Dashboard
               </Badge>
               <h2 className="mt-4 font-serif text-3xl leading-tight">
-                {selected?.tradeName ?? "Seu negocio"} em uma visao operacional unica
+                {selected?.tradeName ?? "Seu negocio"}: acompanhe sua operacao em um so lugar
               </h2>
               <p className="mt-3 max-w-2xl text-sm text-white/82">
-                Painel inspirado em ERPs mais visuais: indicadores, atalhos e contexto rapido para
-                tocar vendas, estoque, financeiro e fiscal sem trocar de tela o tempo todo.
+                Veja rapidamente vendas, estoque, financeiro e fiscal para decidir o que precisa
+                da sua atencao hoje.
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {heroSummary.map((item) => (
-                  <div key={item.label} className="rounded-card border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <p className="text-xs uppercase tracking-wide text-white/70">{item.label}</p>
-                    <p className="mt-2 text-2xl font-bold">{item.value}</p>
-                    <p className="mt-1 text-sm text-white/75">{item.helper}</p>
-                  </div>
+                <div key={item.label} className="rounded-card border border-white/15 bg-white/10 p-4 backdrop-blur">
+                  <p className="text-xs uppercase tracking-wide text-white/70">{item.label}</p>
+                  <p className="mt-2 text-2xl font-bold">{item.value}</p>
+                  <p className="mt-1 text-sm text-white/75">{item.helper}</p>
+                </div>
                 ))}
               </div>
             </div>
@@ -314,13 +314,13 @@ export function ErpHomePanel() {
                   <p className="mt-2 text-2xl font-bold text-white">{fmtCurrency.format(avgTicket)}</p>
                 </div>
                 <div className="rounded-btn bg-white/10 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide text-white/65">Saldo do periodo</p>
+                  <p className="text-xs uppercase tracking-wide text-white/65">Saldo no periodo</p>
                   <p className="mt-2 text-2xl font-bold text-white">
                     {fmtCurrency.format(toNumber(finance?.cash.balance))}
                   </p>
                 </div>
                 <div className="rounded-btn bg-white/10 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide text-white/65">Pendencias fiscais</p>
+                  <p className="text-xs uppercase tracking-wide text-white/65">Notas pendentes</p>
                   <p className="mt-2 text-2xl font-bold text-white">
                     {fiscalDocs.filter((item) => item.status !== "authorized").length}
                   </p>
@@ -335,7 +335,7 @@ export function ErpHomePanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Resumo diario</p>
-                <h3 className="mt-1 font-serif text-2xl text-marinha-900">Radar de operacao</h3>
+                <h3 className="mt-1 font-serif text-2xl text-marinha-900">Resumo do dia</h3>
               </div>
               {isLoading ? <Badge tone="neutral">Atualizando...</Badge> : <Badge tone="accent">Ao vivo</Badge>}
             </div>
@@ -349,17 +349,17 @@ export function ErpHomePanel() {
               <div className="rounded-card border border-marinha-900/8 bg-surface p-4">
                 <p className="text-xs uppercase tracking-wide text-marinha-500">Servicos</p>
                 <p className="mt-2 text-2xl font-bold text-marinha-900">{services.length}</p>
-                <p className="mt-1 text-sm text-marinha-500">itens de servico cadastrados</p>
+                <p className="mt-1 text-sm text-marinha-500">servicos cadastrados</p>
               </div>
               <div className="rounded-card border border-marinha-900/8 bg-surface p-4">
                 <p className="text-xs uppercase tracking-wide text-marinha-500">Caixa</p>
                 <p className="mt-2 text-2xl font-bold text-marinha-900">{finance?.cash.entries ?? 0}</p>
-                <p className="mt-1 text-sm text-marinha-500">movimentacoes no periodo</p>
+                <p className="mt-1 text-sm text-marinha-500">lancamentos no periodo</p>
               </div>
               <div className="rounded-card border border-marinha-900/8 bg-surface p-4">
                 <p className="text-xs uppercase tracking-wide text-marinha-500">Compras recebidas</p>
                 <p className="mt-2 text-2xl font-bold text-marinha-900">{purchasesReceived.length}</p>
-                <p className="mt-1 text-sm text-marinha-500">entradas formalizadas</p>
+                <p className="mt-1 text-sm text-marinha-500">pedidos recebidos</p>
               </div>
             </div>
           </Card>
@@ -388,7 +388,7 @@ export function ErpHomePanel() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Pipeline</p>
-              <h3 className="mt-1 font-serif text-2xl text-marinha-900">Fluxo comercial e suprimentos</h3>
+              <h3 className="mt-1 font-serif text-2xl text-marinha-900">Vendas, compras e estoque</h3>
             </div>
             <Badge tone="neutral">Ultimos registros</Badge>
           </div>
@@ -416,14 +416,14 @@ export function ErpHomePanel() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Graficos</p>
-              <h3 className="mt-1 font-serif text-2xl text-marinha-900">Financeiro e caixa</h3>
+              <h3 className="mt-1 font-serif text-2xl text-marinha-900">Financeiro</h3>
             </div>
             <Badge tone="accent">30 dias</Badge>
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <div className="rounded-card border border-marinha-900/8 bg-surface p-4">
-              <p className="text-sm font-semibold text-marinha-900">Comparativo financeiro</p>
+              <p className="text-sm font-semibold text-marinha-900">Entradas e saidas</p>
               <div className="mt-4 space-y-3">
                 <MetricBar
                   label="Entradas de caixa"
@@ -453,7 +453,7 @@ export function ErpHomePanel() {
             </div>
 
             <div className="rounded-card border border-marinha-900/8 bg-surface p-4">
-              <p className="text-sm font-semibold text-marinha-900">Alertas e foco do dia</p>
+              <p className="text-sm font-semibold text-marinha-900">O que precisa de atencao</p>
               <div className="mt-4 space-y-3">
                 <div className="rounded-btn border border-marinha-900/8 bg-white px-4 py-3">
                   <p className="text-xs uppercase tracking-wide text-marinha-500">Notas pendentes</p>
