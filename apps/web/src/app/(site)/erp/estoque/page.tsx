@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { ErpFormModal } from "@/components/erp/erp-form-modal";
 import { PageIntro } from "@/components/layout/page-intro";
@@ -42,9 +43,100 @@ type StockLocation = {
 
 type Product = { id: string; name: string; sku: string };
 
+type ImportParty = {
+  id: string;
+  name: string;
+  document?: string | null;
+  stateRegistration?: string | null;
+};
+
+type ImportProductRef = {
+  id: string;
+  sku: string;
+  name: string;
+  barcode?: string | null;
+  supplierCode?: string | null;
+  unit: string;
+  cost: string;
+};
+
+type ImportItem = {
+  id: string;
+  lineNumber: number;
+  supplierCode?: string | null;
+  barcode?: string | null;
+  name: string;
+  ncm?: string | null;
+  cest?: string | null;
+  cfop?: string | null;
+  originCode?: string | null;
+  unit?: string | null;
+  qty: string;
+  unitPrice: string;
+  totalPrice: string;
+  suggestedProductId?: string | null;
+  suggestedProduct?: ImportProductRef | null;
+  selectedProductId?: string | null;
+  selectedProduct?: ImportProductRef | null;
+  matchMeta?: {
+    strategy?: string;
+    confidence?: number | null;
+    reason?: string | null;
+  } | null;
+  draftProduct?: {
+    sku?: string;
+    name?: string;
+    unit?: string;
+    barcode?: string | null;
+    supplierCode?: string | null;
+    ncm?: string | null;
+    cest?: string | null;
+    cfopDefault?: string | null;
+    originCode?: string | null;
+    cost?: string;
+  } | null;
+  action?: "link" | "create" | "ignore" | null;
+};
+
+type XmlImportDetail = {
+  id: string;
+  accessKey: string;
+  invoiceNumber?: string | null;
+  invoiceSeries?: string | null;
+  issuedAt?: string | null;
+  status: "uploaded" | "applied";
+  purchaseOrderId?: string | null;
+  summary?: {
+    totalAmount?: string;
+    totalItems?: number;
+    stockPosted?: boolean;
+    stockLocationId?: string | null;
+    stockPostedAt?: string | null;
+  } | null;
+  supplierParty?: ImportParty | null;
+  items: ImportItem[];
+};
+
+type ImportDecision = {
+  action: "link" | "create" | "ignore";
+  selectedProductId: string;
+  createProduct: {
+    sku: string;
+    name: string;
+    unit: string;
+    barcode: string;
+    supplierCode: string;
+    ncm: string;
+    cest: string;
+    cfopDefault: string;
+    originCode: string;
+    cost: string;
+  };
+};
+
 const TAKE = 50;
 
-const MOVE_LABELS: Record<string, string> = { in: "Entrada", out: "Saída", adjust: "Ajuste" };
+const MOVE_LABELS: Record<string, string> = { in: "Entrada", out: "Saida", adjust: "Ajuste" };
 const MOVE_COLORS: Record<string, string> = {
   in: "bg-green-100 text-green-700",
   out: "bg-red-100 text-red-700",
@@ -52,7 +144,41 @@ const MOVE_COLORS: Record<string, string> = {
 };
 
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function fmtMoney(value: string) {
+  return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function shortDate(value: string | null | undefined) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("pt-BR");
+}
+
+function buildDecision(item: ImportItem): ImportDecision {
+  return {
+    action: item.suggestedProductId ? "link" : "create",
+    selectedProductId: item.suggestedProductId ?? "",
+    createProduct: {
+      sku: item.draftProduct?.sku ?? "",
+      name: item.draftProduct?.name ?? item.name,
+      unit: item.draftProduct?.unit ?? item.unit ?? "UN",
+      barcode: item.draftProduct?.barcode ?? item.barcode ?? "",
+      supplierCode: item.draftProduct?.supplierCode ?? item.supplierCode ?? "",
+      ncm: item.draftProduct?.ncm ?? item.ncm ?? "",
+      cest: item.draftProduct?.cest ?? item.cest ?? "",
+      cfopDefault: item.draftProduct?.cfopDefault ?? item.cfop ?? "",
+      originCode: item.draftProduct?.originCode ?? item.originCode ?? "",
+      cost: item.draftProduct?.cost ?? item.unitPrice,
+    },
+  };
 }
 
 const balanceColumns: ErpColumn<StockBalance>[] = [
@@ -62,8 +188,7 @@ const balanceColumns: ErpColumn<StockBalance>[] = [
     render: (r) =>
       r.product ? (
         <span>
-          {r.product.name}{" "}
-          <span className="font-mono text-xs text-marinha-500">({r.product.sku})</span>
+          {r.product.name} <span className="font-mono text-xs text-marinha-500">({r.product.sku})</span>
         </span>
       ) : (
         r.productId
@@ -93,14 +218,10 @@ const movementColumns: ErpColumn<StockMovement>[] = [
       </span>
     ),
   },
-  {
-    key: "product",
-    label: "Produto",
-    render: (r) => r.product?.name ?? r.productId,
-  },
+  { key: "product", label: "Produto", render: (r) => r.product?.name ?? r.productId },
   { key: "quantity", label: "Qtd", render: (r) => r.quantity },
-  { key: "refType", label: "Referência", render: (r) => r.refType ?? "—" },
-  { key: "note", label: "Obs.", render: (r) => r.note ?? "—" },
+  { key: "refType", label: "Referencia", render: (r) => r.refType ?? "-" },
+  { key: "note", label: "Obs.", render: (r) => r.note ?? "-" },
 ];
 
 export default function ErpEstoquePage() {
@@ -118,6 +239,7 @@ export default function ErpEstoquePage() {
 
   const [moveModal, setMoveModal] = useState(false);
   const [locationModal, setLocationModal] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const [moveForm, setMoveForm] = useState({
     type: "in" as "in" | "out" | "adjust",
@@ -131,6 +253,18 @@ export default function ErpEstoquePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isMoveSubmitting, setIsMoveSubmitting] = useState(false);
   const [isLocSubmitting, setIsLocSubmitting] = useState(false);
+
+  const [importStep, setImportStep] = useState<1 | 2 | 3>(1);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImportSubmitting, setIsImportSubmitting] = useState(false);
+  const [isImportApplying, setIsImportApplying] = useState(false);
+  const [isCreatingPurchaseOrder, setIsCreatingPurchaseOrder] = useState(false);
+  const [xmlImport, setXmlImport] = useState<XmlImportDetail | null>(null);
+  const [importDecisions, setImportDecisions] = useState<Record<string, ImportDecision>>({});
+  const [createdPurchaseOrderId, setCreatedPurchaseOrderId] = useState<string | null>(null);
+  const [launchStockFromImport, setLaunchStockFromImport] = useState(true);
+  const [importStockLocationId, setImportStockLocationId] = useState("");
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
@@ -158,7 +292,7 @@ export default function ErpEstoquePage() {
         setMovSkip(currentSkip + items.length);
         setMovHasMore(currentSkip + items.length < total);
       } else {
-        setMovementsError(res.error ?? "Erro ao carregar movimentações.");
+        setMovementsError(res.error ?? "Erro ao carregar movimentacoes.");
       }
       setMovementsLoading(false);
     },
@@ -171,7 +305,7 @@ export default function ErpEstoquePage() {
   }, []);
 
   const loadProducts = useCallback(async () => {
-    const res = await erpFetch<ErpListResponse<Product>>("/api/v1/erp/products?take=100&skip=0");
+    const res = await erpFetch<ErpListResponse<Product>>("/api/v1/erp/products?take=200&skip=0");
     if (res.ok && res.data) setProducts(res.data.items);
   }, []);
 
@@ -185,16 +319,46 @@ export default function ErpEstoquePage() {
       setMovSkip(0);
       return;
     }
-    loadBalances();
-    loadMovements(true);
-    loadLocations();
-    loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId]);
+    void loadBalances();
+    void loadMovements(true);
+    void loadLocations();
+    void loadProducts();
+  }, [businessId, loadBalances, loadLocations, loadMovements, loadProducts, noBusinessId]);
+
+  const openImportModal = () => {
+    setImportOpen(true);
+    setImportStep(1);
+    setImportFile(null);
+    setImportError(null);
+    setXmlImport(null);
+    setImportDecisions({});
+    setCreatedPurchaseOrderId(null);
+    setLaunchStockFromImport(true);
+    setImportStockLocationId(locations.find((location) => location.isDefault)?.id ?? "");
+  };
+
+  const importSummary = useMemo(() => {
+    const decisions = Object.values(importDecisions);
+    return {
+      link: decisions.filter((item) => item.action === "link").length,
+      create: decisions.filter((item) => item.action === "create").length,
+      ignore: decisions.filter((item) => item.action === "ignore").length,
+    };
+  }, [importDecisions]);
+
+  const importModalTitle =
+    importStep === 1
+      ? "Importar XML da NF-e"
+      : importStep === 2
+        ? "Revisar entrada por XML"
+        : "Resumo da entrada";
+
+  const importSubmitLabel =
+    importStep === 1 ? "Ler XML" : importStep === 2 ? "Aplicar entrada" : "Concluir";
 
   const handleMoveSubmit = async () => {
     if (!moveForm.productId || !moveForm.locationId || !moveForm.quantity) {
-      setMoveError("Produto, local e quantidade são obrigatórios.");
+      setMoveError("Produto, local e quantidade sao obrigatorios.");
       return;
     }
     setIsMoveSubmitting(true);
@@ -211,17 +375,17 @@ export default function ErpEstoquePage() {
     });
     if (res.ok) {
       setMoveModal(false);
-      loadBalances();
-      loadMovements(true);
+      void loadBalances();
+      void loadMovements(true);
     } else {
-      setMoveError(res.error ?? "Erro ao registrar movimentação.");
+      setMoveError(res.error ?? "Erro ao registrar movimentacao.");
     }
     setIsMoveSubmitting(false);
   };
 
   const handleLocationSubmit = async () => {
     if (!locationForm.name.trim()) {
-      setLocationError("Nome é obrigatório.");
+      setLocationError("Nome e obrigatorio.");
       return;
     }
     setIsLocSubmitting(true);
@@ -239,6 +403,119 @@ export default function ErpEstoquePage() {
     setIsLocSubmitting(false);
   };
 
+  async function handleImportSubmit() {
+    if (importStep === 1) {
+      if (!importFile) {
+        setImportError("Selecione um arquivo XML para importar.");
+        return;
+      }
+      setIsImportSubmitting(true);
+      setImportError(null);
+      const xmlContent = await importFile.text();
+      const res = await erpFetch<XmlImportDetail>("/api/v1/erp/products/xml-imports", {
+        method: "POST",
+        body: JSON.stringify({ xmlContent }),
+      });
+      setIsImportSubmitting(false);
+      if (!res.ok || !res.data) {
+        setImportError(res.error ?? "Nao foi possivel importar o XML.");
+        return;
+      }
+      setXmlImport(res.data);
+      setImportDecisions(
+        Object.fromEntries(res.data.items.map((item) => [item.id, buildDecision(item)])),
+      );
+      setImportStep(2);
+      return;
+    }
+
+    if (importStep === 2) {
+      if (!xmlImport) return;
+      setIsImportApplying(true);
+      setImportError(null);
+      const res = await erpFetch<XmlImportDetail>(
+        `/api/v1/erp/products/xml-imports/${xmlImport.id}/apply`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            items: xmlImport.items.map((item) => ({
+              itemId: item.id,
+              action: importDecisions[item.id]?.action ?? "ignore",
+              selectedProductId: importDecisions[item.id]?.selectedProductId || undefined,
+              createProduct:
+                importDecisions[item.id]?.action === "create"
+                  ? importDecisions[item.id]?.createProduct
+                  : undefined,
+            })),
+            launchStockNow: launchStockFromImport,
+            stockLocationId: launchStockFromImport ? importStockLocationId || undefined : undefined,
+          }),
+        },
+      );
+      setIsImportApplying(false);
+      if (!res.ok || !res.data) {
+        setImportError(res.error ?? "Nao foi possivel aplicar a entrada.");
+        return;
+      }
+      setXmlImport(res.data);
+      setImportStep(3);
+      void loadBalances();
+      void loadMovements(true);
+      void loadProducts();
+      return;
+    }
+
+    setImportOpen(false);
+  }
+
+  async function createPurchaseOrderFromImport() {
+    if (!xmlImport) return;
+    setIsCreatingPurchaseOrder(true);
+    setImportError(null);
+    const res = await erpFetch<{ id: string }>(
+      `/api/v1/erp/products/xml-imports/${xmlImport.id}/create-purchase-order`,
+      { method: "POST" },
+    );
+    setIsCreatingPurchaseOrder(false);
+    if (!res.ok || !res.data) {
+      setImportError(res.error ?? "Nao foi possivel gerar o pedido de compra.");
+      return;
+    }
+    setCreatedPurchaseOrderId(res.data.id);
+    setXmlImport((current) => (current ? { ...current, purchaseOrderId: res.data!.id } : current));
+  }
+
+  function setDecisionAction(itemId: string, action: ImportDecision["action"]) {
+    setImportDecisions((current) => ({
+      ...current,
+      [itemId]: { ...current[itemId], action },
+    }));
+  }
+
+  function setDecisionProduct(itemId: string, selectedProductId: string) {
+    setImportDecisions((current) => ({
+      ...current,
+      [itemId]: { ...current[itemId], selectedProductId },
+    }));
+  }
+
+  function setDecisionDraftField(
+    itemId: string,
+    key: keyof ImportDecision["createProduct"],
+    value: string,
+  ) {
+    setImportDecisions((current) => ({
+      ...current,
+      [itemId]: {
+        ...current[itemId],
+        createProduct: {
+          ...current[itemId].createProduct,
+          [key]: value,
+        },
+      },
+    }));
+  }
+
   const sel = (
     value: string,
     onChange: (v: string) => void,
@@ -249,7 +526,7 @@ export default function ErpEstoquePage() {
       onChange={(e) => onChange(e.target.value)}
       className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
     >
-      <option value="">— Selecione —</option>
+      <option value="">- Selecione -</option>
       {options.map((o) => (
         <option key={o.value} value={o.value}>
           {o.label}
@@ -269,31 +546,38 @@ export default function ErpEstoquePage() {
     <>
       <PageIntro
         title="Estoque"
-        description="Acompanhe saldos, movimentações e locais de armazenamento para manter a operação abastecida."
-        badge="Operação"
+        description="Acompanhe saldos, movimentacoes e entradas de mercadoria sem perder o vinculo com produtos e fornecedores."
+        badge="Operacao"
       />
-
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card variant="featured">
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Saldos</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{balances.length} posições</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{balances.length} posicoes</p>
           <p className="mt-1 text-sm text-marinha-500">Itens com saldo registrado por local.</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Movimentações</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Movimentacoes</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{movements.length} registros</p>
-          <p className="mt-1 text-sm text-marinha-500">Histórico recente de entradas, saídas e ajustes.</p>
+          <p className="mt-1 text-sm text-marinha-500">Historico recente de entradas, saidas e ajustes.</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Locais</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{locations.length} locais cadastrados</p>
-          <p className="mt-1 text-sm text-marinha-500">Organize estoque por depósito, loja ou almoxarifado.</p>
+          <p className="mt-1 text-sm text-marinha-500">Organize estoque por deposito, loja ou almoxarifado.</p>
         </Card>
       </div>
 
+      <div className="mb-4 rounded-btn border border-cerrado-500/25 bg-cerrado-500/10 px-4 py-3 text-sm text-marinha-700">
+        A entrada por XML fica no estoque porque essa rotina pode atualizar cadastro de produto, cadastrar
+        fornecedor e, se voce quiser, <strong>lancar saldo imediatamente</strong> a partir da NF-e.
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-3">
+        <Button variant="primary" onClick={openImportModal} disabled={noBusinessId}>
+          Importar XML
+        </Button>
         <Button
-          variant="primary"
+          variant="secondary"
           onClick={() => {
             setMoveForm({ type: "in", productId: "", locationId: "", quantity: "", note: "" });
             setMoveError(null);
@@ -301,7 +585,7 @@ export default function ErpEstoquePage() {
           }}
           disabled={noBusinessId}
         >
-          Nova movimentação
+          Nova movimentacao
         </Button>
         <Button
           variant="secondary"
@@ -314,14 +598,14 @@ export default function ErpEstoquePage() {
         >
           Novo local
         </Button>
-        <Badge tone="accent" className="self-center">Operação diária</Badge>
+        <Badge tone="accent" className="self-center">Operacao diaria</Badge>
       </div>
 
       <Card className="mb-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Saldos por produto</h2>
-            <p className="mt-1 text-sm text-marinha-500">Consulte rapidamente onde cada item está armazenado e em qual quantidade.</p>
+            <p className="mt-1 text-sm text-marinha-500">Consulte rapidamente onde cada item esta armazenado e em qual quantidade.</p>
           </div>
           <Badge tone="neutral">Saldo atual</Badge>
         </div>
@@ -339,17 +623,17 @@ export default function ErpEstoquePage() {
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-marinha-900">Movimentações</h2>
-            <p className="mt-1 text-sm text-marinha-500">Acompanhe entradas, saídas e ajustes registrados no estoque.</p>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Movimentacoes</h2>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe entradas, saidas e ajustes registrados no estoque.</p>
           </div>
-          <Badge tone="warning">Histórico</Badge>
+          <Badge tone="warning">Historico</Badge>
         </div>
         <ErpDataTable
           columns={movementColumns}
           data={movements}
           isLoading={movementsLoading}
           error={movementsError}
-          emptyMessage="Nenhuma movimentação registrada ainda."
+          emptyMessage="Nenhuma movimentacao registrada ainda."
           onRetry={() => loadMovements(true)}
           keyExtractor={(r) => r.id}
           hasMore={movHasMore}
@@ -357,9 +641,247 @@ export default function ErpEstoquePage() {
         />
       </Card>
 
-      {/* Modal: Nova movimentação */}
       <ErpFormModal
-        title="Nova movimentação"
+        title={importModalTitle}
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSubmit={() => void handleImportSubmit()}
+        isSubmitting={isImportSubmitting || isImportApplying}
+        submitLabel={importSubmitLabel}
+      >
+        {importStep === 1 ? (
+          <>
+            <p className="mb-4 text-sm text-marinha-500">
+              Envie o XML da NF-e de entrada. O sistema vai ler o fornecedor, os itens e sugerir
+              como conciliar com o catalogo existente antes de atualizar o estoque.
+            </p>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-marinha-700">Arquivo XML</label>
+              <input
+                type="file"
+                accept=".xml,text/xml,application/xml"
+                onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
+                className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
+              />
+              {importFile ? <p className="text-xs text-marinha-500">Arquivo selecionado: {importFile.name}</p> : null}
+            </div>
+          </>
+        ) : null}
+
+        {importStep === 2 && xmlImport ? (
+          <div className="space-y-4">
+            <div className="rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-4 py-3">
+              <p className="text-sm font-semibold text-marinha-900">
+                NF-e {xmlImport.invoiceNumber ?? "-"} serie {xmlImport.invoiceSeries ?? "-"}
+              </p>
+              <p className="mt-1 text-xs text-marinha-600">Chave: {xmlImport.accessKey}</p>
+              <p className="mt-1 text-xs text-marinha-600">
+                Emissao: {shortDate(xmlImport.issuedAt)} | Total: {fmtMoney(xmlImport.summary?.totalAmount ?? "0")}
+              </p>
+            </div>
+
+            <div className="rounded-btn border border-green-200 bg-green-50 px-4 py-3">
+              <p className="text-sm font-semibold text-green-900">Fornecedor conciliado automaticamente</p>
+              <p className="mt-1 text-sm text-green-800">{xmlImport.supplierParty?.name ?? "Fornecedor"}</p>
+              <p className="mt-1 text-xs text-green-800">
+                Documento: {xmlImport.supplierParty?.document ?? "-"} | IE: {xmlImport.supplierParty?.stateRegistration ?? "-"}
+              </p>
+            </div>
+
+            <div className="rounded-btn border border-marinha-900/10 bg-cerrado-500/5 px-4 py-3">
+              <p className="text-sm font-semibold text-marinha-900">Como finalizar esta entrada</p>
+              <label className="mt-3 flex items-center gap-2 text-sm text-marinha-700">
+                <input
+                  type="checkbox"
+                  checked={launchStockFromImport}
+                  onChange={(event) => setLaunchStockFromImport(event.target.checked)}
+                />
+                Lancar estoque agora a partir desta NF-e
+              </label>
+              {launchStockFromImport ? (
+                <div className="mt-3">
+                  <label className="mb-1 block text-xs font-medium text-marinha-700">Local do estoque</label>
+                  <select
+                    value={importStockLocationId}
+                    onChange={(event) => setImportStockLocationId(event.target.value)}
+                    className="w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+                  >
+                    <option value="">Usar local padrao</option>
+                    {locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                        {location.isDefault ? " (padrao)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-marinha-600">
+                  O XML vai atualizar o cadastro dos produtos agora, e voce podera gerar um pedido de compra depois.
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
+              <p className="text-sm font-semibold text-marinha-900">Resumo da revisao</p>
+              <p className="mt-2 text-xs text-marinha-600">
+                Vincular: {importSummary.link} | Criar: {importSummary.create} | Ignorar: {importSummary.ignore}
+              </p>
+            </div>
+
+            <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+              {xmlImport.items.map((item) => {
+                const decision = importDecisions[item.id];
+                return (
+                  <div key={item.id} className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-marinha-900">
+                          Item {item.lineNumber}: {item.name}
+                        </p>
+                        <p className="mt-1 text-xs text-marinha-500">
+                          Cod. fornecedor: {item.supplierCode ?? "-"} | EAN: {item.barcode ?? "-"} | Unidade: {item.unit ?? "-"}
+                        </p>
+                        <p className="mt-1 text-xs text-marinha-500">
+                          Qtd: {item.qty} | Custo unit.: {fmtMoney(item.unitPrice)} | Total: {fmtMoney(item.totalPrice)}
+                        </p>
+                      </div>
+                      {item.matchMeta?.reason ? (
+                        <div className="rounded-full bg-cerrado-500/10 px-3 py-1 text-xs font-semibold text-marinha-700">
+                          Sugestao {Math.round((item.matchMeta.confidence ?? 0) * 100)}%
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {item.matchMeta?.reason ? <p className="mt-2 text-xs text-marinha-600">{item.matchMeta.reason}</p> : null}
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(["link", "create", "ignore"] as const).map((action) => (
+                        <button
+                          key={action}
+                          type="button"
+                          onClick={() => setDecisionAction(item.id, action)}
+                          className={`rounded-btn border px-3 py-2 text-xs font-semibold ${
+                            decision?.action === action
+                              ? "border-municipal-600 bg-municipal-600 text-white"
+                              : "border-marinha-900/10 bg-white text-marinha-700"
+                          }`}
+                        >
+                          {action === "link" ? "Vincular" : action === "create" ? "Criar novo" : "Ignorar"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {decision?.action === "link" ? (
+                      <div className="mt-3">
+                        <label className="mb-1 block text-xs font-medium text-marinha-700">Produto do catalogo</label>
+                        <select
+                          value={decision.selectedProductId}
+                          onChange={(event) => setDecisionProduct(item.id, event.target.value)}
+                          className="w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+                        >
+                          <option value="">Selecione um produto</option>
+                          {products.map((product) => (
+                            <option key={product.id} value={product.id}>
+                              {product.sku} - {product.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+
+                    {decision?.action === "create" ? (
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        {(["sku", "unit", "name", "supplierCode", "barcode", "ncm", "cest", "cfopDefault", "originCode", "cost"] as const).map(
+                          (fieldKey) => (
+                            <input
+                              key={fieldKey}
+                              type={fieldKey === "cost" ? "number" : "text"}
+                              value={decision.createProduct[fieldKey]}
+                              onChange={(event) => setDecisionDraftField(item.id, fieldKey, event.target.value)}
+                              placeholder={
+                                {
+                                  sku: "SKU",
+                                  unit: "Unidade",
+                                  name: "Nome do produto",
+                                  supplierCode: "Codigo do fornecedor",
+                                  barcode: "Codigo de barras",
+                                  ncm: "NCM",
+                                  cest: "CEST",
+                                  cfopDefault: "CFOP padrao",
+                                  originCode: "Origem",
+                                  cost: "Custo",
+                                }[fieldKey]
+                              }
+                              className={`rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500 ${fieldKey === "name" ? "col-span-2" : ""}`}
+                            />
+                          ),
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {importStep === 3 && xmlImport ? (
+          <div className="space-y-4">
+            <div className="rounded-btn border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+              <p className="font-semibold">
+                {xmlImport.summary?.stockPosted ? "Entrada aplicada ao estoque" : "Cadastro atualizado pelo XML"}
+              </p>
+              <p className="mt-1">
+                Fornecedor: {xmlImport.supplierParty?.name ?? "Fornecedor"} | Itens conciliados:{" "}
+                {xmlImport.items.filter((item) => item.action !== "ignore").length}
+              </p>
+            </div>
+
+            {xmlImport.summary?.stockPosted ? (
+              <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3 text-sm text-marinha-700">
+                O saldo ja foi lancado no estoque desta empresa com referencia a esta NF-e.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => void createPurchaseOrderFromImport()}
+                  disabled={Boolean(createdPurchaseOrderId || xmlImport.purchaseOrderId) || isCreatingPurchaseOrder}
+                >
+                  {isCreatingPurchaseOrder ? "Gerando..." : "Gerar pedido de compra"}
+                </Button>
+                {(createdPurchaseOrderId || xmlImport.purchaseOrderId) ? (
+                  <Link
+                    href={`/erp/pedidos-compra?focus=${createdPurchaseOrderId ?? xmlImport.purchaseOrderId}`}
+                    className="inline-flex min-h-[44px] items-center rounded-btn border border-marinha-900/20 px-4 py-2 text-sm font-semibold text-marinha-700 hover:bg-marinha-50"
+                  >
+                    Abrir pedido gerado
+                  </Link>
+                ) : null}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {importStep > 1 ? (
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setImportStep((current) => (current === 3 ? 2 : 1))}
+              className="text-sm font-medium text-marinha-600 hover:text-municipal-700"
+            >
+              Voltar
+            </button>
+          </div>
+        ) : null}
+
+        {importError ? <p className="mt-3 whitespace-pre-line text-sm text-red-600">{importError}</p> : null}
+      </ErpFormModal>
+
+      <ErpFormModal
+        title="Nova movimentacao"
         open={moveModal}
         onClose={() => setMoveModal(false)}
         onSubmit={handleMoveSubmit}
@@ -368,31 +890,25 @@ export default function ErpEstoquePage() {
         <div className="grid grid-cols-2 gap-4">
           {field(
             "Tipo *",
-            sel(
-              moveForm.type,
-              (v) => setMoveForm((f) => ({ ...f, type: v as "in" | "out" | "adjust" })),
-              [
-                { value: "in", label: "Entrada" },
-                { value: "out", label: "Saída" },
-                { value: "adjust", label: "Ajuste (saldo absoluto)" },
-              ],
-            ),
+            sel(moveForm.type, (v) => setMoveForm((f) => ({ ...f, type: v as "in" | "out" | "adjust" })), [
+              { value: "in", label: "Entrada" },
+              { value: "out", label: "Saida" },
+              { value: "adjust", label: "Ajuste (saldo absoluto)" },
+            ]),
           )}
           {field(
             "Produto *",
-            sel(
-              moveForm.productId,
-              (v) => setMoveForm((f) => ({ ...f, productId: v })),
-              products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` })),
-            ),
+            sel(moveForm.productId, (v) => setMoveForm((f) => ({ ...f, productId: v })), products.map((p) => ({
+              value: p.id,
+              label: `${p.sku} - ${p.name}`,
+            }))),
           )}
           {field(
             "Local *",
-            sel(
-              moveForm.locationId,
-              (v) => setMoveForm((f) => ({ ...f, locationId: v })),
-              locations.map((l) => ({ value: l.id, label: l.name + (l.isDefault ? " (padrão)" : "") })),
-            ),
+            sel(moveForm.locationId, (v) => setMoveForm((f) => ({ ...f, locationId: v })), locations.map((l) => ({
+              value: l.id,
+              label: l.name + (l.isDefault ? " (padrao)" : ""),
+            }))),
           )}
           {field(
             "Quantidade *",
@@ -407,7 +923,7 @@ export default function ErpEstoquePage() {
           )}
           <div className="col-span-2">
             {field(
-              "Observação",
+              "Observacao",
               <input
                 type="text"
                 value={moveForm.note}
@@ -417,10 +933,9 @@ export default function ErpEstoquePage() {
             )}
           </div>
         </div>
-        {moveError && <p className="mt-3 text-sm text-red-600">{moveError}</p>}
+        {moveError ? <p className="mt-3 text-sm text-red-600">{moveError}</p> : null}
       </ErpFormModal>
 
-      {/* Modal: Novo local */}
       <ErpFormModal
         title="Novo local de estoque"
         open={locationModal}
@@ -444,10 +959,10 @@ export default function ErpEstoquePage() {
               checked={locationForm.isDefault}
               onChange={(e) => setLocationForm((f) => ({ ...f, isDefault: e.target.checked }))}
             />
-            Definir como local padrão
+            Definir como local padrao
           </label>
         </div>
-        {locationError && <p className="mt-3 text-sm text-red-600">{locationError}</p>}
+        {locationError ? <p className="mt-3 text-sm text-red-600">{locationError}</p> : null}
       </ErpFormModal>
     </>
   );

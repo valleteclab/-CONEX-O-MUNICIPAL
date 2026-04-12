@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpProduct } from '../../entities/erp-product.entity';
 import { ErpProductClassificationJob } from '../../entities/erp-product-classification-job.entity';
@@ -8,16 +8,19 @@ import { CreateErpProductDto, UpdateErpProductDto } from '../dto/product.dto';
 import { dec } from '../utils/decimal';
 import { OpenRouterService } from './openrouter.service';
 import { PlatformSettingsService } from '../../platform/platform-settings.service';
+import { ErpStockService } from './erp-stock.service';
 
 @Injectable()
 export class ErpProductService {
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(ErpProduct)
     private readonly products: Repository<ErpProduct>,
     @InjectRepository(ErpProductClassificationJob)
     private readonly jobs: Repository<ErpProductClassificationJob>,
     private readonly ai: OpenRouterService,
     private readonly platformSettings: PlatformSettingsService,
+    private readonly stock: ErpStockService,
   ) {}
 
   async list(
@@ -35,27 +38,54 @@ export class ErpProductService {
   }
 
   async create(business: ErpBusiness, dto: CreateErpProductDto): Promise<ErpProduct> {
-    const row = this.products.create({
-      tenantId: business.tenantId,
-      businessId: business.id,
-      kind: dto.kind ?? 'product',
-      sku: dto.sku.trim(),
-      name: dto.name.trim(),
-      description: dto.description?.trim() || null,
-      barcode: dto.barcode?.trim() || null,
-      supplierCode: dto.supplierCode?.trim() || null,
-      ncm: dto.ncm?.trim() || null,
-      cest: dto.cest?.trim() || null,
-      originCode: dto.originCode?.trim() || null,
-      cfopDefault: dto.cfopDefault?.trim() || null,
-      unit: dto.unit?.trim() || 'UN',
-      cost: dec(dto.cost ?? '0'),
-      price: dec(dto.price ?? '0'),
-      minStock: dec(dto.minStock ?? '0'),
-      taxConfig: dto.taxConfig ?? {},
-      isActive: true,
+    return this.dataSource.transaction(async (em) => {
+      const row = em.create(ErpProduct, {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        kind: dto.kind ?? 'product',
+        sku: dto.sku.trim(),
+        name: dto.name.trim(),
+        description: dto.description?.trim() || null,
+        barcode: dto.barcode?.trim() || null,
+        supplierCode: dto.supplierCode?.trim() || null,
+        ncm: dto.ncm?.trim() || null,
+        cest: dto.cest?.trim() || null,
+        originCode: dto.originCode?.trim() || null,
+        cfopDefault: dto.cfopDefault?.trim() || null,
+        unit: dto.unit?.trim() || 'UN',
+        cost: dec(dto.cost ?? '0'),
+        price: dec(dto.price ?? '0'),
+        minStock: dec(dto.minStock ?? '0'),
+        taxConfig: dto.taxConfig ?? {},
+        isActive: true,
+      });
+      await em.save(row);
+
+      const shouldLaunchInitialStock =
+        row.kind === 'product' &&
+        dto.launchInitialStock === true &&
+        Number(dto.initialStockQuantity ?? '0') > 0;
+
+      if (shouldLaunchInitialStock) {
+        const location =
+          dto.initialStockLocationId
+            ? { id: dto.initialStockLocationId }
+            : await this.stock.findDefaultLocation(business, em);
+
+        await this.stock.createTrackedMovement({
+          manager: em,
+          business,
+          type: 'in',
+          productId: row.id,
+          locationId: location.id,
+          quantity: dto.initialStockQuantity ?? '0',
+          refType: 'product_initial_stock',
+          note: `Saldo inicial informado no cadastro do produto ${row.sku}.`,
+        });
+      }
+
+      return row;
     });
-    return this.products.save(row);
   }
 
   async findOne(business: ErpBusiness, id: string): Promise<ErpProduct> {

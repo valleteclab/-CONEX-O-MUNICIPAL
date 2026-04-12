@@ -25,6 +25,7 @@ import {
 } from '../dto/product-xml-import.dto';
 import { dec } from '../utils/decimal';
 import { ErpPartyService } from './erp-party.service';
+import { ErpStockService } from './erp-stock.service';
 
 type ParsedImportSupplier = {
   name: string;
@@ -227,6 +228,7 @@ export class ErpProductXmlImportService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly parties: ErpPartyService,
+    private readonly stock: ErpStockService,
     @InjectRepository(ErpProduct)
     private readonly products: Repository<ErpProduct>,
     @InjectRepository(ErpProductXmlImport)
@@ -358,6 +360,7 @@ export class ErpProductXmlImportService {
     }
 
     await this.dataSource.transaction(async (em) => {
+      const appliedItems: Array<{ item: ErpProductXmlImportItem; productId: string }> = [];
       for (const item of importRow.items) {
         const decision = decisions.get(item.id);
         if (!decision) {
@@ -400,6 +403,7 @@ export class ErpProductXmlImportService {
           item.selectedProductId = product.id;
           item.draftProduct = {};
           await em.save(item);
+          appliedItems.push({ item, productId: product.id });
           continue;
         }
 
@@ -454,6 +458,39 @@ export class ErpProductXmlImportService {
         item.selectedProductId = created.id;
         item.draftProduct = draft;
         await em.save(item);
+        appliedItems.push({ item, productId: created.id });
+      }
+
+      if (dto.launchStockNow) {
+        const stockLocation = dto.stockLocationId
+          ? { id: dto.stockLocationId }
+          : await this.stock.findDefaultLocation(business, em);
+
+        for (const applied of appliedItems) {
+          await this.stock.createTrackedMovement({
+            manager: em,
+            business,
+            type: 'in',
+            productId: applied.productId,
+            locationId: stockLocation.id,
+            quantity: applied.item.qty,
+            refType: 'xml_import',
+            refId: importRow.id,
+            note: `Entrada gerada da NF-e ${importRow.accessKey} item ${applied.item.lineNumber}.`,
+          });
+        }
+
+        importRow.summary = {
+          ...(importRow.summary ?? {}),
+          stockPosted: true,
+          stockPostedAt: new Date().toISOString(),
+          stockLocationId: stockLocation.id,
+        };
+      } else {
+        importRow.summary = {
+          ...(importRow.summary ?? {}),
+          stockPosted: false,
+        };
       }
 
       importRow.status = 'applied' as ErpProductXmlImportStatus;
@@ -485,6 +522,11 @@ export class ErpProductXmlImportService {
 
     if (importRow.status !== 'applied') {
       throw new BadRequestException('Aplique a importacao ao catalogo antes de gerar o pedido.');
+    }
+    if (importRow.summary?.['stockPosted'] === true) {
+      throw new BadRequestException(
+        'Esta importacao ja lancou estoque. Nao gere pedido de compra para evitar duplicidade.',
+      );
     }
 
     const selectedItems = importRow.items.filter(

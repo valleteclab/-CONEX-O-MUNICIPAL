@@ -6,6 +6,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -90,6 +91,21 @@ export class CreateErpProductDto {
   @IsOptional()
   @IsNumberString()
   minStock?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  launchInitialStock?: boolean;
+
+  @ApiPropertyOptional({ default: '0' })
+  @IsOptional()
+  @IsNumberString()
+  initialStockQuantity?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  initialStockLocationId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

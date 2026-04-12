@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsNumberString,
   IsObject,
@@ -106,4 +107,14 @@ export class ApplyProductXmlImportDto {
   @ValidateNested({ each: true })
   @Type(() => ProductXmlImportDecisionDto)
   items!: ProductXmlImportDecisionDto[];
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  launchStockNow?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  stockLocationId?: string;
 }
