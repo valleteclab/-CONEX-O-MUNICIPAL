@@ -76,6 +76,11 @@ export class ProductXmlImportDraftProductDto {
   @IsOptional()
   @IsNumberString()
   cost?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumberString()
+  price?: string;
 }
 
 export class ProductXmlImportDecisionDto {

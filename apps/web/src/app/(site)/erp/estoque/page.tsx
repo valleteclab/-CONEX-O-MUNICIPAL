@@ -94,6 +94,7 @@ type ImportItem = {
     cfopDefault?: string | null;
     originCode?: string | null;
     cost?: string;
+    price?: string;
   } | null;
   action?: "link" | "create" | "ignore" | null;
 };
@@ -131,6 +132,7 @@ type ImportDecision = {
     cfopDefault: string;
     originCode: string;
     cost: string;
+    price: string;
   };
 };
 
@@ -177,6 +179,7 @@ function buildDecision(item: ImportItem): ImportDecision {
       cfopDefault: item.draftProduct?.cfopDefault ?? item.cfop ?? "",
       originCode: item.draftProduct?.originCode ?? item.originCode ?? "",
       cost: item.draftProduct?.cost ?? item.unitPrice,
+      price: item.draftProduct?.price ?? "0",
     },
   };
 }
@@ -792,11 +795,11 @@ export default function ErpEstoquePage() {
 
                     {decision?.action === "create" ? (
                       <div className="mt-3 grid grid-cols-2 gap-3">
-                        {(["sku", "unit", "name", "supplierCode", "barcode", "ncm", "cest", "cfopDefault", "originCode", "cost"] as const).map(
+                        {(["sku", "unit", "name", "supplierCode", "barcode", "ncm", "cest", "cfopDefault", "originCode", "cost", "price"] as const).map(
                           (fieldKey) => (
                             <input
                               key={fieldKey}
-                              type={fieldKey === "cost" ? "number" : "text"}
+                              type={fieldKey === "cost" || fieldKey === "price" ? "number" : "text"}
                               value={decision.createProduct[fieldKey]}
                               onChange={(event) => setDecisionDraftField(item.id, fieldKey, event.target.value)}
                               placeholder={
@@ -811,6 +814,7 @@ export default function ErpEstoquePage() {
                                   cfopDefault: "CFOP padrao",
                                   originCode: "Origem",
                                   cost: "Custo",
+                                  price: "Preco de venda",
                                 }[fieldKey]
                               }
                               className={`rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500 ${fieldKey === "name" ? "col-span-2" : ""}`}

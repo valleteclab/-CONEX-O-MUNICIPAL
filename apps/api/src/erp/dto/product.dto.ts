@@ -114,6 +114,12 @@ export class CreateErpProductDto {
 }
 
 export class UpdateErpProductDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  sku?: string;
+
   @ApiPropertyOptional({ enum: ['product', 'service'] })
   @IsOptional()
   @IsString()

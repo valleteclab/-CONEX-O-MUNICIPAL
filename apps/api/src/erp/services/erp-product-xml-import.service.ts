@@ -192,6 +192,7 @@ function parseNfeXml(xmlContent: string): ParsedNfeXml {
         cfopDefault: cfop,
         originCode,
         cost: unitPrice,
+        price: '0',
       },
     };
   });
@@ -442,7 +443,7 @@ export class ErpProductXmlImportService {
           originCode: this.stringOrNull(draft.originCode) ?? item.originCode,
           unit: this.stringOrNull(draft.unit) ?? item.unit ?? 'UN',
           cost: dec(this.stringOrNull(draft.cost) ?? item.unitPrice),
-          price: dec(0),
+          price: dec(this.stringOrNull(draft.price) ?? '0'),
           minStock: dec(0),
           taxConfig: {
             importedFromXml: {

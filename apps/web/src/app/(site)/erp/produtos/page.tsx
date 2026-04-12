@@ -30,17 +30,23 @@ type Product = {
   isActive: boolean;
 };
 
-type CreateForm = {
+type StockLocation = {
+  id: string;
+  name: string;
+  isDefault: boolean;
+};
+
+type ProductForm = {
   kind: "product" | "service";
   sku: string;
   name: string;
   unit: string;
-  barcode?: string;
-  supplierCode?: string;
-  ncm?: string;
-  cest?: string;
-  originCode?: string;
-  cfopDefault?: string;
+  barcode: string;
+  supplierCode: string;
+  ncm: string;
+  cest: string;
+  originCode: string;
+  cfopDefault: string;
   price: string;
   cost: string;
   minStock: string;
@@ -72,13 +78,9 @@ type ClassificationJobPayload = {
   result?: ClassificationJobResult | null;
 };
 
-type StockLocation = {
-  id: string;
-  name: string;
-  isDefault: boolean;
-};
+const TAKE = 50;
 
-const EMPTY_FORM: CreateForm = {
+const EMPTY_FORM: ProductForm = {
   kind: "product",
   sku: "",
   name: "",
@@ -97,31 +99,33 @@ const EMPTY_FORM: CreateForm = {
   initialStockLocationId: "",
 };
 
-const TAKE = 50;
-
 function fmt(value: string) {
   return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const columns: ErpColumn<Product>[] = [
-  { key: "sku", label: "SKU", render: (r) => <span className="font-mono text-xs">{r.sku}</span> },
-  { key: "name", label: "Nome", render: (r) => r.name },
-  { key: "kind", label: "Tipo", render: (r) => (r.kind === "service" ? "Serviço" : "Produto") },
-  { key: "unit", label: "Unidade", render: (r) => r.unit },
-  { key: "price", label: "Preço", render: (r) => fmt(r.price) },
-  { key: "minStock", label: "Est. mín.", render: (r) => r.minStock },
-  {
-    key: "status",
-    label: "Status",
-    render: (r) => (
-      <span
-        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.isActive ? "bg-green-100 text-green-700" : "bg-marinha-100 text-marinha-500"}`}
-      >
-        {r.isActive ? "Ativo" : "Inativo"}
-      </span>
-    ),
-  },
-];
+function buildForm(product?: Product, defaultLocationId = ""): ProductForm {
+  if (!product) {
+    return { ...EMPTY_FORM, initialStockLocationId: defaultLocationId };
+  }
+  return {
+    kind: product.kind,
+    sku: product.sku,
+    name: product.name,
+    unit: product.unit ?? "UN",
+    barcode: product.barcode ?? "",
+    supplierCode: product.supplierCode ?? "",
+    ncm: product.ncm ?? "",
+    cest: product.cest ?? "",
+    originCode: product.originCode ?? "",
+    cfopDefault: product.cfopDefault ?? "",
+    price: product.price ?? "0",
+    cost: product.cost ?? "0",
+    minStock: product.minStock ?? "0",
+    launchInitialStock: false,
+    initialStockQuantity: "0",
+    initialStockLocationId: defaultLocationId,
+  };
+}
 
 export default function ErpProdutosPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -132,9 +136,11 @@ export default function ErpProdutosPage() {
   const [skip, setSkip] = useState(0);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   const [classifyOpen, setClassifyOpen] = useState(false);
   const [classifyOnlyMissing, setClassifyOnlyMissing] = useState(true);
@@ -148,6 +154,8 @@ export default function ErpProdutosPage() {
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
+
+  const defaultLocationId = stockLocations.find((location) => location.isDefault)?.id ?? "";
 
   const load = useCallback(async (reset = false) => {
     setIsLoading(true);
@@ -169,9 +177,7 @@ export default function ErpProdutosPage() {
 
   const loadStockLocations = useCallback(async () => {
     const res = await erpFetch<StockLocation[]>("/api/v1/erp/stock/locations");
-    if (res.ok && res.data) {
-      setStockLocations(res.data);
-    }
+    if (res.ok && res.data) setStockLocations(res.data);
   }, []);
 
   useEffect(() => {
@@ -184,90 +190,118 @@ export default function ErpProdutosPage() {
     }
     void load(true);
     void loadStockLocations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId]);
+  }, [businessId, load, loadStockLocations, noBusinessId]);
 
-  const openModal = () => {
-    const defaultLocation = stockLocations.find((location) => location.isDefault)?.id ?? "";
-    setForm({ ...EMPTY_FORM, initialStockLocationId: defaultLocation });
+  const openCreateModal = () => {
+    setEditingProductId(null);
+    setForm(buildForm(undefined, defaultLocationId));
+    setFormError(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProductId(product.id);
+    setForm(buildForm(product, defaultLocationId));
     setFormError(null);
     setModalOpen(true);
   };
 
   const handleSubmit = async () => {
     if (!form.sku.trim() || !form.name.trim()) {
-      setFormError("SKU e Nome são obrigatórios.");
+      setFormError("SKU e nome sao obrigatorios.");
       return;
     }
     if (form.kind === "product") {
-      const n = (form.ncm ?? "").replace(/\D/g, "");
-      if (n && n.length !== 8) {
-        setFormError("NCM deve ter 8 dígitos (ou deixe vazio para classificar depois).");
+      const ncm = form.ncm.replace(/\D/g, "");
+      if (ncm && ncm.length !== 8) {
+        setFormError("NCM deve ter 8 digitos ou ficar vazio para classificar depois.");
         return;
       }
     }
+
     setIsSubmitting(true);
     setFormError(null);
-    const res = await erpFetch<Product>("/api/v1/erp/products", {
-      method: "POST",
-      body: JSON.stringify({
-        ...form,
-        barcode: form.barcode?.trim() || undefined,
-        supplierCode: form.supplierCode?.trim() || undefined,
-        ncm: form.ncm?.trim() || undefined,
-        cest: form.cest?.trim() || undefined,
-        originCode: form.originCode?.trim() || undefined,
-        cfopDefault: form.cfopDefault?.trim() || undefined,
-        initialStockQuantity:
-          form.kind === "product" && form.launchInitialStock ? form.initialStockQuantity : undefined,
-        initialStockLocationId:
-          form.kind === "product" && form.launchInitialStock
-            ? form.initialStockLocationId || undefined
-            : undefined,
-      }),
-    });
+
+    const payload = {
+      kind: form.kind,
+      sku: form.sku.trim(),
+      name: form.name.trim(),
+      unit: form.unit.trim() || "UN",
+      barcode: form.barcode.trim() || undefined,
+      supplierCode: form.supplierCode.trim() || undefined,
+      ncm: form.ncm.trim() || undefined,
+      cest: form.cest.trim() || undefined,
+      originCode: form.originCode.trim() || undefined,
+      cfopDefault: form.cfopDefault.trim() || undefined,
+      price: form.price,
+      cost: form.cost,
+      minStock: form.minStock,
+      launchInitialStock:
+        !editingProductId && form.kind === "product" ? form.launchInitialStock : undefined,
+      initialStockQuantity:
+        !editingProductId && form.kind === "product" && form.launchInitialStock
+          ? form.initialStockQuantity
+          : undefined,
+      initialStockLocationId:
+        !editingProductId && form.kind === "product" && form.launchInitialStock
+          ? form.initialStockLocationId || undefined
+          : undefined,
+    };
+
+    const res = editingProductId
+      ? await erpFetch<Product>(`/api/v1/erp/products/${editingProductId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        })
+      : await erpFetch<Product>("/api/v1/erp/products", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
     if (res.ok && res.data) {
-      setProducts((prev) => [res.data!, ...prev]);
+      if (editingProductId) {
+        setProducts((prev) => prev.map((item) => (item.id === res.data!.id ? res.data! : item)));
+      } else {
+        setProducts((prev) => [res.data!, ...prev]);
+      }
       setModalOpen(false);
+      setEditingProductId(null);
     } else {
-      setFormError(res.error ?? "Erro ao criar produto.");
+      setFormError(res.error ?? "Erro ao salvar produto.");
     }
     setIsSubmitting(false);
   };
 
-  const field = (label: string, el: React.ReactNode) => (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-marinha-700">{label}</label>
-      {el}
-    </div>
-  );
+  const handleDelete = async (product: Product) => {
+    const confirmed = window.confirm(`Excluir ${product.name}? O item sera desativado no cadastro.`);
+    if (!confirmed) return;
 
-  const input = (key: keyof CreateForm, type = "text", extra?: object) => (
-    <input
-      type={type}
-      value={typeof form[key] === "boolean" ? "" : (form[key] ?? "")}
-      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-      className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
-      {...extra}
-    />
-  );
+    setIsDeletingId(product.id);
+    const res = await erpFetch<Product>(`/api/v1/erp/products/${product.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive: false }),
+    });
+    if (res.ok && res.data) {
+      setProducts((prev) => prev.map((item) => (item.id === product.id ? res.data! : item)));
+    } else {
+      window.alert(res.error ?? "Nao foi possivel excluir o produto.");
+    }
+    setIsDeletingId(null);
+  };
 
-  const pollJob = useCallback(
-    async (jobId: string) => {
-      const res = await erpFetch<ClassificationJobPayload>(
-        `/api/v1/erp/products/classification-jobs/${jobId}`,
-      );
-      if (!res.ok || !res.data) return;
-      setClassifyStatus(res.data.status ?? null);
-      if (res.data.status === "done" || res.data.status === "failed") {
-        setClassifyResult(res.data.result ?? null);
-        if (res.data.status === "failed") {
-          setClassifyError(res.data.error ?? "Job falhou.");
-        }
+  const pollJob = useCallback(async (jobId: string) => {
+    const res = await erpFetch<ClassificationJobPayload>(
+      `/api/v1/erp/products/classification-jobs/${jobId}`,
+    );
+    if (!res.ok || !res.data) return;
+    setClassifyStatus(res.data.status ?? null);
+    if (res.data.status === "done" || res.data.status === "failed") {
+      setClassifyResult(res.data.result ?? null);
+      if (res.data.status === "failed") {
+        setClassifyError(res.data.error ?? "Job falhou.");
       }
-    },
-    [],
-  );
+    }
+  }, []);
 
   useEffect(() => {
     if (!classifyJobId) return;
@@ -298,7 +332,7 @@ export default function ErpProdutosPage() {
     });
     setIsClassifySubmitting(false);
     if (!res.ok || !res.data) {
-      setClassifyError(res.error ?? "Não foi possível iniciar a classificação.");
+      setClassifyError(res.error ?? "Nao foi possivel iniciar a classificacao.");
       return;
     }
     setClassifyJobId(res.data.id);
@@ -313,7 +347,7 @@ export default function ErpProdutosPage() {
     );
     setIsApplySubmitting(false);
     if (!res.ok || !res.data) {
-      setClassifyError(res.error ?? "Falha ao aplicar classificações.");
+      setClassifyError(res.error ?? "Falha ao aplicar classificacoes.");
       return;
     }
     setClassifyOpen(false);
@@ -324,30 +358,80 @@ export default function ErpProdutosPage() {
     void load(true);
   };
 
+  const columns: ErpColumn<Product>[] = [
+    { key: "sku", label: "SKU", render: (r) => <span className="font-mono text-xs">{r.sku}</span> },
+    { key: "name", label: "Nome", render: (r) => r.name },
+    { key: "kind", label: "Tipo", render: (r) => (r.kind === "service" ? "Servico" : "Produto") },
+    { key: "unit", label: "Unidade", render: (r) => r.unit },
+    { key: "price", label: "Preco", render: (r) => fmt(r.price) },
+    { key: "minStock", label: "Est. min.", render: (r) => r.minStock },
+    {
+      key: "status",
+      label: "Status",
+      render: (r) => (
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.isActive ? "bg-green-100 text-green-700" : "bg-marinha-100 text-marinha-500"}`}
+        >
+          {r.isActive ? "Ativo" : "Inativo"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Acoes",
+      render: (r) => (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => openEditModal(r)}
+            className="rounded-btn border border-marinha-900/20 px-3 py-1.5 text-xs font-medium text-marinha-700 hover:bg-marinha-50"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDelete(r)}
+            disabled={!r.isActive || isDeletingId === r.id}
+            className="rounded-btn border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
+            {isDeletingId === r.id ? "Excluindo..." : "Excluir"}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const field = (label: string, el: React.ReactNode) => (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-medium text-marinha-700">{label}</label>
+      {el}
+    </div>
+  );
+
   return (
     <>
       <PageIntro
         title="Produtos"
-        description="Organize seu catálogo de produtos e serviços com preço, unidade e estoque mínimo para a operação diária."
+        description="Organize seu catalogo de produtos e servicos com preco, unidade e estoque minimo para a operacao diaria."
         badge="Cadastros"
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card variant="featured">
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Catálogo</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Catalogo</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{products.length} itens carregados</p>
-          <p className="mt-1 text-sm text-marinha-500">Produtos e serviços disponíveis no ERP.</p>
+          <p className="mt-1 text-sm text-marinha-500">Produtos e servicos disponiveis no ERP.</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Mix de venda</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">Produtos e serviços</p>
-          <p className="mt-1 text-sm text-marinha-500">Cadastre itens físicos e também serviços prestados.</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">Produtos e servicos</p>
+          <p className="mt-1 text-sm text-marinha-500">Cadastre itens fisicos e tambem servicos prestados.</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Ação rápida</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Acao rapida</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <Badge tone="accent">Cadastro</Badge>
-            <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
+            <Button variant="primary" onClick={openCreateModal} disabled={noBusinessId}>
               Novo produto
             </Button>
             <Link
@@ -356,11 +440,7 @@ export default function ErpProdutosPage() {
             >
               Entrada por XML no estoque
             </Link>
-            <Button
-              variant="secondary"
-              onClick={() => setClassifyOpen(true)}
-              disabled={noBusinessId}
-            >
+            <Button variant="secondary" onClick={() => setClassifyOpen(true)} disabled={noBusinessId}>
               Classificar com IA
             </Button>
           </div>
@@ -375,10 +455,10 @@ export default function ErpProdutosPage() {
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de produtos e serviços</h2>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de produtos e servicos</h2>
             <p className="mt-1 text-sm text-marinha-500">Use este cadastro como base para vendas, compras, estoque e fiscal.</p>
           </div>
-          <Badge tone="neutral">Catálogo</Badge>
+          <Badge tone="neutral">Catalogo</Badge>
         </div>
         <ErpDataTable
           columns={columns}
@@ -394,14 +474,19 @@ export default function ErpProdutosPage() {
       </Card>
 
       <ErpFormModal
-        title="Novo produto"
+        title={editingProductId ? "Editar produto" : "Novo produto"}
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingProductId(null);
+        }}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       >
         <p className="mb-4 text-sm text-marinha-500">
-          Preencha as informações principais do item para começar a usar no catálogo e nas rotinas do ERP.
+          {editingProductId
+            ? "Atualize os dados comerciais e fiscais do item cadastrado."
+            : "Preencha as informacoes principais do item para comecar a usar no catalogo e nas rotinas do ERP."}
         </p>
         <div className="grid grid-cols-2 gap-4">
           {field(
@@ -412,31 +497,43 @@ export default function ErpProdutosPage() {
                 setForm((f) => ({
                   ...f,
                   kind: e.target.value as "product" | "service",
-                  launchInitialStock:
-                    e.target.value === "product" ? f.launchInitialStock : false,
+                  launchInitialStock: e.target.value === "product" ? f.launchInitialStock : false,
                 }))
               }
               className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
             >
               <option value="product">Produto</option>
-              <option value="service">Serviço</option>
+              <option value="service">Servico</option>
             </select>,
           )}
-          {field("SKU *", input("sku"))}
-          <div className="col-span-2">{field("Nome *", input("name"))}</div>
-          {field("Unidade", input("unit"))}
-          {field("Preço de venda (R$)", input("price", "number"))}
-          {field("Custo (R$)", input("cost", "number"))}
-          {field("Estoque mínimo", input("minStock", "number"))}
+          {field(
+            "SKU *",
+            <input
+              value={form.sku}
+              onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
+              className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+            />,
+          )}
+          <div className="col-span-2">
+            {field(
+              "Nome *",
+              <input
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+              />,
+            )}
+          </div>
+          {field("Unidade", <input value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+          {field("Preco de venda (R$)", <input type="number" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+          {field("Custo (R$)", <input type="number" value={form.cost} onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+          {field("Estoque minimo", <input type="number" value={form.minStock} onChange={(e) => setForm((f) => ({ ...f, minStock: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
         </div>
-        {form.kind === "product" ? (
+
+        {!editingProductId && form.kind === "product" ? (
           <details className="mt-4 rounded-btn border border-marinha-900/10 bg-cerrado-500/5 px-4 py-3" open={form.launchInitialStock}>
-            <summary className="cursor-pointer text-sm font-semibold text-marinha-800">
-              Estoque inicial (opcional)
-            </summary>
-            <p className="mt-2 text-xs text-marinha-600">
-              Use quando quiser que o produto ja entre no estoque ao ser cadastrado.
-            </p>
+            <summary className="cursor-pointer text-sm font-semibold text-marinha-800">Estoque inicial (opcional)</summary>
+            <p className="mt-2 text-xs text-marinha-600">Use quando quiser que o produto ja entre no estoque ao ser cadastrado.</p>
             <label className="mt-3 flex items-center gap-2 text-sm text-marinha-700">
               <input
                 type="checkbox"
@@ -446,9 +543,7 @@ export default function ErpProdutosPage() {
                     ...current,
                     launchInitialStock: event.target.checked,
                     initialStockLocationId:
-                      event.target.checked && !current.initialStockLocationId
-                        ? stockLocations.find((location) => location.isDefault)?.id ?? ""
-                        : current.initialStockLocationId,
+                      event.target.checked && !current.initialStockLocationId ? defaultLocationId : current.initialStockLocationId,
                   }))
                 }
               />
@@ -456,26 +551,12 @@ export default function ErpProdutosPage() {
             </label>
             {form.launchInitialStock ? (
               <div className="mt-3 grid grid-cols-2 gap-4">
-                {field(
-                  "Quantidade inicial",
-                  <input
-                    type="number"
-                    min="0.0001"
-                    step="0.0001"
-                    value={form.initialStockQuantity}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, initialStockQuantity: event.target.value }))
-                    }
-                    className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
-                  />,
-                )}
+                {field("Quantidade inicial", <input type="number" min="0.0001" step="0.0001" value={form.initialStockQuantity} onChange={(e) => setForm((f) => ({ ...f, initialStockQuantity: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
                 {field(
                   "Local do estoque",
                   <select
                     value={form.initialStockLocationId}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, initialStockLocationId: event.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, initialStockLocationId: e.target.value }))}
                     className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
                   >
                     <option value="">Usar local padrao</option>
@@ -491,23 +572,23 @@ export default function ErpProdutosPage() {
             ) : null}
           </details>
         ) : null}
+
         <details className="mt-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-4 py-3">
-          <summary className="cursor-pointer text-sm font-semibold text-marinha-800">
-            Fiscal (opcional) — NCM/CFOP/origem
-          </summary>
-          <p className="mt-2 text-xs text-marinha-600">
-            Para NF-e, o NCM (8 dígitos) é obrigatório. Se não souber agora, deixe vazio e use
-            “Classificar com IA”.
-          </p>
+          <summary className="cursor-pointer text-sm font-semibold text-marinha-800">Fiscal (opcional) - NCM/CFOP/origem</summary>
+          <p className="mt-2 text-xs text-marinha-600">Para NF-e, o NCM (8 digitos) e obrigatorio. Se nao souber agora, deixe vazio e use &quot;Classificar com IA&quot;.</p>
           <div className="mt-3 grid grid-cols-2 gap-4">
-            <div className="col-span-2">{field("Código de barras (EAN)", input("barcode"))}</div>
-            {field("NCM (8 dígitos)", input("ncm"))}
-            {field("CFOP padrão", input("cfopDefault"))}
-            {field("Origem (0-8)", input("originCode"))}
-            {field("CEST", input("cest"))}
+            <div className="col-span-2">
+              {field("Codigo de barras (EAN)", <input value={form.barcode} onChange={(e) => setForm((f) => ({ ...f, barcode: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+            </div>
+            {field("Codigo do fornecedor", <input value={form.supplierCode} onChange={(e) => setForm((f) => ({ ...f, supplierCode: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+            {field("NCM (8 digitos)", <input value={form.ncm} onChange={(e) => setForm((f) => ({ ...f, ncm: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+            {field("CFOP padrao", <input value={form.cfopDefault} onChange={(e) => setForm((f) => ({ ...f, cfopDefault: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+            {field("Origem (0-8)", <input value={form.originCode} onChange={(e) => setForm((f) => ({ ...f, originCode: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+            {field("CEST", <input value={form.cest} onChange={(e) => setForm((f) => ({ ...f, cest: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
           </div>
         </details>
-        {formError && <p className="mt-3 text-sm text-red-600">{formError}</p>}
+
+        {formError ? <p className="mt-3 text-sm text-red-600">{formError}</p> : null}
       </ErpFormModal>
 
       <ErpFormModal
@@ -522,8 +603,7 @@ export default function ErpProdutosPage() {
         submitLabel="Iniciar job"
       >
         <p className="mb-3 text-sm text-marinha-500">
-          Você pode cadastrar produtos sem classificação fiscal e depois rodar a IA para sugerir NCM/CFOP/origem
-          em lote. O job roda no servidor e você aplica o resultado ao final.
+          Voce pode cadastrar produtos sem classificacao fiscal e depois rodar a IA para sugerir NCM/CFOP/origem em lote.
         </p>
         <div className="grid grid-cols-2 gap-4">
           {field(
@@ -534,7 +614,7 @@ export default function ErpProdutosPage() {
               className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
             >
               <option value="missing">Somente sem NCM</option>
-              <option value="all">Todos (não recomendado)</option>
+              <option value="all">Todos (nao recomendado)</option>
             </select>,
           )}
           {field(
@@ -550,28 +630,27 @@ export default function ErpProdutosPage() {
           )}
         </div>
 
-        {classifyJobId && (
+        {classifyJobId ? (
           <div className="mt-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-4 py-3">
             <p className="text-sm font-semibold text-marinha-900">
-              Status do job: <span className="font-mono">{classifyStatus ?? "…"}</span>
+              Status do job: <span className="font-mono">{classifyStatus ?? "..."}</span>
             </p>
-            {classifyResult?.stats ? null : null}
             {classifyResult?.suggestions?.length ? (
               <p className="mt-2 text-sm text-marinha-700">
-                Sugestões prontas: <strong>{classifyResult.suggestions.length}</strong>
+                Sugestoes prontas: <strong>{classifyResult.suggestions.length}</strong>
               </p>
             ) : null}
-            {classifyStatus === "done" && (
+            {classifyStatus === "done" ? (
               <div className="mt-3 flex gap-2">
                 <Button type="button" variant="primary" onClick={applyClassification} disabled={isApplySubmitting}>
-                  {isApplySubmitting ? "Aplicando…" : "Aplicar no cadastro"}
+                  {isApplySubmitting ? "Aplicando..." : "Aplicar no cadastro"}
                 </Button>
               </div>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        {classifyError && <p className="mt-3 whitespace-pre-line text-sm text-red-600">{classifyError}</p>}
+        {classifyError ? <p className="mt-3 whitespace-pre-line text-sm text-red-600">{classifyError}</p> : null}
       </ErpFormModal>
     </>
   );

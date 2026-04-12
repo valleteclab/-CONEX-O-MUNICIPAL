@@ -108,6 +108,9 @@ export class ErpProductService {
     dto: UpdateErpProductDto,
   ): Promise<ErpProduct> {
     const row = await this.findOne(business, id);
+    if (dto.sku !== undefined) {
+      row.sku = dto.sku.trim();
+    }
     if (dto.kind !== undefined) {
       row.kind = dto.kind;
     }
