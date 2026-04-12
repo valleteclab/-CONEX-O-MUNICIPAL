@@ -56,7 +56,7 @@ export class DirectoryService {
     if (query.q?.trim()) {
       const term = `%${query.q.trim()}%`;
       qb.andWhere(
-        '(l.trade_name ILIKE :term OR l.description ILIKE :term)',
+        '(l.trade_name ILIKE :term OR l.public_headline ILIKE :term OR l.description ILIKE :term)',
         { term },
       );
     }
@@ -153,9 +153,13 @@ export class DirectoryService {
       tenantId,
       slug,
       tradeName: dto.tradeName.trim(),
+      publicHeadline: dto.publicHeadline?.trim() || null,
       description: dto.description?.trim() || null,
       category: dto.category?.trim() || null,
       modo: dto.modo,
+      contactInfo: this.normalizeContactInfo(dto.contactInfo),
+      services: this.normalizeServices(dto.services),
+      offerings: this.normalizeOfferings(dto.offerings),
       ownerUserId: user.id,
       moderationStatus: 'pending',
       isPublished: false,
@@ -181,6 +185,9 @@ export class DirectoryService {
     if (dto.tradeName !== undefined) {
       row.tradeName = dto.tradeName.trim();
     }
+    if (dto.publicHeadline !== undefined) {
+      row.publicHeadline = dto.publicHeadline?.trim() || null;
+    }
     if (dto.description !== undefined) {
       row.description = dto.description?.trim() || null;
     }
@@ -190,9 +197,60 @@ export class DirectoryService {
     if (dto.modo !== undefined) {
       row.modo = dto.modo;
     }
+    if (dto.contactInfo !== undefined) {
+      row.contactInfo = this.normalizeContactInfo(dto.contactInfo);
+    }
+    if (dto.services !== undefined) {
+      row.services = this.normalizeServices(dto.services);
+    }
+    if (dto.offerings !== undefined) {
+      row.offerings = this.normalizeOfferings(dto.offerings);
+    }
     if (dto.isPublished !== undefined) {
       row.isPublished = dto.isPublished;
     }
     return this.listings.save(row);
+  }
+
+  private normalizeContactInfo(
+    value?: object | null,
+  ): Record<string, unknown> {
+    if (!value) {
+      return {};
+    }
+    return Object.fromEntries(
+      Object.entries(value).filter(([, current]) => typeof current === 'string' && current.trim()),
+    );
+  }
+
+  private normalizeServices(value?: string[]): string[] {
+    return (value ?? [])
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 20);
+  }
+
+  private normalizeOfferings(
+    value?: Array<{
+      title?: string;
+      kind?: 'product' | 'service';
+      price?: string;
+      description?: string;
+    }>,
+  ): Array<{
+    title: string;
+    kind: 'product' | 'service';
+    price?: string | null;
+    description?: string | null;
+  }> {
+    return (value ?? [])
+      .filter((item) => item.title?.trim() && item.kind)
+      .slice(0, 24)
+      .map((item) => ({
+        title: item.title!.trim(),
+        kind: item.kind!,
+        price: item.price?.trim() || null,
+        description: item.description?.trim() || null,
+      }));
   }
 }

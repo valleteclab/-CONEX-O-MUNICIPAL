@@ -5,24 +5,24 @@ import { PageIntro } from "@/components/layout/page-intro";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Minhas cotações",
+  title: "Minhas oportunidades",
 };
 
 export default function DashboardCotacoesPage() {
   return (
     <>
       <PageIntro
-        title="Minhas cotações"
-        description="Solicitações que publicou neste município (tenant ativo na sessão)."
+        title="Minhas oportunidades"
+        description="Demandas que você publicou neste município, com acompanhamento de respostas recebidas."
         badge="Dashboard"
       />
       <p className="mb-4 text-sm text-marinha-600">
-        <Link href="/cotacoes" className="font-medium text-municipal-700 hover:underline">
-          ← Voltar à central de cotações
+        <Link href="/oportunidades" className="font-medium text-municipal-700 hover:underline">
+          ← Voltar à central de oportunidades
         </Link>
       </p>
       <Card className="p-5">
-        <h2 className="font-serif text-lg text-marinha-900">As suas solicitações</h2>
+        <h2 className="font-serif text-lg text-marinha-900">O que você publicou</h2>
         <div className="mt-4">
           <QuotationMineList />
         </div>

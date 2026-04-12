@@ -4,10 +4,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Tenant } from './tenant.entity';
+import { QuotationResponse } from './quotation-response.entity';
 import { User } from './user.entity';
 
 export type QuotationRequestStatus =
@@ -15,6 +17,8 @@ export type QuotationRequestStatus =
   | 'in_progress'
   | 'closed'
   | 'cancelled';
+
+export type QuotationRequestKind = 'private_market' | 'public_procurement';
 
 @Entity({ name: 'quotation_requests' })
 export class QuotationRequest {
@@ -41,6 +45,21 @@ export class QuotationRequest {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
+  @Column({ type: 'varchar', length: 32, default: 'private_market' })
+  kind: QuotationRequestKind;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  category: string | null;
+
+  @Column({ name: 'desired_date', type: 'date', nullable: true })
+  desiredDate: string | null;
+
+  @Column({ name: 'requester_business_id', type: 'uuid', nullable: true })
+  requesterBusinessId: string | null;
+
+  @Column({ name: 'responses_count', type: 'int', default: 0 })
+  responsesCount: number;
+
   @Column({ type: 'varchar', length: 32, default: 'open' })
   status: QuotationRequestStatus;
 
@@ -49,4 +68,7 @@ export class QuotationRequest {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  @OneToMany(() => QuotationResponse, (response) => response.quotationRequest)
+  responses: QuotationResponse[];
 }

@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateQuotationDto {
   @ApiProperty({ example: 'Reforma elétrica em salão comercial' })
@@ -13,4 +21,25 @@ export class CreateQuotationDto {
   @IsString()
   @MaxLength(8000)
   description?: string;
+
+  @ApiPropertyOptional({ enum: ['private_market', 'public_procurement'] })
+  @IsOptional()
+  @IsIn(['private_market', 'public_procurement'])
+  kind?: 'private_market' | 'public_procurement';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  category?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  desiredDate?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  requesterBusinessId?: string;
 }

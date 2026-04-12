@@ -10,8 +10,12 @@ import { ErpStockBalance } from '../entities/erp-stock-balance.entity';
 import { ErpStockMovement } from '../entities/erp-stock-movement.entity';
 import { ErpSalesOrder } from '../entities/erp-sales-order.entity';
 import { ErpSalesOrderItem } from '../entities/erp-sales-order-item.entity';
+import { ErpQuote } from '../entities/erp-quote.entity';
+import { ErpQuoteItem } from '../entities/erp-quote-item.entity';
 import { ErpPurchaseOrder } from '../entities/erp-purchase-order.entity';
 import { ErpPurchaseOrderItem } from '../entities/erp-purchase-order-item.entity';
+import { ErpServiceOrder } from '../entities/erp-service-order.entity';
+import { ErpServiceOrderItem } from '../entities/erp-service-order-item.entity';
 import { ErpAccountReceivable } from '../entities/erp-account-receivable.entity';
 import { ErpAccountPayable } from '../entities/erp-account-payable.entity';
 import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
@@ -27,7 +31,9 @@ import { ErpProductsController } from './controllers/erp-products.controller';
 import { ErpPartiesController } from './controllers/erp-parties.controller';
 import { ErpStockController } from './controllers/erp-stock.controller';
 import { ErpSalesOrdersController } from './controllers/erp-sales-orders.controller';
+import { ErpQuotesController } from './controllers/erp-quotes.controller';
 import { ErpPurchaseOrdersController } from './controllers/erp-purchase-orders.controller';
+import { ErpServiceOrdersController } from './controllers/erp-service-orders.controller';
 import { ErpFinanceController } from './controllers/erp-finance.controller';
 import { ErpFiscalController } from './controllers/erp-fiscal.controller';
 import { ErpCnpjController } from './controllers/erp-cnpj.controller';
@@ -40,7 +46,9 @@ import { ErpProductService } from './services/erp-product.service';
 import { ErpPartyService } from './services/erp-party.service';
 import { ErpStockService } from './services/erp-stock.service';
 import { ErpSalesOrderService } from './services/erp-sales-order.service';
+import { ErpQuoteService } from './services/erp-quote.service';
 import { ErpPurchaseOrderService } from './services/erp-purchase-order.service';
+import { ErpServiceOrderService } from './services/erp-service-order.service';
 import { ErpFinanceService } from './services/erp-finance.service';
 import { ErpFiscalService } from './services/erp-fiscal.service';
 import { PlugNotasService } from './services/plugnotas.service';
@@ -62,8 +70,12 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
       ErpStockMovement,
       ErpSalesOrder,
       ErpSalesOrderItem,
+      ErpQuote,
+      ErpQuoteItem,
       ErpPurchaseOrder,
       ErpPurchaseOrderItem,
+      ErpServiceOrder,
+      ErpServiceOrderItem,
       ErpAccountReceivable,
       ErpAccountPayable,
       ErpCashEntry,
@@ -81,7 +93,9 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
     ErpPartiesController,
     ErpStockController,
     ErpSalesOrdersController,
+    ErpQuotesController,
     ErpPurchaseOrdersController,
+    ErpServiceOrdersController,
     ErpFinanceController,
     ErpFiscalController,
     ErpCnpjController,
@@ -99,7 +113,9 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
     ErpPartyService,
     ErpStockService,
     ErpSalesOrderService,
+    ErpQuoteService,
     ErpPurchaseOrderService,
+    ErpServiceOrderService,
     ErpFinanceService,
     PlugNotasService,
     ErpFiscalService,

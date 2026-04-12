@@ -9,33 +9,34 @@ const groups: Array<{
   items: { href: string; label: string; exact?: boolean }[];
 }> = [
   {
-    title: "Visão geral",
-    items: [{ href: "/erp", label: "Painel", exact: true }],
-  },
-  {
-    title: "Cadastros",
+    title: "Operação do negócio",
     items: [
+      { href: "/erp", label: "Painel", exact: true },
       { href: "/area-da-empresa/cadastro", label: "Empresa" },
       { href: "/erp/produtos", label: "Produtos" },
       { href: "/erp/clientes-fornecedores", label: "Clientes e fornecedores" },
-    ],
-  },
-  {
-    title: "Operação",
-    items: [
-      { href: "/erp/pdv", label: "PDV" },
-      { href: "/erp/estoque", label: "Estoque" },
+      { href: "/erp/orcamentos", label: "Orçamentos" },
       { href: "/erp/pedidos-venda", label: "Vendas" },
+      { href: "/erp/ordens-servico", label: "Ordens de serviço" },
       { href: "/erp/pedidos-compra", label: "Compras" },
+      { href: "/erp/estoque", label: "Estoque" },
       { href: "/erp/financeiro", label: "Financeiro" },
     ],
   },
   {
-    title: "Fiscal",
+    title: "Fiscal por perfil",
     items: [
       { href: "/erp/mei", label: "Central MEI" },
       { href: "/erp/dados-fiscais", label: "Dados fiscais" },
       { href: "/erp/fiscal", label: "Notas fiscais" },
+    ],
+  },
+  {
+    title: "Conseguir mais negócios",
+    items: [
+      { href: "/dashboard/meu-negocio", label: "Presença digital" },
+      { href: "/marketplace", label: "Marketplace" },
+      { href: "/oportunidades", label: "Oportunidades" },
     ],
   },
 ];
@@ -54,9 +55,9 @@ export function ErpSubNav() {
     <div className="mb-8 rounded-card border border-marinha-900/8 bg-surface-card p-4 shadow-card">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Área da empresa</p>
-        <h2 className="mt-1 font-serif text-lg text-marinha-900">Navegação do ERP</h2>
+        <h2 className="mt-1 font-serif text-lg text-marinha-900">ERP + presença comercial</h2>
       </div>
-      <nav className="grid gap-4 lg:grid-cols-4" aria-label="Módulos ERP">
+      <nav className="grid gap-4 lg:grid-cols-3" aria-label="Módulos ERP">
         {groups.map((group) => (
           <div key={group.title}>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-marinha-500">
