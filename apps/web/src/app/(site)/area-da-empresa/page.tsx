@@ -23,7 +23,7 @@ const steps = [
   {
     title: "2. Informe os dados da empresa",
     description:
-      "Consulte o CNPJ, confirme endereço, CNAE, regime tributário e informe números de inscrição municipal/estadual.",
+      "Consulte o CNPJ, confirme endereço, CNAE, regime tributário e informe números de inscrição municipal e estadual.",
     action: {
       label: "Abrir formulário completo",
       href: "/area-da-empresa/cadastro",
@@ -44,17 +44,17 @@ const highlights = [
   {
     title: "Integração fiscal completa",
     description:
-      "Coletamos todas as informações necessárias para emissão de NFS-e e NF-e, garantindo conformidade desde o primeiro acesso.",
+      "Coletamos as informações necessárias para emissão de NFS-e e NF-e, ajudando sua empresa a começar com mais segurança.",
   },
   {
     title: "CNPJ com preenchimento automático",
     description:
-      "Utilize nossa consulta oficial para trazer dados da Receita Federal, reduzir erros e acelerar a análise da prefeitura.",
+      "Use a consulta oficial para trazer dados da Receita Federal, reduzir erros e acelerar a análise da prefeitura.",
   },
   {
     title: "Suporte municipal",
     description:
-      "Equipe de atendimento acompanha sua empresa da solicitação à operação diária do ERP Conexão Municipal.",
+      "A equipe de atendimento acompanha sua empresa desde a solicitação até a operação diária no ERP Conexão Municipal.",
   },
 ];
 
@@ -63,23 +63,23 @@ export default function AreaDaEmpresaPage() {
     <>
       <PageIntro
         title="Gestão empresarial do município"
-        description="Centralize cadastro, análise e liberação do ERP municipal. Siga as etapas abaixo para colocar sua empresa em operação."
+        description="Organize o cadastro, acompanhe a análise e prepare a sua empresa para operar no ERP municipal."
         badge="Área da empresa"
       />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[2fr,1fr]">
+      <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.95fr)]">
         <Card className="p-6">
           <h2 className="font-serif text-xl text-marinha-900">Como funciona</h2>
           <p className="mt-2 text-sm text-marinha-500">
-            A operação do ERP é liberada apenas após revisão da prefeitura. Organize-se com o roteiro abaixo e acompanhe o
-            status do seu negócio.
+            A operação do ERP é liberada após a revisão da prefeitura. Siga as etapas abaixo para avançar com mais
+            clareza.
           </p>
 
           <ol className="mt-6 space-y-4">
             {steps.map((step, index) => (
               <li key={step.title} className="rounded-card border border-marinha-900/8 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
                     <span className="text-xs font-semibold uppercase tracking-wide text-municipal-700">
                       Etapa {index + 1}
                     </span>
@@ -88,7 +88,7 @@ export default function AreaDaEmpresaPage() {
                   </div>
                   <Link
                     href={step.action.href}
-                    className="focus-ring inline-flex min-h-[44px] items-center justify-center whitespace-nowrap rounded-btn border-2 border-marinha-500/25 bg-white px-4 py-2.5 text-sm font-semibold text-marinha-900 transition hover:border-municipal-600/40 hover:bg-surface"
+                    className="focus-ring inline-flex min-h-[44px] w-full items-center justify-center rounded-btn border-2 border-marinha-500/25 bg-white px-4 py-2.5 text-sm font-semibold text-marinha-900 transition hover:border-municipal-600/40 hover:bg-surface md:w-auto md:whitespace-nowrap"
                   >
                     {step.action.label}
                   </Link>
@@ -100,7 +100,7 @@ export default function AreaDaEmpresaPage() {
           <div className="mt-6 rounded-card border border-municipal-200 bg-municipal-50/70 p-4 text-sm text-municipal-900">
             <p className="font-semibold">Já possui cadastro e foi liberado?</p>
             <p className="mt-1">
-              Acesse o ERP diretamente pela <Link href="/erp" className="underline">Área da empresa</Link>. Se sua empresa
+              Acesse o ERP diretamente pela <Link href="/erp" className="underline">área da empresa</Link>. Se sua empresa
               ainda estiver em análise, mantenha os dados atualizados e aguarde o contato da prefeitura.
             </p>
           </div>
@@ -108,7 +108,7 @@ export default function AreaDaEmpresaPage() {
 
         <div className="space-y-4">
           {highlights.map((highlight) => (
-            <Card key={highlight.title} className="h-full p-5">
+            <Card key={highlight.title} className="p-5">
               <h3 className="font-serif text-lg text-marinha-900">{highlight.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-marinha-600">{highlight.description}</p>
             </Card>
@@ -116,9 +116,9 @@ export default function AreaDaEmpresaPage() {
           <Card className="p-5">
             <h3 className="font-serif text-lg text-marinha-900">Acesso rápido</h3>
             <p className="mt-2 text-sm text-marinha-600">
-              Se você já gerencia empresas aprovadas, utilize o login direto abaixo.
+              Se você já gerencia empresas aprovadas, utilize o acesso abaixo.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
                 href={buildEntrarHref("empresa")}
                 className="focus-ring inline-flex min-h-[44px] items-center justify-center rounded-btn bg-municipal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-municipal-700"

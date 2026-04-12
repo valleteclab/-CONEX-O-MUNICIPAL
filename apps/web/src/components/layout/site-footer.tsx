@@ -6,10 +6,10 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-marinha-900/8 bg-surface-card/80">
       <div className="flex w-full flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
         <div>
-          <p className="font-serif text-lg font-bold text-marinha-900">Conexao Municipal</p>
-          <p className="mt-1 text-sm text-marinha-500">Luis Eduardo Magalhaes - BA</p>
+          <p className="font-serif text-lg font-bold text-marinha-900">Conexão Municipal</p>
+          <p className="mt-1 text-sm text-marinha-500">Luís Eduardo Magalhães - BA</p>
           <p className="mt-3 max-w-md text-sm text-marinha-500">
-            Plataforma para descoberta de negocios locais, oportunidades e operacao guiada das empresas do municipio.
+            Plataforma para descoberta de negócios locais, oportunidades e operação guiada das empresas do município.
           </p>
         </div>
 
@@ -17,7 +17,7 @@ export function SiteFooter() {
           <nav className="flex flex-col gap-2" aria-label="Descoberta">
             <p className="font-semibold text-marinha-900">Explorar</p>
             <Link href="/diretorio" className="font-medium text-municipal-700 hover:underline">
-              Negocios locais
+              Negócios locais
             </Link>
             <Link href="/oportunidades" className="font-medium text-municipal-700 hover:underline">
               Oportunidades
@@ -51,7 +51,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-marinha-900/6 px-4 py-4 text-center text-xs text-marinha-500 sm:px-6 lg:px-8">
-        LGPD e politica de privacidade em evolucao. (c) {new Date().getFullYear()} Conexao Municipal
+        LGPD e política de privacidade em evolução. (c) {new Date().getFullYear()} Conexão Municipal
       </div>
     </footer>
   );

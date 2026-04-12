@@ -6,54 +6,54 @@ import { buildEntrarHref } from "@/lib/auth-routes";
 
 const pillars = [
   {
-    title: "Descoberta publica e geracao de negocios",
+    title: "Descoberta pública e geração de negócios",
     description:
-      "Diretorio, vitrine comercial, oportunidades e conteudo para aproximar empresas locais, compradores e a comunidade.",
-    points: ["Diretorio com perfis publicos", "Oportunidades para captar demanda", "Marketplace como vitrine inicial"],
+      "Diretório, vitrine comercial, oportunidades e conteúdo para aproximar empresas locais, compradores e a comunidade.",
+    points: ["Diretório com perfis públicos", "Oportunidades para captar demanda", "Marketplace como vitrine inicial"],
   },
   {
-    title: "Operacao privada do negocio",
+    title: "Operação privada do negócio",
     description:
-      "ERP, rotina fiscal e gestao operacional para empresas que ja estao em fase de cadastro, liberacao ou operacao.",
-    points: ["Acesso empresarial com jornada guiada", "ERP para estoque, vendas e financeiro", "Fluxo separado para equipe interna"],
+      "ERP, rotina fiscal e gestão operacional para empresas que já estão em fase de cadastro, liberação ou operação.",
+    points: ["Acesso empresarial com jornada guiada", "ERP para estoque, vendas e financeiro", "Fluxo separado para a equipe interna"],
   },
 ];
 
 const editorialCards = [
   {
-    title: "Negocios locais",
+    title: "Negócios locais",
     description:
-      "Encontre empresas do municipio, conheca perfis publicos, servicos e canais de contato em um ambiente curado.",
+      "Encontre empresas do município, conheça perfis públicos, serviços e canais de contato em um ambiente organizado.",
     href: "/diretorio",
-    cta: "Explorar diretorio",
+    cta: "Explorar diretório",
   },
   {
     title: "Oportunidades",
     description:
-      "Publique demandas, acompanhe respostas e conecte fornecedores a oportunidades privadas e publicas.",
+      "Publique demandas, acompanhe respostas e conecte fornecedores a oportunidades privadas e públicas.",
     href: "/oportunidades",
     cta: "Ver oportunidades",
   },
   {
     title: "Academia",
     description:
-      "Capacitacao para empreendedores, equipes e participantes do ecossistema local com trilhas mais praticas.",
+      "Capacitação para empreendedores, equipes e participantes do ecossistema local com trilhas mais práticas.",
     href: "/academia",
     cta: "Acessar academia",
   },
   {
-    title: "Gestao para empresas",
+    title: "Gestão para empresas",
     description:
-      "Uma entrada clara para cadastro, liberacao e operacao do ERP sem misturar descoberta publica com rotina interna.",
+      "Uma entrada clara para cadastro, liberação e operação do ERP, sem misturar descoberta pública com rotina interna.",
     href: "/area-da-empresa",
-    cta: "Conhecer a area da empresa",
+    cta: "Conhecer a área da empresa",
   },
 ];
 
 const trustSignals = [
-  "Cadastro empresarial com revisao e liberacao orientada pelo municipio.",
-  "Contexto multitenant para manter separacao por municipio e por negocio.",
-  "Mesmo ecossistema para descoberta publica e operacao privada, sem jornadas soltas.",
+  "Cadastro empresarial com etapas guiadas para começar com mais segurança.",
+  "Acompanhamento da análise e da liberação em um fluxo mais simples.",
+  "Um só ambiente para divulgar o negócio e cuidar da operação do dia a dia.",
 ];
 
 export default function HomePage() {
@@ -65,14 +65,14 @@ export default function HomePage() {
         <div className="grid gap-10 lg:grid-cols-[1.3fr,0.7fr] lg:items-end">
           <div className="max-w-3xl">
             <Badge tone="accent" className="mb-4">
-              Plataforma municipal de negocios e operacao
+              Plataforma municipal de negócios e operação
             </Badge>
             <h1 className="text-balance font-serif text-4xl font-bold tracking-tight text-marinha-900 sm:text-5xl lg:text-6xl">
-              Um portal para descobrir oportunidades e uma area privada para fazer o negocio operar.
+              Um portal para descobrir oportunidades e uma área privada para fazer o negócio operar.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-marinha-500 sm:text-xl">
-              O Conexao Municipal organiza a experiencia em dois caminhos claros: publico para descoberta e confianca;
-              privado para cadastro, ERP e gestao interna.
+              O Conexão Municipal organiza a experiência em dois caminhos claros: público para descoberta e confiança;
+              privado para cadastro, ERP e gestão interna.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -91,24 +91,24 @@ export default function HomePage() {
                 href="/diretorio"
                 className="focus-ring inline-flex min-h-[48px] items-center justify-center rounded-btn px-5 py-3 text-sm font-semibold text-municipal-800 transition hover:bg-municipal-600/10"
               >
-                Explorar negocios
+                Explorar negócios
               </Link>
             </div>
           </div>
 
           <div className="grid gap-3">
             <Card className="border-white/60 bg-white/85 p-5 backdrop-blur">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Leitura do produto</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Tudo mais simples</p>
               <p className="mt-3 text-base leading-relaxed text-marinha-600">
-                O site deixa de parecer um mosaico de modulos e passa a mostrar o que e publico, o que exige acesso e
-                para quem cada caminho foi pensado.
+                Aqui você encontra com mais clareza o que pode explorar no portal e onde entrar quando precisar gerir
+                sua empresa ou acompanhar sua conta.
               </p>
             </Card>
             <Card className="border-white/60 bg-marinha-900 p-5 text-white shadow-card-hover">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-600">Marketplace</p>
               <p className="mt-3 text-base leading-relaxed text-white/80">
-                Continua publico, mas como parte da descoberta comercial, e nao como entrada concorrendo com login,
-                ERP e administracao.
+                Continua público, mas agora como parte da descoberta comercial, sem disputar espaço com login,
+                área da empresa e administração.
               </p>
               <Link href="/marketplace" className="mt-4 inline-flex text-sm font-semibold text-cerrado-500 hover:underline">
                 Ver vitrine local
@@ -140,11 +140,11 @@ export default function HomePage() {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Entradas principais</p>
-            <h2 className="mt-2 text-3xl text-marinha-900">Quatro portas, cada uma com uma funcao clara</h2>
+            <h2 className="mt-2 text-3xl text-marinha-900">Quatro caminhos, cada um com uma função clara</h2>
           </div>
           <p className="max-w-2xl text-sm leading-relaxed text-marinha-500">
-            Em vez de abrir tudo ao mesmo tempo, a landing aponta para caminhos objetivos de descoberta, capacitacao e
-            operacao.
+            Em vez de abrir tudo ao mesmo tempo, a página inicial aponta para caminhos objetivos de descoberta,
+            capacitação e operação.
           </p>
         </div>
 
@@ -156,10 +156,10 @@ export default function HomePage() {
                   index === 3 ? "bg-[linear-gradient(180deg,_rgba(0,162,141,0.08),_#ffffff)]" : ""
                 }`}
               >
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Editorial</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Destaque</p>
                 <h3 className="mt-3 text-2xl text-marinha-900">{card.title}</h3>
                 <p className="mt-3 text-base leading-relaxed text-marinha-600">{card.description}</p>
-                <p className="mt-6 text-sm font-semibold text-municipal-800">{card.cta} -&gt;</p>
+                <p className="mt-6 text-sm font-semibold text-municipal-800">{card.cta} →</p>
               </Card>
             </Link>
           ))}
@@ -169,8 +169,8 @@ export default function HomePage() {
       <section className="rounded-[24px] border border-marinha-900/8 bg-marinha-900 px-6 py-8 text-white shadow-card sm:px-8">
         <div className="grid gap-6 lg:grid-cols-[0.8fr,1.2fr] lg:items-start">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-600">Confianca</p>
-            <h2 className="mt-3 text-3xl text-white">Uma experiencia mais coerente para municipio, negocios e equipe interna.</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-600">Confiança</p>
+            <h2 className="mt-3 text-3xl text-white">Uma experiência mais coerente para município, negócios e equipe interna.</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {trustSignals.map((signal) => (
@@ -185,10 +185,10 @@ export default function HomePage() {
       <section className="rounded-[24px] border border-municipal-600/20 bg-white px-6 py-8 shadow-card sm:px-8">
         <div className="grid gap-6 lg:grid-cols-[1fr,auto] lg:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Proximo passo</p>
-            <h2 className="mt-2 text-3xl text-marinha-900">Escolha um caminho claro e continue sem ruido.</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Próximo passo</p>
+            <h2 className="mt-2 text-3xl text-marinha-900">Escolha um caminho claro e continue sem ruído.</h2>
             <p className="mt-3 max-w-2xl text-base leading-relaxed text-marinha-600">
-              Quem esta conhecendo o ecossistema pode explorar os negocios e oportunidades. Quem vai operar o negocio
+              Quem está conhecendo o ecossistema pode explorar os negócios e oportunidades. Quem vai operar o negócio
               ou entrar na equipe interna encontra um acesso dedicado.
             </p>
           </div>
@@ -203,7 +203,7 @@ export default function HomePage() {
               href={buildEntrarHref("portal")}
               className="focus-ring inline-flex min-h-[48px] items-center justify-center rounded-btn border-2 border-marinha-900/15 bg-white px-5 py-3 text-sm font-semibold text-marinha-900 transition hover:border-municipal-600/40 hover:bg-surface"
             >
-              Ir para o acesso
+              Ir para a área de acesso
             </Link>
           </div>
         </div>

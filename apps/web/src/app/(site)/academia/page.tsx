@@ -28,9 +28,9 @@ export default async function AcademiaPage({ searchParams }: PageProps) {
     typeof categoriaRaw === "string" && categoriaRaw.trim() ? categoriaRaw.trim() : "";
 
   const listPath =
-    categoryFilter ?
-      `/api/v1/academy/courses?${tenantQ}&take=100&category=${encodeURIComponent(categoryFilter)}`
-    : `/api/v1/academy/courses?${tenantQ}&take=100`;
+    categoryFilter
+      ? `/api/v1/academy/courses?${tenantQ}&take=100&category=${encodeURIComponent(categoryFilter)}`
+      : `/api/v1/academy/courses?${tenantQ}&take=100`;
 
   const [featured, data, categoriesRes] = await Promise.all([
     apiGet<FeaturedResponse>(`/api/v1/academy/courses/featured?${tenantQ}&take=6`, {
@@ -48,7 +48,7 @@ export default async function AcademiaPage({ searchParams }: PageProps) {
     <>
       <PageIntro
         title="Academia"
-        description="Trilhas de formação para empreendedores — estilo catálogo moderno: capas dos vídeos, categorias e progresso quando está matriculado."
+        description="Trilhas de formação para empreendedores, com categorias, conteúdos em destaque e progresso para quem já está matriculado."
       />
       <p className="-mt-2 mb-6 flex flex-wrap gap-x-4 gap-y-1 text-sm text-marinha-600">
         <Link
@@ -71,8 +71,8 @@ export default async function AcademiaPage({ searchParams }: PageProps) {
         <section className="mb-12">
           <h2 className="font-serif text-xl text-marinha-900">Em destaque</h2>
           <p className="mt-1 text-sm text-marinha-500">
-            Trilhas escolhidas pela equipa do município — padrão semelhante a plataformas como Udemy
-            ou Coursera: cartão com imagem do vídeo e resumo.
+            Trilhas escolhidas pela equipe do município para facilitar o começo de quem quer aprender, se organizar e
+            acompanhar a própria evolução.
           </p>
           <div className="mt-5">
             <AcademyCatalogWithProgress courses={featured.items} variant="featured" />
@@ -85,21 +85,21 @@ export default async function AcademiaPage({ searchParams }: PageProps) {
           {categoryFilter ? `Trilhas — ${categoryFilter}` : "Todas as trilhas"}
         </h2>
         <p className="mt-1 text-sm text-marinha-500">
-          {categoryFilter ?
-            `A mostrar apenas cursos na categoria «${categoryFilter}». `
-          : "Filtre por categoria acima quando existirem cursos etiquetados. "}
+          {categoryFilter
+            ? `Mostrando apenas cursos da categoria “${categoryFilter}”. `
+            : "Filtre por categoria acima para encontrar o conteúdo mais relevante para você. "}
           O progresso aparece nos cartões depois de entrar na conta e se matricular.
         </p>
         {!data ? (
           <p className="mt-3 text-sm text-marinha-500">
-            Não foi possível carregar os cursos (verifique NEXT_PUBLIC_API_BASE_URL).
+            Não foi possível carregar os cursos no momento.
           </p>
         ) : data.items.length === 0 ? (
           <Card className="mt-4">
             <p className="text-sm text-marinha-500">
-              {categoryFilter ?
-                "Nenhum curso nesta categoria. Escolha «Todas» ou outra etiqueta."
-              : "Nenhum curso publicado ainda."}
+              {categoryFilter
+                ? "Nenhum curso encontrado nesta categoria. Escolha “Todas” ou tente outra opção."
+                : "Nenhum curso publicado ainda."}
             </p>
           </Card>
         ) : (

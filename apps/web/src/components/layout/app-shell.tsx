@@ -13,8 +13,8 @@ type MainNavItem = {
 };
 
 const mainNav: MainNavItem[] = [
-  { href: "/", label: "Inicio" },
-  { href: "/diretorio", label: "Negocios" },
+  { href: "/", label: "Início" },
+  { href: "/diretorio", label: "Negócios" },
   { href: "/oportunidades", label: "Oportunidades" },
   { href: "/academia", label: "Academia" },
   { href: "/area-da-empresa", label: "Para empresas" },
@@ -53,7 +53,7 @@ function isAuthPath(pathname: string) {
 function AuthFooter() {
   return (
     <footer className="border-t border-marinha-900/8 px-4 py-6 text-center text-sm text-marinha-500 sm:px-6 lg:px-8">
-      Acesso seguro ao Conexao Municipal. Seus dados continuam protegidos pela politica de sessao da plataforma.
+      Acesso seguro ao Conexão Municipal. Seus dados continuam protegidos pela política de sessão da plataforma.
     </footer>
   );
 }
@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="border-b border-marinha-900/8 bg-white/75 backdrop-blur-md">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
             <Link href="/" className="focus-ring rounded-btn font-serif text-lg font-bold text-marinha-900 sm:text-xl">
-              Conexao Municipal
+              Conexão Municipal
             </Link>
             <Link
               href="/"
@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               href="/"
               className="focus-ring shrink-0 rounded-btn font-serif text-lg font-bold text-marinha-900 sm:text-xl"
             >
-              Conexao Municipal
+              Conexão Municipal
             </Link>
 
             <nav className="hidden items-center gap-0.5 md:flex" aria-label="Principal">

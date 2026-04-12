@@ -8,7 +8,7 @@ import { buildEntrarHref, getAuthDestination, parseAuthIntent } from "@/lib/auth
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: "Escolha o tipo de acesso e entre no Conexao Municipal pelo caminho correto.",
+  description: "Escolha o tipo de acesso e entre no Conexão Municipal pelo caminho correto.",
   robots: { index: false, follow: false },
 };
 
@@ -28,24 +28,24 @@ const accessOptions: Array<{
 }> = [
   {
     intent: "empresa",
-    title: "Sou empresa e quero gerir meu negocio",
-    eyebrow: "Area da empresa",
-    description: "Para quem esta em fase de cadastro, liberacao ou operacao do ERP municipal.",
-    support: "Depois do login, o destino padrao e o ERP da empresa.",
+    title: "Sou empresa e quero gerir meu negócio",
+    eyebrow: "Área da empresa",
+    description: "Para quem está em fase de cadastro, liberação ou operação do ERP municipal.",
+    support: "Depois do login, o destino padrão é o ERP da empresa.",
   },
   {
     intent: "portal",
-    title: "Sou usuario do portal",
+    title: "Sou usuário do portal",
     eyebrow: "Portal",
-    description: "Para acompanhar presenca digital, oportunidades, formacoes e fluxos autenticados do ecossistema.",
-    support: "Depois do login, o destino padrao e o dashboard do portal.",
+    description: "Para acompanhar presença digital, oportunidades, formações e fluxos autenticados do ecossistema.",
+    support: "Depois do login, o destino padrão é o dashboard do portal.",
   },
   {
     intent: "platform",
     title: "Sou da equipe interna",
     eyebrow: "Equipe da plataforma",
-    description: "Para moderacao, aprovacao de cadastros, operacao interna e gestao global da plataforma.",
-    support: "Depois do login, o destino padrao e o painel administrativo.",
+    description: "Para moderação, aprovação de cadastros, operação interna e gestão global da plataforma.",
+    support: "Depois do login, o destino padrão é o painel administrativo.",
   },
 ];
 
@@ -60,12 +60,12 @@ function AccessSummary({ intent }: { intent: AuthIntent }) {
     <div className="space-y-4">
       <div>
         <Badge tone="accent">{selected.eyebrow}</Badge>
-        <h1 className="mt-4 text-4xl text-marinha-900">Entrar com clareza, sem misturar jornadas.</h1>
+        <h1 className="mt-4 text-4xl text-marinha-900">Entrar com clareza, sem misturar caminhos.</h1>
         <p className="mt-4 text-base leading-relaxed text-marinha-600">{selected.description}</p>
       </div>
 
       <div className="rounded-[20px] border border-municipal-600/15 bg-municipal-600/5 p-4 text-sm text-marinha-600">
-        <p className="font-semibold text-marinha-900">Destino padrao apos o login</p>
+        <p className="font-semibold text-marinha-900">Destino padrão após o login</p>
         <p className="mt-2">
           {selected.support} <span className="font-medium text-municipal-800">{getAuthDestination(intent)}</span>
         </p>
@@ -82,15 +82,15 @@ export default function EntrarPage({ searchParams }: EntrarPageProps) {
     <div className="grid w-full gap-8 lg:grid-cols-[0.95fr,1.05fr]">
       <div className="space-y-5">
         <div>
-          <Badge tone="accent">Hub de acesso</Badge>
+          <Badge tone="accent">Área de acesso</Badge>
           <h1 className="mt-4 text-4xl text-marinha-900 sm:text-5xl">Escolha o seu tipo de entrada.</h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-marinha-600">
-            O Conexao Municipal agora separa melhor o que e descoberta publica e o que e operacao privada. Selecione
-            abaixo o perfil que melhor representa o seu momento.
+            O Conexão Municipal separa melhor o que é descoberta pública e o que é operação privada. Selecione abaixo
+            o perfil que melhor representa o seu momento.
           </p>
           {redirect ? (
             <p className="mt-3 text-sm text-marinha-500">
-              Voce estava tentando acessar <span className="font-semibold text-marinha-900">{redirect}</span>. Vamos
+              Você estava tentando acessar <span className="font-semibold text-marinha-900">{redirect}</span>. Vamos
               manter esse destino depois do login.
             </p>
           ) : null}
@@ -122,7 +122,7 @@ export default function EntrarPage({ searchParams }: EntrarPageProps) {
                           : "border-marinha-900/12 bg-surface text-marinha-500"
                       }`}
                     >
-                      {active ? "OK" : "->"}
+                      {active ? "OK" : "→"}
                     </span>
                   </div>
                 </Card>
@@ -132,13 +132,13 @@ export default function EntrarPage({ searchParams }: EntrarPageProps) {
         </div>
 
         <div className="rounded-[20px] border border-marinha-900/8 bg-white/80 p-5 text-sm leading-relaxed text-marinha-600 shadow-card">
-          Nao tem conta ainda?{" "}
+          Não tem conta ainda?{" "}
           <Link href="/cadastro" className="font-semibold text-municipal-700 hover:underline">
             Criar conta
           </Link>{" "}
-          para comecar a sua jornada. Se voce so quer explorar o ecossistema antes de entrar, visite o{" "}
+          para começar a sua jornada. Se você só quer explorar o ecossistema antes de entrar, visite o{" "}
           <Link href="/diretorio" className="font-semibold text-municipal-700 hover:underline">
-            diretorio
+            diretório
           </Link>{" "}
           ou a{" "}
           <Link href="/academia" className="font-semibold text-municipal-700 hover:underline">
@@ -160,20 +160,20 @@ export default function EntrarPage({ searchParams }: EntrarPageProps) {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Passo 2</p>
               <h2 className="mt-4 text-3xl text-marinha-900">Escolha um perfil para continuar.</h2>
               <p className="mt-4 text-base leading-relaxed text-marinha-600">
-                Assim que voce selecionar uma das opcoes ao lado, mostraremos o formulario certo e o destino padrao
+                Assim que você selecionar uma das opções ao lado, mostraremos o formulário certo e o destino padrão
                 depois do login.
               </p>
             </div>
 
             <div className="grid gap-3 text-sm text-marinha-600">
               <div className="rounded-[18px] border border-marinha-900/8 bg-white px-4 py-4">
-                Area da empresa: operacao de negocio e ERP.
+                Área da empresa: operação do negócio e ERP.
               </div>
               <div className="rounded-[18px] border border-marinha-900/8 bg-white px-4 py-4">
-                Portal: presenca digital, oportunidades e trilhas autenticadas.
+                Portal: presença digital, oportunidades e trilhas autenticadas.
               </div>
               <div className="rounded-[18px] border border-marinha-900/8 bg-white px-4 py-4">
-                Equipe interna: moderacao, aprovacao e administracao global.
+                Equipe interna: moderação, aprovação e administração global.
               </div>
             </div>
           </div>

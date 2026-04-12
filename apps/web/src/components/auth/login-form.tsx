@@ -23,7 +23,7 @@ type AuthMeResponse = {
 export type LoginFormIntent = "portal" | "empresa" | "platform";
 
 type LoginFormProps = {
-  /** `portal` = usuarios do portal. `empresa` = area da empresa. `platform` = so equipe interna. */
+  /** `portal` = usuários do portal. `empresa` = área da empresa. `platform` = só equipe interna. */
   intent?: LoginFormIntent;
 };
 
@@ -62,13 +62,13 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
       const me = await apiAuthFetch<AuthMeResponse>("/api/v1/auth/me");
 
       if (!me.ok || !me.data) {
-        setError(me.error || "Nao foi possivel confirmar o perfil.");
+        setError(me.error || "Não foi possível confirmar o perfil.");
         return;
       }
 
       if (me.data.role !== "super_admin") {
         setError(
-          "Esta entrada e so para super administradores da plataforma. Sua sessao foi iniciada, mas voce deve continuar pelo acesso normal do portal.",
+          "Esta entrada é só para super administradores da plataforma. Sua sessão foi iniciada, mas você deve continuar pelo acesso normal do portal.",
         );
         return;
       }
@@ -87,9 +87,9 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
 
   const submitLabel =
     intent === "platform"
-      ? "Entrar na gestao"
+      ? "Entrar na gestão"
       : intent === "empresa"
-        ? "Entrar na area da empresa"
+        ? "Entrar na área da empresa"
         : "Entrar no portal";
 
   return (
@@ -142,7 +142,7 @@ export function LoginForm({ intent = "portal" }: LoginFormProps) {
 
         {intent === "platform" ? (
           <Link href={buildEntrarHref("portal")} className="font-medium text-marinha-600 hover:underline">
-            Entrar como usuario do portal
+            Entrar como usuário do portal
           </Link>
         ) : intent === "empresa" ? (
           <Link href="/cadastro" className="font-medium text-marinha-600 hover:underline">
