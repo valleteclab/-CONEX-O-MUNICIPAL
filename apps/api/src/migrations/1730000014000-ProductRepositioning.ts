@@ -54,12 +54,20 @@ export class ProductRepositioning1730000014000 implements MigrationInterface {
       );
     `);
 
+    // PG < 15 não aceita ADD CONSTRAINT IF NOT EXISTS; usar bloco condicional.
     await queryRunner.query(`
-      ALTER TABLE erp_quotes
-      ADD CONSTRAINT IF NOT EXISTS fk_erp_quotes_converted_service_order
-      FOREIGN KEY (converted_service_order_id)
-      REFERENCES erp_service_orders(id)
-      ON DELETE SET NULL;
+      DO $migration$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'fk_erp_quotes_converted_service_order'
+        ) THEN
+          ALTER TABLE erp_quotes
+            ADD CONSTRAINT fk_erp_quotes_converted_service_order
+            FOREIGN KEY (converted_service_order_id)
+            REFERENCES erp_service_orders(id)
+            ON DELETE SET NULL;
+        END IF;
+      END $migration$;
     `);
 
     await queryRunner.query(`
@@ -138,7 +146,7 @@ export class ProductRepositioning1730000014000 implements MigrationInterface {
 
     await queryRunner.query(`DROP TABLE IF EXISTS erp_service_order_items;`);
     await queryRunner.query(`DROP TABLE IF EXISTS erp_quote_items;`);
-    await queryRunner.query(`DROP TABLE IF EXISTS erp_service_orders;`);
     await queryRunner.query(`DROP TABLE IF EXISTS erp_quotes;`);
+    await queryRunner.query(`DROP TABLE IF EXISTS erp_service_orders;`);
   }
 }

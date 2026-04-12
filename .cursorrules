@@ -37,6 +37,7 @@
 - Regra detalhada para o agente: `.cursor/rules/responsive-web.mdc` (globs `apps/web/**`).
 
 ## Lessons
+- **Postgres migrations:** `ALTER TABLE ... ADD CONSTRAINT IF NOT EXISTS` só existe no PG 15+; em PG 14 (ex. Railway) dá `syntax error at or near "EXISTS"`. Usar `DO $$ ... IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '...') THEN ALTER TABLE ... ADD CONSTRAINT ...`.
 - **Nest — ERP ↔ plataforma:** serviços ERP que injetam `PlatformSettingsService` precisam de `PlatformSettingsModule` em `ErpModule` (não importar `PlatformModule` inteiro: há dependência circular com `ErpModule`). O `PlatformSettingsModule` exporta só o serviço + `TypeOrmModule.forFeature([PlatformSetting])`.
 - **Web — duas entradas de login:** `/login` = portal (empresas/cidadãos); `/plataforma/entrar` = copy e redirect só para `role === super_admin` → `/dashboard/plataforma`. Mesma API `/auth/login`; separação é UX + mensagem clara.
 - **Web — visibilidade super admin:** header com item de menu **Plataforma** + botão destacado **Área da plataforma** (não só rodapé). **Painel** (`/painel`) ≠ plataforma: KPIs do município (manager/admin); confusão comum → mensagens no `PainelDashboard` + link para `/plataforma/entrar`.
