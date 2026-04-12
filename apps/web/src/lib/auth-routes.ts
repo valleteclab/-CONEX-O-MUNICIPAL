@@ -15,12 +15,12 @@ export function parseAuthIntent(value?: string | null): AuthIntent {
 export function getAuthDestination(intent: AuthIntent): string {
   switch (intent) {
     case "empresa":
+    case "portal":
       return "/erp";
     case "platform":
       return "/admin";
-    case "portal":
     default:
-      return "/dashboard/meu-negocio";
+      return "/erp";
   }
 }
 

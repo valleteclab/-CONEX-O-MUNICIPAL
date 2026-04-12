@@ -38,7 +38,7 @@ const accessOptions: Array<{
     title: "Sou usuário do portal",
     eyebrow: "Portal",
     description: "Para acompanhar presença digital, oportunidades, formações e fluxos autenticados do ecossistema.",
-    support: "Depois do login, o destino padrão é o dashboard do portal.",
+    support: "Depois do login, o destino padrão é a área da empresa no ERP.",
   },
   {
     intent: "platform",
