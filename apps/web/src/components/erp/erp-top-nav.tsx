@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -64,10 +64,33 @@ export function ErpTopNav() {
   const pathname = usePathname();
   const { businesses, selectedId, selected, isLoading, error, hasApproved, selectBusiness } = useErpBusiness();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setOpenGroup(null);
   }, [pathname]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!navRef.current?.contains(event.target as Node)) {
+        setOpenGroup(null);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpenGroup(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const approved = useMemo(
     () => businesses.filter((b) => b.moderationStatus === "approved" && b.isActive),
@@ -133,7 +156,7 @@ export function ErpTopNav() {
           </div>
         </div>
 
-        <div className="rounded-card border border-marinha-900/8 bg-surface-card px-3 py-2 shadow-card">
+        <div ref={navRef} className="rounded-card border border-marinha-900/8 bg-surface-card px-3 py-2 shadow-card">
           <div className="flex flex-wrap items-center gap-2">
             {groups.map((group) => {
               const active =
@@ -143,12 +166,12 @@ export function ErpTopNav() {
                 <div
                   key={group.key}
                   className="relative"
-                  onMouseEnter={() => setOpenGroup(group.key)}
-                  onMouseLeave={() => setOpenGroup((current) => (current === group.key ? null : current))}
                 >
                   <button
                     type="button"
                     onClick={() => setOpenGroup((current) => (current === group.key ? null : group.key))}
+                    aria-expanded={openGroup === group.key}
+                    aria-haspopup="menu"
                     className={cn(
                       "focus-ring rounded-full px-4 py-2 text-sm font-semibold transition-colors",
                       active
@@ -168,6 +191,7 @@ export function ErpTopNav() {
                             <Link
                               key={item.href}
                               href={item.href}
+                              onClick={() => setOpenGroup(null)}
                               className={cn(
                                 "rounded-btn border px-4 py-4 transition",
                                 itemActive
