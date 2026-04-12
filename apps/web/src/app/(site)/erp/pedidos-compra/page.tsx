@@ -123,17 +123,30 @@ function ErpPedidosCompraContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
 
-  const patchStatus = async (id: string, status: "confirmed" | "received" | "cancelled") => {
+  const patchStatus = async (
+    order: PurchaseOrder,
+    status: "confirmed" | "received" | "cancelled",
+  ) => {
     setStatusPatchError(null);
-    const res = await erpFetch(`/api/v1/erp/purchase-orders/${id}/status`, {
+    const res = await erpFetch<PurchaseOrder>(`/api/v1/erp/purchase-orders/${order.id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) {
-      setStatusPatchError(res.error ?? "Não foi possível atualizar o pedido de compra.");
+    if (!res.ok || !res.data) {
+      setStatusPatchError(res.error ?? "Nao foi possivel atualizar o pedido de compra.");
       return;
     }
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    setOrders((prev) => prev.map((current) => (current.id === order.id ? res.data! : current)));
+  };
+
+  const handleCancelReceivedOrder = async (order: PurchaseOrder) => {
+    const confirmed = confirm(
+      "Cancelar esta entrada recebida? O sistema vai estornar estoque e contas a pagar quando houver.",
+    );
+    if (!confirmed) {
+      return;
+    }
+    await patchStatus(order, "cancelled");
   };
 
   const addLine = () =>
@@ -226,13 +239,13 @@ function ErpPedidosCompraContent() {
         r.status === "draft" ? (
           <div className="flex gap-2">
             <button
-              onClick={() => patchStatus(r.id, "confirmed")}
+              onClick={() => patchStatus(r, "confirmed")}
               className="rounded-btn bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700"
             >
               Confirmar
             </button>
             <button
-              onClick={() => patchStatus(r.id, "cancelled")}
+              onClick={() => patchStatus(r, "cancelled")}
               className="rounded-btn border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
             >
               Cancelar
@@ -240,10 +253,17 @@ function ErpPedidosCompraContent() {
           </div>
         ) : r.status === "confirmed" ? (
           <button
-            onClick={() => patchStatus(r.id, "received")}
+            onClick={() => patchStatus(r, "received")}
             className="rounded-btn bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
           >
             Marcar recebido
+          </button>
+        ) : r.status === "received" ? (
+          <button
+            onClick={() => void handleCancelReceivedOrder(r)}
+            className="rounded-btn border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+          >
+            Cancelar entrada
           </button>
         ) : null,
     },

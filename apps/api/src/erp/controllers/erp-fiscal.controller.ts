@@ -26,13 +26,17 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ErpBusinessGuard } from '../guards/erp-business.guard';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
 import { ErpBusiness } from '../../entities/erp-business.entity';
+import { ErpSalesOrderService } from '../services/erp-sales-order.service';
 import { ErpFiscalService } from '../services/erp-fiscal.service';
 import { EmitFiscalDto } from '../dto/fiscal.dto';
 
 @ApiTags('erp — fiscal')
 @Controller('erp/fiscal')
 export class ErpFiscalController {
-  constructor(private readonly svc: ErpFiscalService) {}
+  constructor(
+    private readonly svc: ErpFiscalService,
+    private readonly salesOrders: ErpSalesOrderService,
+  ) {}
 
   // ─── Webhook — sem autenticação ─────────────────────────────────────
   @Post('webhook')
@@ -177,10 +181,23 @@ export class ErpFiscalController {
   @ApiHeader({ name: 'X-Business-Id', required: true })
   @Delete(':id')
   @ApiOperation({ summary: 'Cancelar documento fiscal autorizado' })
-  cancel(
+  async cancel(
     @SelectedBusiness() business: ErpBusiness,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('cancelSale') cancelSaleStr?: string,
   ) {
-    return this.svc.cancel(business, id);
+    const cancelSale = cancelSaleStr === 'true' || cancelSaleStr === '1';
+    const currentDoc =
+      cancelSale && id ? await this.svc.findOne(business, id) : null;
+    if (cancelSale && currentDoc?.salesOrderId) {
+      await this.salesOrders.validateCancellation(business, currentDoc.salesOrderId);
+    }
+    const doc = await this.svc.cancel(business, id);
+    if (cancelSale && doc.salesOrderId) {
+      await this.salesOrders.patchStatus(business, doc.salesOrderId, {
+        status: 'cancelled',
+      });
+    }
+    return this.svc.findOne(business, id);
   }
 }

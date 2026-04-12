@@ -113,6 +113,8 @@ type XmlImportDetail = {
     stockPosted?: boolean;
     stockLocationId?: string | null;
     stockPostedAt?: string | null;
+    stockCancelled?: boolean;
+    stockCancelledAt?: string | null;
   } | null;
   supplierParty?: ImportParty | null;
   items: ImportItem[];
@@ -281,6 +283,7 @@ export default function ErpEstoquePage() {
   const [isImportSubmitting, setIsImportSubmitting] = useState(false);
   const [isImportApplying, setIsImportApplying] = useState(false);
   const [isCreatingPurchaseOrder, setIsCreatingPurchaseOrder] = useState(false);
+  const [isCancellingImportEntry, setIsCancellingImportEntry] = useState(false);
   const [xmlImport, setXmlImport] = useState<XmlImportDetail | null>(null);
   const [importDecisions, setImportDecisions] = useState<Record<string, ImportDecision>>({});
   const [createdPurchaseOrderId, setCreatedPurchaseOrderId] = useState<string | null>(null);
@@ -504,6 +507,30 @@ export default function ErpEstoquePage() {
     }
     setCreatedPurchaseOrderId(res.data.id);
     setXmlImport((current) => (current ? { ...current, purchaseOrderId: res.data!.id } : current));
+  }
+
+  async function cancelImportStockEntry() {
+    if (!xmlImport) return;
+    const confirmed = confirm(
+      "Cancelar a entrada de estoque desta NF-e? O sistema vai estornar as quantidades lancadas por esta importacao.",
+    );
+    if (!confirmed) {
+      return;
+    }
+    setIsCancellingImportEntry(true);
+    setImportError(null);
+    const res = await erpFetch<XmlImportDetail>(
+      `/api/v1/erp/products/xml-imports/${xmlImport.id}/cancel-stock-entry`,
+      { method: "POST" },
+    );
+    setIsCancellingImportEntry(false);
+    if (!res.ok || !res.data) {
+      setImportError(res.error ?? "Nao foi possivel cancelar a entrada desta NF-e.");
+      return;
+    }
+    setXmlImport(res.data);
+    void loadBalances();
+    void loadMovements(true);
   }
 
   function setDecisionAction(itemId: string, action: ImportDecision["action"]) {
@@ -851,9 +878,25 @@ export default function ErpEstoquePage() {
               </p>
             </div>
 
+            {xmlImport.summary?.stockCancelled ? (
+              <div className="rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                A entrada de estoque desta NF-e foi cancelada. O cadastro dos produtos continua atualizado, mas o saldo foi estornado.
+              </div>
+            ) : null}
+
             {xmlImport.summary?.stockPosted ? (
-              <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3 text-sm text-marinha-700">
-                O saldo ja foi lancado no estoque desta empresa com referencia a esta NF-e.
+              <div className="space-y-3">
+                <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3 text-sm text-marinha-700">
+                  O saldo ja foi lancado no estoque desta empresa com referencia a esta NF-e.
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void cancelImportStockEntry()}
+                  disabled={isCancellingImportEntry}
+                >
+                  {isCancellingImportEntry ? "Cancelando entrada..." : "Cancelar entrada desta NF-e"}
+                </Button>
               </div>
             ) : (
               <div className="flex flex-wrap gap-3">

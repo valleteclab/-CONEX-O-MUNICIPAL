@@ -8,6 +8,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpParty } from '../../entities/erp-party.entity';
+import { ErpFiscalDocument } from '../../entities/erp-fiscal-document.entity';
 import { ErpProduct } from '../../entities/erp-product.entity';
 import { ErpStockBalance } from '../../entities/erp-stock-balance.entity';
 import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
@@ -22,13 +23,19 @@ import {
   PatchSalesOrderStatusDto,
 } from '../dto/sales-order.dto';
 import { dec, decMul } from '../utils/decimal';
+import { ErpFiscalService } from './erp-fiscal.service';
 
 @Injectable()
 export class ErpSalesOrderService {
   constructor(
     private readonly dataSource: DataSource,
+    private readonly fiscal: ErpFiscalService,
     @InjectRepository(ErpSalesOrder)
     private readonly orders: Repository<ErpSalesOrder>,
+    @InjectRepository(ErpFiscalDocument)
+    private readonly fiscalDocs: Repository<ErpFiscalDocument>,
+    @InjectRepository(ErpAccountReceivable)
+    private readonly receivables: Repository<ErpAccountReceivable>,
   ) {}
 
   async list(
@@ -52,7 +59,7 @@ export class ErpSalesOrderService {
       relations: ['items', 'items.product', 'party'],
     });
     if (!row) {
-      throw new NotFoundException('Pedido de venda não encontrado');
+      throw new NotFoundException('Pedido de venda nao encontrado');
     }
     return row;
   }
@@ -77,7 +84,7 @@ export class ErpSalesOrderService {
           },
         });
         if (!party) {
-          throw new BadRequestException('Cliente (party) inválido');
+          throw new BadRequestException('Cliente (party) invalido');
         }
       }
       let total = 0;
@@ -90,7 +97,7 @@ export class ErpSalesOrderService {
           },
         });
         if (!p) {
-          throw new BadRequestException(`Produto ${line.productId} inválido`);
+          throw new BadRequestException(`Produto ${line.productId} invalido`);
         }
         total += Number(decMul(line.qty, line.unitPrice));
       }
@@ -123,10 +130,18 @@ export class ErpSalesOrderService {
         relations: ['items', 'items.product', 'party'],
       });
       if (!full) {
-        throw new NotFoundException('Pedido recém-criado não encontrado');
+        throw new NotFoundException('Pedido recem-criado nao encontrado');
       }
       return full;
     });
+  }
+
+  async validateCancellation(
+    business: ErpBusiness,
+    id: string,
+  ): Promise<void> {
+    const order = await this.findOne(business, id);
+    await this.assertSaleCanBeCancelled(business, order);
   }
 
   async patchStatus(
@@ -134,24 +149,62 @@ export class ErpSalesOrderService {
     id: string,
     dto: PatchSalesOrderStatusDto,
   ): Promise<ErpSalesOrder> {
+    if (dto.status === 'cancelled' && dto.cancelFiscalDocument) {
+      const order = await this.findOne(business, id);
+      await this.assertSaleCanBeCancelled(business, order);
+      if (order.fiscalStatus === 'authorized') {
+        const linkedDoc = await this.fiscalDocs.findOne({
+          where: {
+            tenantId: business.tenantId,
+            businessId: business.id,
+            salesOrderId: id,
+          },
+          order: { createdAt: 'DESC' },
+        });
+        if (!linkedDoc) {
+          throw new NotFoundException(
+            'Nao foi encontrado o documento fiscal vinculado a esta venda.',
+          );
+        }
+        await this.fiscal.cancel(business, linkedDoc.id);
+      }
+    }
+
     await this.dataSource.transaction(async (em) => {
       const row = await em.findOne(ErpSalesOrder, {
         where: { id, businessId: business.id, tenantId: business.tenantId },
         relations: ['items', 'items.product', 'party'],
       });
       if (!row) {
-        throw new NotFoundException('Pedido de venda não encontrado');
+        throw new NotFoundException('Pedido de venda nao encontrado');
       }
       if (row.status === 'cancelled') {
-        throw new BadRequestException('Pedido cancelado não pode ser alterado');
+        throw new BadRequestException('Pedido cancelado nao pode ser alterado');
       }
       if (dto.status === 'draft') {
-        throw new BadRequestException('Não é possível voltar para rascunho');
+        throw new BadRequestException('Nao e possivel voltar para rascunho');
       }
       if (dto.status === 'confirmed' && row.status === 'draft') {
         await this.postStock(em, business, row);
         await this.postReceivable(em, business, row);
         row.stockPostedAt = new Date();
+      }
+      if (dto.status === 'cancelled') {
+        if (row.fiscalStatus === 'pending') {
+          throw new BadRequestException(
+            'Esta venda tem emissao fiscal pendente. Atualize ou cancele a nota antes de cancelar a venda.',
+          );
+        }
+        if (row.fiscalStatus === 'authorized') {
+          throw new BadRequestException(
+            'Cancele a nota fiscal vinculada antes de cancelar a venda.',
+          );
+        }
+        if (row.status === 'confirmed') {
+          await this.reverseStock(em, business, row);
+          await this.cancelReceivable(em, business, row);
+          row.stockPostedAt = null;
+        }
       }
       row.status = dto.status;
       await em.save(row);
@@ -165,7 +218,7 @@ export class ErpSalesOrderService {
     order: ErpSalesOrder,
   ): Promise<void> {
     if (order.stockPostedAt) {
-      throw new BadRequestException('Estoque deste pedido já foi lançado');
+      throw new BadRequestException('Estoque deste pedido ja foi lancado');
     }
     const defaultLocation = await em.findOne(ErpStockLocation, {
       where: {
@@ -176,7 +229,7 @@ export class ErpSalesOrderService {
     });
     if (!defaultLocation) {
       throw new BadRequestException(
-        'Defina um local de estoque padrão antes de confirmar o pedido',
+        'Defina um local de estoque padrao antes de confirmar o pedido',
       );
     }
 
@@ -200,11 +253,11 @@ export class ErpSalesOrderService {
       if (next < 0) {
         if (!balance || current === 0) {
           throw new BadRequestException(
-            `Sem saldo de estoque para "${nome}" no local padrão. Registre uma entrada em Estoque antes de confirmar, ou cadastre o item como serviço (sem baixa).`,
+            `Sem saldo de estoque para "${nome}" no local padrao. Registre uma entrada em Estoque antes de confirmar, ou cadastre o item como servico (sem baixa).`,
           );
         }
         throw new BadRequestException(
-          `Estoque insuficiente para "${nome}". Disponível: ${current}.`,
+          `Estoque insuficiente para "${nome}". Disponivel: ${current}.`,
         );
       }
 
@@ -219,7 +272,7 @@ export class ErpSalesOrderService {
           refType: 'sales_order',
           refId: order.id,
           userId: null,
-          note: `Baixa automática do pedido ${order.id}`,
+          note: `Baixa automatica do pedido ${order.id}`,
         }),
       );
 
@@ -272,5 +325,125 @@ export class ErpSalesOrderService {
         note: `Gerado automaticamente do pedido de venda ${order.id}`,
       }),
     );
+  }
+
+  private async reverseStock(
+    em: EntityManager,
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+  ): Promise<void> {
+    if (!order.stockPostedAt) {
+      return;
+    }
+    const defaultLocation = await em.findOne(ErpStockLocation, {
+      where: {
+        businessId: business.id,
+        tenantId: business.tenantId,
+        isDefault: true,
+      },
+    });
+    if (!defaultLocation) {
+      throw new BadRequestException(
+        'Defina um local de estoque padrao antes de cancelar a venda.',
+      );
+    }
+
+    for (const item of order.items) {
+      if (item.product?.kind === 'service') {
+        continue;
+      }
+
+      let balance = await em.findOne(ErpStockBalance, {
+        where: {
+          businessId: business.id,
+          tenantId: business.tenantId,
+          productId: item.productId,
+          locationId: defaultLocation.id,
+        },
+      });
+      const current = balance ? parseFloat(balance.quantity) : 0;
+      const next = current + parseFloat(item.qty);
+
+      await em.save(
+        em.create(ErpStockMovement, {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          type: 'in',
+          productId: item.productId,
+          locationId: defaultLocation.id,
+          quantity: dec(item.qty),
+          refType: 'sales_order_cancel',
+          refId: order.id,
+          userId: null,
+          note: `Estorno de estoque da venda ${order.id}`,
+        }),
+      );
+
+      if (!balance) {
+        balance = em.create(ErpStockBalance, {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          productId: item.productId,
+          locationId: defaultLocation.id,
+          quantity: dec(next),
+        });
+      } else {
+        balance.quantity = dec(next);
+      }
+      await em.save(balance);
+    }
+  }
+
+  private async cancelReceivable(
+    em: EntityManager,
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+  ): Promise<void> {
+    const receivable = await em.findOne(ErpAccountReceivable, {
+      where: {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        linkRef: 'sales_order',
+        linkId: order.id,
+      },
+    });
+    if (!receivable || receivable.status === 'cancelled') {
+      return;
+    }
+    if (receivable.status === 'paid') {
+      throw new BadRequestException(
+        'Esta venda ja foi baixada no financeiro. Cancele ou estorne o recebimento antes de cancelar a venda.',
+      );
+    }
+    receivable.status = 'cancelled';
+    receivable.note = `${receivable.note ?? ''}\nCancelado automaticamente com a venda ${order.id}.`
+      .trim();
+    await em.save(receivable);
+  }
+
+  private async assertSaleCanBeCancelled(
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+  ): Promise<void> {
+    if (order.status === 'cancelled') {
+      throw new BadRequestException('Pedido cancelado nao pode ser alterado');
+    }
+    if (order.status !== 'confirmed') {
+      return;
+    }
+
+    const receivable = await this.receivables.findOne({
+      where: {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        linkRef: 'sales_order',
+        linkId: order.id,
+      },
+    });
+    if (receivable?.status === 'paid') {
+      throw new BadRequestException(
+        'Esta venda ja foi baixada no financeiro. Cancele ou estorne o recebimento antes de cancelar a venda.',
+      );
+    }
   }
 }

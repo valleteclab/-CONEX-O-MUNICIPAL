@@ -582,6 +582,56 @@ export class ErpProductXmlImportService {
     return order;
   }
 
+  async cancelStockEntry(
+    business: ErpBusiness,
+    id: string,
+  ): Promise<ErpProductXmlImport> {
+    const importRow = await this.findOne(business, id);
+    if (importRow.summary?.['stockPosted'] !== true) {
+      throw new BadRequestException(
+        'Esta importacao nao possui entrada de estoque para cancelar.',
+      );
+    }
+
+    await this.dataSource.transaction(async (em) => {
+      const stockLocationId =
+        typeof importRow.summary?.['stockLocationId'] === 'string'
+          ? importRow.summary['stockLocationId']
+          : (await this.stock.findDefaultLocation(business, em)).id;
+
+      const selectedItems = importRow.items.filter(
+        (item) =>
+          item.action !== 'ignore' &&
+          item.selectedProductId &&
+          Number(item.qty) > 0,
+      );
+
+      for (const item of selectedItems) {
+        await this.stock.createTrackedMovement({
+          manager: em,
+          business,
+          type: 'out',
+          productId: item.selectedProductId!,
+          locationId: stockLocationId,
+          quantity: item.qty,
+          refType: 'xml_import_cancel',
+          refId: importRow.id,
+          note: `Cancelamento da entrada da NF-e ${importRow.accessKey} item ${item.lineNumber}.`,
+        });
+      }
+
+      importRow.summary = {
+        ...(importRow.summary ?? {}),
+        stockPosted: false,
+        stockCancelled: true,
+        stockCancelledAt: new Date().toISOString(),
+      };
+      await em.save(importRow);
+    });
+
+    return this.findOne(business, id);
+  }
+
   private stringOrNull(value: unknown): string | null {
     if (typeof value !== 'string') return null;
     const trimmed = value.trim();

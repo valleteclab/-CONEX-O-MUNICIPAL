@@ -110,10 +110,21 @@ export default function FiscalPage() {
     }
   }
 
-  async function handleCancel(id: string) {
-    if (!confirm("Cancelar esta nota fiscal? Esta ação não pode ser desfeita.")) return;
+  async function handleCancel(id: string, options?: { cancelSale?: boolean }) {
+    if (
+      !confirm(
+        options?.cancelSale
+          ? "Cancelar esta nota fiscal e a venda vinculada? Esta ação não pode ser desfeita."
+          : "Cancelar esta nota fiscal? Esta ação não pode ser desfeita.",
+      )
+    ) {
+      return;
+    }
     setCancellingId(id);
-    const res = await erpFetch<FiscalDoc>(`/api/v1/erp/fiscal/${id}`, { method: "DELETE" });
+    const res = await erpFetch<FiscalDoc>(
+      `/api/v1/erp/fiscal/${id}${options?.cancelSale ? "?cancelSale=true" : ""}`,
+      { method: "DELETE" },
+    );
     setCancellingId(null);
     if (res.ok && res.data) {
       setDocs((prev) => prev.map((d) => (d.id === id ? res.data! : d)));
@@ -275,13 +286,24 @@ export default function FiscalPage() {
                         </button>
                       )}
                       {doc.status === "authorized" && (
-                        <button
-                          onClick={() => void handleCancel(doc.id)}
-                          disabled={cancellingId === doc.id}
-                          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-alerta-700 hover:bg-alerta-500/10 disabled:opacity-50"
-                        >
-                          {cancellingId === doc.id ? "…" : "Cancelar"}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => void handleCancel(doc.id)}
+                            disabled={cancellingId === doc.id}
+                            className="focus-ring rounded px-2 py-1 text-xs font-semibold text-alerta-700 hover:bg-alerta-500/10 disabled:opacity-50"
+                          >
+                            {cancellingId === doc.id ? "…" : "Cancelar nota"}
+                          </button>
+                          {doc.salesOrder?.id ? (
+                            <button
+                              onClick={() => void handleCancel(doc.id, { cancelSale: true })}
+                              disabled={cancellingId === doc.id}
+                              className="focus-ring rounded px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-50"
+                            >
+                              {cancellingId === doc.id ? "…" : "Cancelar nota + venda"}
+                            </button>
+                          ) : null}
+                        </>
                       )}
                     </div>
                   </td>

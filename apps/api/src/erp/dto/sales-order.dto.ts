@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsIn,
   IsNumberString,
   IsOptional,
@@ -65,4 +66,13 @@ export class PatchSalesOrderStatusDto {
   @IsString()
   @IsIn(['draft', 'confirmed', 'cancelled'])
   status!: 'draft' | 'confirmed' | 'cancelled';
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'Quando cancelar uma venda com documento fiscal autorizado, cancela a nota vinculada antes de reverter a venda.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  cancelFiscalDocument?: boolean;
 }

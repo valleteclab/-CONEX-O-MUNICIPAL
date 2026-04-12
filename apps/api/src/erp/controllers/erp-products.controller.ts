@@ -94,6 +94,15 @@ export class ErpProductsController {
     return this.xmlImports.createPurchaseOrder(business, id);
   }
 
+  @Post('xml-imports/:id/cancel-stock-entry')
+  @ApiOperation({ summary: 'Cancelar a entrada de estoque gerada pela importacao XML' })
+  cancelStockEntryFromXmlImport(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.xmlImports.cancelStockEntry(business, id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obter produto' })
   findOne(

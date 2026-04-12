@@ -180,17 +180,46 @@ function ErpPedidosVendaContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
 
-  const patchStatus = async (id: string, status: "confirmed" | "cancelled") => {
+  const patchStatus = async (
+    order: SalesOrder,
+    status: "confirmed" | "cancelled",
+    options?: { cancelFiscalDocument?: boolean },
+  ) => {
     setStatusPatchError(null);
-    const res = await erpFetch(`/api/v1/erp/sales-orders/${id}/status`, {
+    const res = await erpFetch<SalesOrder>(`/api/v1/erp/sales-orders/${order.id}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...(options ?? {}) }),
     });
-    if (res.ok) {
-      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    if (res.ok && res.data) {
+      setOrders((prev) => prev.map((current) => (current.id === order.id ? res.data! : current)));
     } else {
-      setStatusPatchError(res.error ?? "Não foi possível alterar o status do pedido.");
+      setStatusPatchError(res.error ?? "Nao foi possivel alterar o status do pedido.");
     }
+  };
+
+  const handleCancelOrder = async (order: SalesOrder) => {
+    let cancelFiscalDocument = false;
+    if (order.fiscalStatus === "authorized") {
+      cancelFiscalDocument = confirm(
+        "Esta venda possui nota fiscal emitida. Deseja cancelar a nota fiscal vinculada junto com a venda?",
+      );
+      if (!cancelFiscalDocument) {
+        return;
+      }
+    }
+
+    const confirmed = confirm(
+      cancelFiscalDocument
+        ? "Confirmar cancelamento da nota fiscal e da venda?"
+        : "Confirmar cancelamento da venda? O sistema vai estornar estoque e contas a receber quando houver.",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await patchStatus(order, "cancelled", {
+      cancelFiscalDocument: cancelFiscalDocument || undefined,
+    });
   };
 
   const addLine = () =>
@@ -292,13 +321,13 @@ function ErpPedidosVendaContent() {
         r.status === "draft" ? (
           <div className="flex gap-2">
             <button
-              onClick={() => patchStatus(r.id, "confirmed")}
+              onClick={() => patchStatus(r, "confirmed")}
               className="rounded-btn bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
             >
               Confirmar
             </button>
             <button
-              onClick={() => patchStatus(r.id, "cancelled")}
+              onClick={() => void handleCancelOrder(r)}
               className="rounded-btn border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
             >
               Cancelar
@@ -317,6 +346,12 @@ function ErpPedidosVendaContent() {
               className="rounded-btn border border-municipal-600/40 px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10"
             >
               Emitir NF
+            </button>
+            <button
+              onClick={() => void handleCancelOrder(r)}
+              className="rounded-btn border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+            >
+              {r.fiscalStatus === "authorized" ? "Cancelar venda + NF" : "Cancelar venda"}
             </button>
           </div>
         ) : null,

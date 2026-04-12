@@ -49,7 +49,7 @@ export class ErpPurchaseOrderService {
       relations: ['items', 'items.product', 'supplierParty'],
     });
     if (!row) {
-      throw new NotFoundException('Pedido de compra não encontrado');
+      throw new NotFoundException('Pedido de compra nao encontrado');
     }
     return row;
   }
@@ -67,7 +67,7 @@ export class ErpPurchaseOrderService {
         },
       });
       if (!supplier) {
-        throw new BadRequestException('Fornecedor inválido');
+        throw new BadRequestException('Fornecedor invalido');
       }
       if (supplier.type === 'customer') {
         throw new BadRequestException(
@@ -84,7 +84,7 @@ export class ErpPurchaseOrderService {
           },
         });
         if (!p) {
-          throw new BadRequestException(`Produto ${line.productId} inválido`);
+          throw new BadRequestException(`Produto ${line.productId} invalido`);
         }
         total += Number(decMul(line.qty, line.unitPrice));
       }
@@ -112,7 +112,7 @@ export class ErpPurchaseOrderService {
         relations: ['items', 'items.product', 'supplierParty'],
       });
       if (!full) {
-        throw new NotFoundException('Pedido recém-criado não encontrado');
+        throw new NotFoundException('Pedido recem-criado nao encontrado');
       }
       return full;
     });
@@ -129,18 +129,23 @@ export class ErpPurchaseOrderService {
         relations: ['items', 'items.product', 'supplierParty'],
       });
       if (!row) {
-        throw new NotFoundException('Pedido de compra não encontrado');
+        throw new NotFoundException('Pedido de compra nao encontrado');
       }
       if (row.status === 'cancelled') {
-        throw new BadRequestException('Pedido cancelado não pode ser alterado');
+        throw new BadRequestException('Pedido cancelado nao pode ser alterado');
       }
       if (dto.status === 'draft') {
-        throw new BadRequestException('Não é possível voltar para rascunho');
+        throw new BadRequestException('Nao e possivel voltar para rascunho');
       }
-      if (dto.status === 'received') {
+      if (dto.status === 'received' && row.status !== 'received') {
         await this.postStock(em, business, row);
         await this.postPayable(em, business, row);
         row.stockPostedAt = new Date();
+      }
+      if (dto.status === 'cancelled' && row.status === 'received') {
+        await this.reverseStock(em, business, row);
+        await this.cancelPayable(em, business, row);
+        row.stockPostedAt = null;
       }
       row.status = dto.status;
       await em.save(row);
@@ -154,7 +159,7 @@ export class ErpPurchaseOrderService {
     order: ErpPurchaseOrder,
   ): Promise<void> {
     if (order.stockPostedAt) {
-      throw new BadRequestException('Estoque deste pedido já foi lançado');
+      throw new BadRequestException('Estoque deste pedido ja foi lancado');
     }
     const defaultLocation = await em.findOne(ErpStockLocation, {
       where: {
@@ -165,7 +170,7 @@ export class ErpPurchaseOrderService {
     });
     if (!defaultLocation) {
       throw new BadRequestException(
-        'Defina um local de estoque padrão antes de receber o pedido',
+        'Defina um local de estoque padrao antes de receber o pedido',
       );
     }
 
@@ -192,7 +197,7 @@ export class ErpPurchaseOrderService {
           refType: 'purchase_order',
           refId: order.id,
           userId: null,
-          note: `Entrada automática do pedido ${order.id}`,
+          note: `Entrada automatica do pedido ${order.id}`,
         }),
       );
 
@@ -241,5 +246,102 @@ export class ErpPurchaseOrderService {
         note: `Gerado automaticamente do pedido de compra ${order.id}`,
       }),
     );
+  }
+
+  private async reverseStock(
+    em: EntityManager,
+    business: ErpBusiness,
+    order: ErpPurchaseOrder,
+  ): Promise<void> {
+    if (!order.stockPostedAt) {
+      return;
+    }
+    const defaultLocation = await em.findOne(ErpStockLocation, {
+      where: {
+        businessId: business.id,
+        tenantId: business.tenantId,
+        isDefault: true,
+      },
+    });
+    if (!defaultLocation) {
+      throw new BadRequestException(
+        'Defina um local de estoque padrao antes de cancelar a entrada.',
+      );
+    }
+
+    for (const item of order.items) {
+      const nome = item.product?.name ?? item.productId;
+      let balance = await em.findOne(ErpStockBalance, {
+        where: {
+          businessId: business.id,
+          tenantId: business.tenantId,
+          productId: item.productId,
+          locationId: defaultLocation.id,
+        },
+      });
+      const current = balance ? parseFloat(balance.quantity) : 0;
+      const need = parseFloat(item.qty);
+      const next = current - need;
+      if (next < 0) {
+        throw new BadRequestException(
+          `Nao ha saldo suficiente para cancelar a entrada de "${nome}". Disponivel: ${current}.`,
+        );
+      }
+
+      await em.save(
+        em.create(ErpStockMovement, {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          type: 'out',
+          productId: item.productId,
+          locationId: defaultLocation.id,
+          quantity: dec(item.qty),
+          refType: 'purchase_order_cancel',
+          refId: order.id,
+          userId: null,
+          note: `Estorno da entrada do pedido ${order.id}`,
+        }),
+      );
+
+      if (!balance) {
+        balance = em.create(ErpStockBalance, {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          productId: item.productId,
+          locationId: defaultLocation.id,
+          quantity: dec(next),
+        });
+      } else {
+        balance.quantity = dec(next);
+      }
+      await em.save(balance);
+    }
+  }
+
+  private async cancelPayable(
+    em: EntityManager,
+    business: ErpBusiness,
+    order: ErpPurchaseOrder,
+  ): Promise<void> {
+    const payable = await em.findOne(ErpAccountPayable, {
+      where: {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        linkRef: 'purchase_order',
+        linkId: order.id,
+      },
+    });
+    if (!payable || payable.status === 'cancelled') {
+      return;
+    }
+    if (payable.status === 'paid') {
+      throw new BadRequestException(
+        'Esta entrada ja foi baixada no financeiro. Cancele ou estorne o pagamento antes de cancelar a entrada.',
+      );
+    }
+    payable.status = 'cancelled';
+    payable.note = `${payable.note ?? ''}\nCancelado automaticamente com o pedido ${order.id}.`
+      .trim();
+    await em.save(payable);
   }
 }
