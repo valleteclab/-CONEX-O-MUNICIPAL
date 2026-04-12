@@ -31,23 +31,30 @@ export class PublicBusinessSignupDto {
   @ApiProperty({ minLength: 8 })
   @IsString()
   @MinLength(8)
-  @Matches(/[A-Z]/, { message: 'Senha deve conter ao menos uma letra maiúscula' })
-  @Matches(/[0-9]/, { message: 'Senha deve conter ao menos um número' })
+  @Matches(/[A-Z]/, {
+    message: 'Senha deve conter ao menos uma letra maiuscula',
+  })
+  @Matches(/[0-9]/, {
+    message: 'Senha deve conter ao menos um numero',
+  })
   password!: string;
 
-  @ApiProperty({ example: 'Comércio Exemplo Ltda' })
+  @ApiProperty({ example: 'Comercio Exemplo Ltda' })
   @IsString()
   @MinLength(2)
   @MaxLength(255)
   tradeName!: string;
 
-  @ApiProperty({ example: 'Comércio Exemplo Ltda' })
+  @ApiProperty({ example: 'Comercio Exemplo Ltda' })
   @IsString()
   @MinLength(2)
   @MaxLength(255)
   legalName!: string;
 
-  @ApiProperty({ example: '12345678000199' })
+  @ApiProperty({
+    example: '12345678000199',
+    description: 'CNPJ sem mascara; aceita CNPJ alfanumerico',
+  })
   @IsString()
   @MinLength(14)
   @MaxLength(20)
@@ -71,10 +78,22 @@ export class PublicBusinessSignupDto {
   cityIbgeCode!: string;
 
   @ApiProperty({
-    enum: ['mei', 'simples_nacional', 'simples_nacional_excesso', 'lucro_presumido', 'lucro_real'],
+    enum: [
+      'mei',
+      'simples_nacional',
+      'simples_nacional_excesso',
+      'lucro_presumido',
+      'lucro_real',
+    ],
   })
   @IsString()
-  @IsIn(['mei', 'simples_nacional', 'simples_nacional_excesso', 'lucro_presumido', 'lucro_real'])
+  @IsIn([
+    'mei',
+    'simples_nacional',
+    'simples_nacional_excesso',
+    'lucro_presumido',
+    'lucro_real',
+  ])
   taxRegime!: string;
 
   @ApiProperty()

@@ -7,6 +7,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
+import {
+  parseFiscalDocument,
+  supportsCurrentPlugNotasDocument,
+} from '../../common/fiscal-document';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpFiscalDocument } from '../../entities/erp-fiscal-document.entity';
 import { ErpSalesOrder } from '../../entities/erp-sales-order.entity';
@@ -121,12 +125,11 @@ export class ErpFiscalService {
       };
     }
 
-    const documentDigits = this.onlyDigits(business.document);
-    if (documentDigits.length !== 11 && documentDigits.length !== 14) {
-      throw new BadRequestException(
-        'Informe CNPJ ou CPF valido do negocio antes de registrar no PlugNotas.',
-      );
-    }
+    this.getRequiredPlugNotasDocument(
+      business.document,
+      'Informe CNPJ ou CPF valido do negocio antes de registrar no PlugNotas.',
+      'CNPJ alfanumerico ainda nao pode ser sincronizado no PlugNotas com o contrato atual. Cadastre o documento internamente e conclua a emissao fiscal apos a atualizacao do provedor.',
+    );
     if (
       typeof fiscalConfig['plugnotasCertificateId'] !== 'string' ||
       !String(fiscalConfig['plugnotasCertificateId']).trim()
@@ -463,15 +466,17 @@ export class ErpFiscalService {
       .map((check) => check.message);
 
     if (order.party) {
-      const partyDocumentDigits = this.onlyDigits(order.party.document);
-      if (
-        partyDocumentDigits &&
-        partyDocumentDigits.length !== 11 &&
-        partyDocumentDigits.length !== 14
-      ) {
-        errors.push(
-          'Cliente do pedido com CPF ou CNPJ invalido; atualize o cadastro antes de emitir.',
-        );
+      const partyDocument = parseFiscalDocument(order.party.document);
+      if (partyDocument.normalized) {
+        if (!partyDocument.isValid) {
+          errors.push(
+            'Cliente do pedido com CPF ou CNPJ invalido; atualize o cadastro antes de emitir.',
+          );
+        } else if (!supportsCurrentPlugNotasDocument(partyDocument.normalized)) {
+          errors.push(
+            'Cliente do pedido com CNPJ alfanumerico. A emissao fiscal ainda depende de provedor externo que aceita apenas CPF e CNPJ numerico.',
+          );
+        }
       }
     }
 
@@ -503,7 +508,9 @@ export class ErpFiscalService {
     type: FiscalDocumentType,
   ): FiscalReadinessCheck[] {
     const checks: FiscalReadinessCheck[] = [];
-    const documentDigits = this.onlyDigits(business.document);
+    const document = parseFiscalDocument(business.document);
+    const plugNotasSupportsDocument =
+      document.isValid && supportsCurrentPlugNotasDocument(document.normalized);
     const legalName = (business.legalName ?? business.tradeName ?? '').trim();
     const address = this.getAddress(business);
     const cep = this.onlyDigits(address.cep);
@@ -512,11 +519,13 @@ export class ErpFiscalService {
 
     checks.push({
       id: 'emitente_documento',
-      ok: documentDigits.length === 11 || documentDigits.length === 14,
+      ok: plugNotasSupportsDocument,
       message:
-        documentDigits.length === 11 || documentDigits.length === 14
+        plugNotasSupportsDocument
           ? 'Documento do emitente preenchido.'
-          : 'Informe CPF ou CNPJ valido do emitente.',
+          : document.kind === 'cnpj_alphanumeric'
+            ? 'CNPJ alfanumerico salvo, mas a emissao ainda depende de provedor que aceita apenas CPF e CNPJ numerico.'
+            : 'Informe CPF ou CNPJ valido do emitente.',
     });
     checks.push({
       id: 'emitente_razao',
@@ -645,7 +654,7 @@ export class ErpFiscalService {
       {
         idIntegracao: integrationId,
         prestador: {
-          cpfCnpj: this.onlyDigits(business.document),
+          cpfCnpj: this.getRequiredPlugNotasDocument(business.document),
           inscricaoMunicipal: business.inscricaoMunicipal ?? '',
           razaoSocial: business.legalName ?? business.tradeName,
           endereco: {
@@ -659,7 +668,7 @@ export class ErpFiscalService {
         },
         tomador: order.party
           ? {
-              cpfCnpj: this.onlyDigits(order.party.document) || undefined,
+              cpfCnpj: this.getOptionalPlugNotasDocument(order.party.document),
               razaoSocial: order.party.legalName ?? order.party.name,
               email: order.party.email ?? undefined,
             }
@@ -711,7 +720,7 @@ export class ErpFiscalService {
         idIntegracao: integrationId,
         naturezaOperacao: 'Venda de mercadoria',
         emitente: {
-          cpfCnpj: this.onlyDigits(business.document),
+          cpfCnpj: this.getRequiredPlugNotasDocument(business.document),
           razaoSocial: business.legalName ?? business.tradeName,
           inscricaoEstadual: business.inscricaoEstadual ?? '',
           endereco: {
@@ -725,7 +734,7 @@ export class ErpFiscalService {
         },
         destinatario: order.party
           ? {
-              cpfCnpj: this.onlyDigits(order.party.document) || undefined,
+              cpfCnpj: this.getOptionalPlugNotasDocument(order.party.document),
               razaoSocial: order.party.legalName ?? order.party.name,
               email: order.party.email ?? undefined,
             }
@@ -755,11 +764,11 @@ export class ErpFiscalService {
         idIntegracao: integrationId,
         natureza: 'VENDA',
         emitente: {
-          cpfCnpj: this.onlyDigits(business.document),
+          cpfCnpj: this.getRequiredPlugNotasDocument(business.document),
         },
         destinatario: order.party
           ? {
-              cpfCnpj: this.onlyDigits(order.party.document) || undefined,
+              cpfCnpj: this.getOptionalPlugNotasDocument(order.party.document),
               razaoSocial: order.party.legalName ?? order.party.name,
               email: order.party.email ?? undefined,
             }
@@ -833,7 +842,7 @@ export class ErpFiscalService {
     const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
     const fiscalConfig = this.getFiscalConfig(business);
     const address = this.getAddress(business);
-    const documentDigits = this.onlyDigits(business.document);
+    const documentDigits = this.getRequiredPlugNotasDocument(business.document);
     const phone = this.parsePhone(business.responsiblePhone);
     const nfseConfig = this.getNestedConfig(business, 'nfse');
     const nfeConfig = this.getNestedConfig(business, 'nfe');
@@ -942,8 +951,11 @@ export class ErpFiscalService {
       return;
     }
 
-    const documentDigits = this.onlyDigits(business.document);
-    if (documentDigits.length !== 11 && documentDigits.length !== 14) {
+    const document = parseFiscalDocument(business.document);
+    if (
+      !document.isValid ||
+      !supportsCurrentPlugNotasDocument(document.normalized)
+    ) {
       return;
     }
 
@@ -987,6 +999,31 @@ export class ErpFiscalService {
 
   private onlyDigits(value: string | null | undefined): string {
     return (value ?? '').replace(/\D/g, '');
+  }
+
+  private getOptionalPlugNotasDocument(
+    value: string | null | undefined,
+  ): string | undefined {
+    const parsed = parseFiscalDocument(value);
+    if (!parsed.isValid || !supportsCurrentPlugNotasDocument(parsed.normalized)) {
+      return undefined;
+    }
+    return this.onlyDigits(parsed.normalized) || undefined;
+  }
+
+  private getRequiredPlugNotasDocument(
+    value: string | null | undefined,
+    invalidMessage = 'Informe CPF ou CNPJ valido do emitente.',
+    unsupportedMessage = 'CNPJ alfanumerico ainda nao e suportado pelo provedor fiscal atual.',
+  ): string {
+    const parsed = parseFiscalDocument(value);
+    if (!parsed.isValid) {
+      throw new BadRequestException(invalidMessage);
+    }
+    if (!supportsCurrentPlugNotasDocument(parsed.normalized)) {
+      throw new BadRequestException(unsupportedMessage);
+    }
+    return this.onlyDigits(parsed.normalized);
   }
 
   private mapRegime(regime: string | null): number {
@@ -1039,17 +1076,18 @@ export class ErpFiscalService {
     business: ErpBusiness,
   ): Record<string, unknown> | null {
     const phone = this.parsePhone(business.responsiblePhone);
+    const document = this.getOptionalPlugNotasDocument(business.document);
     if (
       !business.responsibleName ||
       !business.responsibleEmail ||
       !phone ||
-      !business.document
+      !document
     ) {
       return null;
     }
 
     return {
-      cpfCnpj: this.onlyDigits(business.document),
+      cpfCnpj: document,
       nome: business.responsibleName,
       email: business.responsibleEmail,
       telefone: {

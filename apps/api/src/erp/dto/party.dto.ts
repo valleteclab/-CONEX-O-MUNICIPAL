@@ -28,7 +28,9 @@ export class CreateErpPartyDto {
   @MaxLength(255)
   legalName?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'CPF/CNPJ sem mascara; aceita CNPJ alfanumerico',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(20)
@@ -94,7 +96,9 @@ export class UpdateErpPartyDto {
   @MaxLength(255)
   legalName?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'CPF/CNPJ sem mascara; aceita CNPJ alfanumerico',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(20)

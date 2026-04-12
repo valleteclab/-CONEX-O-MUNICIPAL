@@ -5,6 +5,10 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  parseFiscalDocument,
+  supportsCurrentCnpjLookup,
+} from '../../common/fiscal-document';
 
 /** Resposta bruta https://api.invertexto.com/v1/cnpj/{cnpj} */
 export interface CnpjApiResponse {
@@ -111,7 +115,7 @@ export interface DadosCnpjFormatados {
     codigo: string;
     descricao: string;
   }>;
-  /** Sugestão para `erp_businesses.tax_regime` */
+  /** Sugestao para `erp_businesses.tax_regime` */
   suggestedTaxRegime: 'mei' | 'simples_nacional' | null;
 }
 
@@ -122,48 +126,19 @@ export class CnpjLookupService {
   constructor(private readonly config: ConfigService) {}
 
   private limparCnpj(cnpj: string): string {
-    return cnpj.replace(/\D/g, '');
-  }
-
-  private validarCnpj(cnpj: string): boolean {
-    const cnpjLimpo = this.limparCnpj(cnpj);
-    if (cnpjLimpo.length !== 14) return false;
-    if (/^(\d)\1+$/.test(cnpjLimpo)) return false;
-
-    let tamanho = cnpjLimpo.length - 2;
-    let numeros = cnpjLimpo.substring(0, tamanho);
-    const digitos = cnpjLimpo.substring(tamanho);
-    let soma = 0;
-    let pos = tamanho - 7;
-
-    for (let i = tamanho; i >= 1; i--) {
-      soma += parseInt(numeros.charAt(tamanho - i), 10) * pos--;
-      if (pos < 2) pos = 9;
-    }
-
-    let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-    if (resultado !== parseInt(digitos.charAt(0), 10)) return false;
-
-    tamanho += 1;
-    numeros = cnpjLimpo.substring(0, tamanho);
-    soma = 0;
-    pos = tamanho - 7;
-
-    for (let i = tamanho; i >= 1; i--) {
-      soma += parseInt(numeros.charAt(tamanho - i), 10) * pos--;
-      if (pos < 2) pos = 9;
-    }
-
-    resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-    if (resultado !== parseInt(digitos.charAt(1), 10)) return false;
-
-    return true;
+    return parseFiscalDocument(cnpj).normalized;
   }
 
   async consultarCnpj(cnpj: string): Promise<DadosCnpjFormatados> {
     const cnpjLimpo = this.limparCnpj(cnpj);
-    if (!this.validarCnpj(cnpjLimpo)) {
-      throw new BadRequestException('CNPJ inválido');
+    const parsed = parseFiscalDocument(cnpjLimpo);
+    if (!parsed.isValid || parsed.kind === 'cpf') {
+      throw new BadRequestException('CNPJ invalido');
+    }
+    if (!supportsCurrentCnpjLookup(parsed.normalized)) {
+      throw new ServiceUnavailableException(
+        'Consulta automatica indisponivel para CNPJ alfanumerico: o provedor atual ainda aceita apenas CNPJ numerico.',
+      );
     }
 
     const token = this.config.get<string>('cnpj.apiToken', '');
@@ -172,18 +147,18 @@ export class CnpjLookupService {
       'https://api.invertexto.com/v1/cnpj';
     if (!token) {
       throw new ServiceUnavailableException(
-        'Consulta CNPJ indisponível: configure CNPJ_API_TOKEN no servidor.',
+        'Consulta CNPJ indisponivel: configure CNPJ_API_TOKEN no servidor.',
       );
     }
 
-    const url = `${baseUrl.replace(/\/$/, '')}/${cnpjLimpo}?token=${encodeURIComponent(token)}`;
+    const url = `${baseUrl.replace(/\/$/, '')}/${parsed.normalized}?token=${encodeURIComponent(token)}`;
 
     try {
       const response = await fetch(url);
       if (!response.ok) {
         if (response.status === 404) {
           throw new BadRequestException(
-            'CNPJ não encontrado na base da Receita Federal',
+            'CNPJ nao encontrado na base da Receita Federal',
           );
         }
         if (response.status === 429) {
@@ -205,7 +180,7 @@ export class CnpjLookupService {
       }
       this.logger.warn(`Erro ao consultar API CNPJ: ${(error as Error).message}`);
       throw new BadRequestException(
-        'Erro ao consultar CNPJ. Verifique sua conexão.',
+        'Erro ao consultar CNPJ. Verifique sua conexao.',
       );
     }
   }
@@ -272,13 +247,13 @@ export class CnpjLookupService {
     };
   }
 
-  private mapearPorte(porte: string): string {
-    const p = porte.toLowerCase();
-    if (p.includes('mei') || p.includes('microempreendedor')) return 'MEI';
-    if (p.includes('micro empresa') || p.includes('microempresa')) return 'ME';
-    if (p.includes('pequeno porte') || p.includes('epp')) return 'EPP';
-    if (p.includes('médio') || p.includes('medio')) return 'MEDIO';
-    if (p.includes('grande')) return 'GRANDE';
+  private mapearPorte(
+    porte: string,
+  ): string {
+    const value = (porte ?? '').toLowerCase();
+    if (value.includes('micro')) return 'microempresa';
+    if (value.includes('pequeno')) return 'empresa_pequeno_porte';
+    if (value.includes('demais')) return 'demais';
     return porte;
   }
 }
