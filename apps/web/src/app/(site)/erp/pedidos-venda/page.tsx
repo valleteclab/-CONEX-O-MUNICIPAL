@@ -11,16 +11,28 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
 import { erpFetch } from "@/lib/api-browser";
+import { printSalesReceipt, type ReceiptOrder } from "@/lib/erp-sales-receipt";
 import type { ErpListResponse } from "@/lib/erp-list";
 
 type SalesOrder = {
   id: string;
   partyId: string | null;
   status: "draft" | "confirmed" | "cancelled";
+  fiscalStatus: "none" | "pending" | "authorized" | "cancelled" | "error";
+  fiscalDocumentType: "nfse" | "nfe" | "nfce" | null;
+  paymentMethod: "cash" | "credit_card" | "debit_card" | "pix" | "other" | null;
   totalAmount: string;
   source: string;
   createdAt: string;
   party?: { name: string };
+  items?: Array<{
+    qty: string;
+    unitPrice: string;
+    product?: {
+      name: string;
+      sku?: string | null;
+    } | null;
+  }>;
 };
 
 type Product = {
@@ -67,6 +79,22 @@ const SOURCE_LABEL: Record<string, string> = {
   portal_cotacoes: "Cotações",
 };
 
+const FISCAL_STATUS_LABEL: Record<string, string> = {
+  none: "Sem documento fiscal",
+  pending: "Emissão pendente",
+  authorized: "Documento emitido",
+  cancelled: "Documento cancelado",
+  error: "Falha fiscal",
+};
+
+const FISCAL_STATUS_COLOR: Record<string, string> = {
+  none: "bg-marinha-100 text-marinha-700",
+  pending: "bg-amber-100 text-amber-700",
+  authorized: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
+  error: "bg-red-100 text-red-700",
+};
+
 function ErpPedidosVendaContent() {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +117,23 @@ function ErpPedidosVendaContent() {
   const noBusinessId = !businessId;
   const searchParams = useSearchParams();
   const focusOrderId = searchParams.get("focus");
+
+  const printReceipt = useCallback(async (order: SalesOrder) => {
+    let fullOrder = order;
+    if (!order.items?.length) {
+      const res = await erpFetch<SalesOrder>(`/api/v1/erp/sales-orders/${order.id}`);
+      if (!res.ok || !res.data) {
+        setStatusPatchError(res.error ?? "Nao foi possivel carregar os itens para imprimir o recibo.");
+        return;
+      }
+      fullOrder = res.data;
+    }
+
+    const ok = printSalesReceipt(fullOrder as ReceiptOrder);
+    if (!ok) {
+      setStatusPatchError("Nao foi possivel abrir a janela de impressao do recibo.");
+    }
+  }, []);
 
   const load = useCallback(
     async (reset = false) => {
@@ -229,6 +274,16 @@ function ErpPedidosVendaContent() {
         </span>
       ),
     },
+    {
+      key: "fiscalStatus",
+      label: "Fiscal",
+      render: (r) => (
+        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${FISCAL_STATUS_COLOR[r.fiscalStatus]}`}>
+          {FISCAL_STATUS_LABEL[r.fiscalStatus]}
+          {r.fiscalDocumentType ? ` · ${r.fiscalDocumentType.toUpperCase()}` : ""}
+        </span>
+      ),
+    },
     { key: "total", label: "Total", render: (r) => fmt(r.totalAmount) },
     {
       key: "actions",
@@ -250,12 +305,20 @@ function ErpPedidosVendaContent() {
             </button>
           </div>
         ) : r.status === "confirmed" ? (
-          <button
-            onClick={() => setFiscalModalOrderId(r.id)}
-            className="rounded-btn border border-municipal-600/40 px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10"
-          >
-            Emitir NF
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => printReceipt(r)}
+              className="rounded-btn border border-marinha-900/20 px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/5"
+            >
+              Recibo
+            </button>
+            <button
+              onClick={() => setFiscalModalOrderId(r.id)}
+              className="rounded-btn border border-municipal-600/40 px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10"
+            >
+              Emitir NF
+            </button>
+          </div>
         ) : null,
     },
   ];

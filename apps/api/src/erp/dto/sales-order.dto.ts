@@ -10,6 +10,7 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator';
+import { FISCAL_PAYMENT_METHODS } from './fiscal.dto';
 
 export class SalesOrderLineDto {
   @ApiProperty()
@@ -49,6 +50,14 @@ export class CreateSalesOrderDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  @ApiPropertyOptional({
+    enum: FISCAL_PAYMENT_METHODS,
+    description: 'Meio de pagamento principal da venda',
+  })
+  @IsOptional()
+  @IsIn(FISCAL_PAYMENT_METHODS)
+  paymentMethod?: 'cash' | 'credit_card' | 'debit_card' | 'pix' | 'other';
 }
 
 export class PatchSalesOrderStatusDto {

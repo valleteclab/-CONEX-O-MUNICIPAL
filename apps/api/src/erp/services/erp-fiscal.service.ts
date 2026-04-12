@@ -66,6 +66,24 @@ function normalizeStatus(raw: string): ErpFiscalDocument['status'] {
   return 'processing';
 }
 
+function mapOrderFiscalStatus(
+  status: ErpFiscalDocument['status'],
+): ErpSalesOrder['fiscalStatus'] {
+  switch (status) {
+    case 'authorized':
+      return 'authorized';
+    case 'cancelled':
+      return 'cancelled';
+    case 'error':
+    case 'rejected':
+      return 'error';
+    case 'pending':
+    case 'processing':
+    default:
+      return 'pending';
+  }
+}
+
 @Injectable()
 export class ErpFiscalService {
   private readonly logger = new Logger(ErpFiscalService.name);
@@ -333,6 +351,10 @@ export class ErpFiscalService {
     this.assertEmitPrerequisites(business, order, dto);
     await this.ensureEmpresaRegistered(business);
 
+    order.fiscalStatus = 'pending';
+    order.fiscalDocumentType = dto.type;
+    await this.orders.save(order);
+
     const integrationId = `${order.id}-${dto.type}`;
     let remote: PlugNotasDocumentResponse;
 
@@ -367,6 +389,9 @@ export class ErpFiscalService {
       errDoc.status = 'error';
       errDoc.errorMessage = (error as Error).message;
       await this.docs.save(errDoc);
+      order.fiscalStatus = 'error';
+      order.fiscalDocumentType = dto.type;
+      await this.orders.save(order);
       throw error;
     }
 
@@ -386,7 +411,11 @@ export class ErpFiscalService {
     doc.rawResponse = remote as unknown as object;
     doc.emittedAt = new Date();
     doc.errorMessage = null;
-    return this.docs.save(doc);
+    const savedDoc = await this.docs.save(doc);
+    order.fiscalStatus = mapOrderFiscalStatus(savedDoc.status);
+    order.fiscalDocumentType = savedDoc.type;
+    await this.orders.save(order);
+    return savedDoc;
   }
 
   async refreshStatus(
@@ -408,7 +437,9 @@ export class ErpFiscalService {
     doc.xmlUrl = remote.xml ?? doc.xmlUrl;
     doc.pdfUrl = remote.pdf ?? doc.pdfUrl;
     doc.rawResponse = remote as unknown as object;
-    return this.docs.save(doc);
+    const savedDoc = await this.docs.save(doc);
+    await this.syncOrderFiscalStatus(savedDoc);
+    return savedDoc;
   }
 
   async cancel(
@@ -427,7 +458,9 @@ export class ErpFiscalService {
 
     await this.plugnotas.cancel(doc.type, doc.plugnotasId);
     doc.status = 'cancelled';
-    return this.docs.save(doc);
+    const savedDoc = await this.docs.save(doc);
+    await this.syncOrderFiscalStatus(savedDoc);
+    return savedDoc;
   }
 
   async handleWebhook(payload: Record<string, unknown>): Promise<void> {
@@ -450,10 +483,32 @@ export class ErpFiscalService {
     doc.pdfUrl = typeof payload.pdf === 'string' ? payload.pdf : doc.pdfUrl;
     doc.rawResponse = payload;
     await this.docs.save(doc);
+    await this.syncOrderFiscalStatus(doc);
 
     this.logger.log(
       `Webhook PlugNotas: documento ${doc.id} atualizado para ${doc.status}.`,
     );
+  }
+
+  private async syncOrderFiscalStatus(doc: ErpFiscalDocument): Promise<void> {
+    if (!doc.salesOrderId) {
+      return;
+    }
+
+    const order = await this.orders.findOne({
+      where: {
+        id: doc.salesOrderId,
+        tenantId: doc.tenantId,
+        businessId: doc.businessId,
+      },
+    });
+    if (!order) {
+      return;
+    }
+
+    order.fiscalStatus = mapOrderFiscalStatus(doc.status);
+    order.fiscalDocumentType = doc.type;
+    await this.orders.save(order);
   }
 
   private assertEmitPrerequisites(

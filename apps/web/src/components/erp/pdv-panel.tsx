@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { erpFetch } from "@/lib/api-browser";
 import { cn } from "@/lib/cn";
+import { printSalesReceipt, RECEIPT_PAYMENT_OPTIONS } from "@/lib/erp-sales-receipt";
 import type { ErpListResponse } from "@/lib/erp-list";
 
 type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix" | "other";
@@ -34,8 +35,22 @@ type Line = {
   qty: number;
 };
 
-type SaleResult = {
+type SaleOrderDetail = {
   id: string;
+  status: "draft" | "confirmed" | "cancelled";
+  fiscalStatus: "none" | "pending" | "authorized" | "cancelled" | "error";
+  fiscalDocumentType: "nfce" | "nfe" | "nfse" | null;
+  paymentMethod: PaymentMethod | null;
+  totalAmount: string;
+  createdAt: string;
+  items?: Array<{
+    qty: string;
+    unitPrice: string;
+    product?: {
+      name: string;
+      sku: string;
+    } | null;
+  }>;
 };
 
 const fmt = new Intl.NumberFormat("pt-BR", {
@@ -43,13 +58,7 @@ const fmt = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
-const PAYMENT_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
-  { value: "cash", label: "Dinheiro" },
-  { value: "pix", label: "PIX" },
-  { value: "credit_card", label: "Cartao de credito" },
-  { value: "debit_card", label: "Cartao de debito" },
-  { value: "other", label: "Outro" },
-];
+const PAYMENT_OPTIONS = RECEIPT_PAYMENT_OPTIONS;
 
 function mapProduct(product: ApiProduct): Product {
   return {
@@ -74,6 +83,7 @@ export function PdvPanel() {
   const [isSaving, setIsSaving] = useState(false);
   const [saleError, setSaleError] = useState<string | null>(null);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [lastSale, setLastSale] = useState<SaleOrderDetail | null>(null);
   const [fiscalModalOpen, setFiscalModalOpen] = useState(false);
 
   useEffect(() => {
@@ -160,17 +170,27 @@ export function PdvPanel() {
   );
   const totalItems = lines.reduce((sum, line) => sum + line.qty, 0);
 
+  const printReceipt = useCallback(() => {
+    if (!lastSale) return;
+    const ok = printSalesReceipt(lastSale);
+    if (!ok) {
+      setSaleError("Nao foi possivel abrir a janela de impressao do recibo.");
+    }
+  }, [lastSale, setSaleError]);
+
   const finalizeSale = useCallback(async () => {
     if (lines.length === 0) return;
 
     setIsSaving(true);
     setSaleError(null);
     setLastSaleId(null);
+    setLastSale(null);
 
-    const createRes = await erpFetch<SaleResult>("/api/v1/erp/sales-orders", {
+    const createRes = await erpFetch<SaleOrderDetail>("/api/v1/erp/sales-orders", {
       method: "POST",
       body: JSON.stringify({
         source: "pdv",
+        paymentMethod,
         items: lines.map((line) => ({
           productId: line.product.id,
           qty: String(line.qty),
@@ -185,7 +205,7 @@ export function PdvPanel() {
       return;
     }
 
-    const confirmRes = await erpFetch<SaleResult>(
+    const confirmRes = await erpFetch<SaleOrderDetail>(
       `/api/v1/erp/sales-orders/${createRes.data.id}/status`,
       {
         method: "PATCH",
@@ -203,10 +223,10 @@ export function PdvPanel() {
     }
 
     setLastSaleId(confirmRes.data.id);
+    setLastSale(confirmRes.data);
     setLines([]);
     setIsSaving(false);
-    setFiscalModalOpen(true);
-  }, [lines]);
+  }, [lines, paymentMethod]);
 
   return (
     <>
@@ -240,11 +260,10 @@ export function PdvPanel() {
             </p>
             <p className="mt-2 flex items-center gap-2 text-lg font-bold text-marinha-900">
               <Badge tone="accent">PDV</Badge>
-              Venda confirmada + NFC-e
+              Venda confirmada com escolha fiscal
             </p>
             <p className="mt-1 text-sm text-marinha-500">
-              Finalize a venda, confirme o pedido e siga direto para a emissao
-              do cupom fiscal.
+              Registre a venda primeiro e depois decida se quer emitir NFC-e ou só imprimir um recibo não fiscal.
             </p>
           </Card>
         </div>
@@ -407,7 +426,18 @@ export function PdvPanel() {
                     >
                       Emitir NFC-e
                     </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="min-h-[36px]"
+                      onClick={() => printReceipt()}
+                    >
+                      Imprimir recibo
+                    </Button>
                   </div>
+                  <p className="text-[11px] text-green-800">
+                    A venda já está registrada no ERP. Emitir NFC-e agora é opcional.
+                  </p>
                 </div>
               )}
 
@@ -514,8 +544,7 @@ export function PdvPanel() {
               </div>
 
               <p className="mt-2 text-[11px] text-marinha-500">
-                Ao finalizar, o pedido e confirmado no ERP e fica pronto para
-                emitir NFC-e.
+                Ao finalizar, a venda é confirmada no ERP. Depois você pode emitir NFC-e ou usar apenas recibo não fiscal.
               </p>
             </Card>
           </aside>

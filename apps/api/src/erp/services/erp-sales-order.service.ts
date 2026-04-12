@@ -102,6 +102,9 @@ export class ErpSalesOrderService {
         totalAmount: dec(total),
         note: dto.note?.trim() || null,
         source,
+        paymentMethod: dto.paymentMethod ?? null,
+        fiscalStatus: 'none',
+        fiscalDocumentType: null,
         portalRequestId,
       });
       await em.save(order);

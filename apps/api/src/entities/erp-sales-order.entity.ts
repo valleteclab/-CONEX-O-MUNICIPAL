@@ -13,6 +13,12 @@ import { ErpParty } from './erp-party.entity';
 import { ErpSalesOrderItem } from './erp-sales-order-item.entity';
 
 export type ErpSalesOrderStatus = 'draft' | 'confirmed' | 'cancelled';
+export type ErpSalesOrderFiscalStatus =
+  | 'none'
+  | 'pending'
+  | 'authorized'
+  | 'cancelled'
+  | 'error';
 
 /** Origem do pedido: manual no ERP, PDV, vitrine do diretorio ou central de cotacoes. */
 export type ErpSalesOrderSource =
@@ -60,6 +66,15 @@ export class ErpSalesOrder {
 
   @Column({ type: 'varchar', length: 32, default: 'erp' })
   source!: ErpSalesOrderSource;
+
+  @Column({ name: 'payment_method', type: 'varchar', length: 24, nullable: true })
+  paymentMethod!: string | null;
+
+  @Column({ name: 'fiscal_status', type: 'varchar', length: 24, default: 'none' })
+  fiscalStatus!: ErpSalesOrderFiscalStatus;
+
+  @Column({ name: 'fiscal_document_type', type: 'varchar', length: 8, nullable: true })
+  fiscalDocumentType!: string | null;
 
   @Column({ name: 'portal_request_id', type: 'uuid', nullable: true })
   portalRequestId!: string | null;
