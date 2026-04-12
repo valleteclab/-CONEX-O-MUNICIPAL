@@ -43,6 +43,7 @@ export class ErpProductService {
       name: dto.name.trim(),
       description: dto.description?.trim() || null,
       barcode: dto.barcode?.trim() || null,
+      supplierCode: dto.supplierCode?.trim() || null,
       ncm: dto.ncm?.trim() || null,
       cest: dto.cest?.trim() || null,
       originCode: dto.originCode?.trim() || null,
@@ -88,6 +89,9 @@ export class ErpProductService {
     }
     if (dto.barcode !== undefined) {
       row.barcode = dto.barcode?.trim() || null;
+    }
+    if (dto.supplierCode !== undefined) {
+      row.supplierCode = dto.supplierCode?.trim() || null;
     }
     if (dto.ncm !== undefined) {
       row.ncm = dto.ncm?.trim() || null;

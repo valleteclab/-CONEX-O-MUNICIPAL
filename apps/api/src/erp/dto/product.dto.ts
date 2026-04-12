@@ -43,6 +43,12 @@ export class CreateErpProductDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(80)
+  supplierCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   @MaxLength(16)
   ncm?: string;
 
@@ -114,6 +120,12 @@ export class UpdateErpProductDto {
   @IsString()
   @MaxLength(32)
   barcode?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  supplierCode?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()

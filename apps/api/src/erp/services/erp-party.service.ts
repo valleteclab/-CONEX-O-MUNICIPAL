@@ -53,6 +53,60 @@ export class ErpPartyService {
     );
   }
 
+  async upsertSupplierFromImport(
+    business: ErpBusiness,
+    input: {
+      name: string;
+      legalName?: string | null;
+      document: string;
+      phone?: string | null;
+      stateRegistration?: string | null;
+      address?: Record<string, unknown>;
+      notes?: string | null;
+    },
+  ): Promise<ErpParty> {
+    const normalized = normalizeFiscalDocument(input.document);
+    if (!normalized) {
+      throw new NotFoundException('Documento do fornecedor ausente no XML');
+    }
+
+    const existing = await this.parties.findOne({
+      where: {
+        businessId: business.id,
+        tenantId: business.tenantId,
+        document: normalized,
+      },
+    });
+
+    if (existing) {
+      existing.type =
+        existing.type === 'customer' ? 'both' : existing.type ?? 'supplier';
+      existing.name = input.name.trim() || existing.name;
+      existing.legalName = input.legalName?.trim() || existing.legalName;
+      existing.phone = input.phone?.trim() || existing.phone;
+      existing.stateRegistration =
+        input.stateRegistration?.trim() || existing.stateRegistration;
+      existing.address =
+        input.address && Object.keys(input.address).length
+          ? { ...(existing.address ?? {}), ...input.address }
+          : existing.address;
+      existing.notes = input.notes?.trim() || existing.notes;
+      existing.isActive = true;
+      return this.parties.save(existing);
+    }
+
+    return this.create(business, {
+      type: 'supplier',
+      name: input.name.trim(),
+      legalName: input.legalName?.trim() || undefined,
+      document: normalized,
+      phone: input.phone?.trim() || undefined,
+      stateRegistration: input.stateRegistration?.trim() || undefined,
+      address: input.address ?? {},
+      notes: input.notes?.trim() || undefined,
+    });
+  }
+
   async create(business: ErpBusiness, dto: CreateErpPartyDto): Promise<ErpParty> {
     const row = this.parties.create({
       tenantId: business.tenantId,

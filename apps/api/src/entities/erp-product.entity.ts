@@ -41,6 +41,9 @@ export class ErpProduct {
   @Column({ type: 'varchar', length: 32, nullable: true })
   barcode: string | null;
 
+  @Column({ name: 'supplier_code', type: 'varchar', length: 80, nullable: true })
+  supplierCode: string | null;
+
   @Column({ type: 'varchar', length: 16, nullable: true })
   ncm: string | null;
 

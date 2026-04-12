@@ -27,6 +27,8 @@ export * from './erp-cash-entry.entity';
 export * from './erp-fiscal-document.entity';
 export * from './platform-setting.entity';
 export * from './erp-product-classification-job.entity';
+export * from './erp-product-xml-import.entity';
+export * from './erp-product-xml-import-item.entity';
 export * from './quotation-request.entity';
 export * from './quotation-response.entity';
 export * from './ibge-city.entity';

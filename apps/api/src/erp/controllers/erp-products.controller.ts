@@ -18,7 +18,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../entities/user.entity';
 import { CreateErpProductDto, UpdateErpProductDto } from '../dto/product.dto';
 import { CreateProductClassificationJobDto } from '../dto/product-classification-job.dto';
+import {
+  ApplyProductXmlImportDto,
+  CreateProductXmlImportDto,
+} from '../dto/product-xml-import.dto';
 import { ErpProductService } from '../services/erp-product.service';
+import { ErpProductXmlImportService } from '../services/erp-product-xml-import.service';
 
 @ApiTags('erp — produtos')
 @Controller('erp/products')
@@ -26,7 +31,10 @@ import { ErpProductService } from '../services/erp-product.service';
 @ApiBearerAuth()
 @ApiHeader({ name: 'X-Business-Id', required: true })
 export class ErpProductsController {
-  constructor(private readonly svc: ErpProductService) {}
+  constructor(
+    private readonly svc: ErpProductService,
+    private readonly xmlImports: ErpProductXmlImportService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar produtos (requer X-Business-Id)' })
@@ -47,6 +55,43 @@ export class ErpProductsController {
     @Body() dto: CreateErpProductDto,
   ) {
     return this.svc.create(business, dto);
+  }
+
+  @Post('xml-imports')
+  @ApiOperation({ summary: 'Importar XML de NF-e de entrada para conciliacao de produtos' })
+  createXmlImport(
+    @SelectedBusiness() business: ErpBusiness,
+    @Body() dto: CreateProductXmlImportDto,
+  ) {
+    return this.xmlImports.createFromXml(business, dto.xmlContent);
+  }
+
+  @Get('xml-imports/:id')
+  @ApiOperation({ summary: 'Detalhar importacao XML de produtos' })
+  getXmlImport(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.xmlImports.findOne(business, id);
+  }
+
+  @Post('xml-imports/:id/apply')
+  @ApiOperation({ summary: 'Aplicar conciliacao da importacao XML no catalogo' })
+  applyXmlImport(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ApplyProductXmlImportDto,
+  ) {
+    return this.xmlImports.apply(business, id, dto);
+  }
+
+  @Post('xml-imports/:id/create-purchase-order')
+  @ApiOperation({ summary: 'Gerar pedido de compra em rascunho a partir da importacao XML' })
+  createPurchaseOrderFromXmlImport(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.xmlImports.createPurchaseOrder(business, id);
   }
 
   @Get(':id')

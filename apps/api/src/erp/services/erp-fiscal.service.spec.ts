@@ -14,6 +14,7 @@ describe('ErpFiscalService', () => {
   };
   let orders: {
     findOne: jest.Mock;
+    save: jest.Mock;
   };
   let businesses: {
     update: jest.Mock;
@@ -40,6 +41,7 @@ describe('ErpFiscalService', () => {
     };
     orders = {
       findOne: jest.fn(),
+      save: jest.fn(async (order) => order),
     };
     businesses = {
       update: jest.fn(async () => undefined),

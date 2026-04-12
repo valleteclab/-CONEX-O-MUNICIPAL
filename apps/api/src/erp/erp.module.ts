@@ -21,6 +21,8 @@ import { ErpAccountPayable } from '../entities/erp-account-payable.entity';
 import { ErpCashEntry } from '../entities/erp-cash-entry.entity';
 import { ErpFiscalDocument } from '../entities/erp-fiscal-document.entity';
 import { ErpProductClassificationJob } from '../entities/erp-product-classification-job.entity';
+import { ErpProductXmlImport } from '../entities/erp-product-xml-import.entity';
+import { ErpProductXmlImportItem } from '../entities/erp-product-xml-import-item.entity';
 import { IbgeCity } from '../entities/ibge-city.entity';
 import { DirectoryListing } from '../entities/directory-listing.entity';
 import { Tenant } from '../entities/tenant.entity';
@@ -45,6 +47,7 @@ import { IbgeCityService } from './services/ibge-city.service';
 import { ErpPublicSignupService } from './services/erp-public-signup.service';
 import { BusinessSegmentPresetService } from './services/business-segment-preset.service';
 import { ErpProductService } from './services/erp-product.service';
+import { ErpProductXmlImportService } from './services/erp-product-xml-import.service';
 import { ErpPartyService } from './services/erp-party.service';
 import { ErpStockService } from './services/erp-stock.service';
 import { ErpSalesOrderService } from './services/erp-sales-order.service';
@@ -83,6 +86,8 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
       ErpCashEntry,
       ErpFiscalDocument,
       ErpProductClassificationJob,
+      ErpProductXmlImport,
+      ErpProductXmlImportItem,
       DirectoryListing,
       Tenant,
       User,
@@ -113,6 +118,7 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
     OpenRouterService,
     ErpBusinessService,
     ErpProductService,
+    ErpProductXmlImportService,
     ErpProductClassificationWorker,
     ErpPartyService,
     ErpStockService,
