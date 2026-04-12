@@ -79,7 +79,7 @@ export function ErpTopNav() {
 
   return (
     <div className="sticky top-0 z-40 mb-6 border-b border-marinha-900/8 bg-white/92 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 px-4 py-3 lg:px-6">
+      <div className="flex w-full flex-col gap-4 px-3 py-3 lg:px-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-municipal-600 text-lg font-bold text-white shadow-sm">
@@ -160,7 +160,7 @@ export function ErpTopNav() {
                   </button>
 
                   {openGroup === group.key ? (
-                    <div className="absolute left-0 top-[calc(100%+0.75rem)] w-[min(92vw,720px)] rounded-card border border-marinha-900/8 bg-white p-5 shadow-2xl">
+                    <div className="absolute left-0 top-[calc(100%+0.75rem)] w-[min(96vw,760px)] rounded-card border border-marinha-900/8 bg-white p-5 shadow-2xl">
                       <div className="grid gap-4 md:grid-cols-2">
                         {group.items.map((item) => {
                           const itemActive = isActive(pathname, item.href, item.exact);

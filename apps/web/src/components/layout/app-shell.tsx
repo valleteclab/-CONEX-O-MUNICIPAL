@@ -50,6 +50,10 @@ function isAuthPath(pathname: string) {
   return authPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
+function isErpPath(pathname: string) {
+  return pathname === "/erp" || pathname.startsWith("/erp/");
+}
+
 function AuthFooter() {
   return (
     <footer className="border-t border-marinha-900/8 px-4 py-6 text-center text-sm text-marinha-500 sm:px-6 lg:px-8">
@@ -62,6 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const authPage = isAuthPath(pathname);
+  const erpPage = isErpPath(pathname);
 
   return (
     <div
@@ -196,13 +201,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           "w-full flex-1",
           authPage
             ? "mx-auto flex max-w-6xl items-start px-4 py-10 sm:px-6 sm:py-14 lg:px-8"
-            : "px-4 py-8 sm:px-6 sm:py-10 lg:px-8",
+            : erpPage
+              ? "px-0 py-0"
+              : "px-4 py-8 sm:px-6 sm:py-10 lg:px-8",
         )}
       >
         {children}
       </main>
 
-      {authPage ? <AuthFooter /> : <SiteFooter />}
+      {authPage ? <AuthFooter /> : erpPage ? null : <SiteFooter />}
     </div>
   );
 }
