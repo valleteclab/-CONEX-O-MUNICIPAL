@@ -184,6 +184,24 @@ function buildDecision(item: ImportItem): ImportDecision {
   };
 }
 
+function importFieldLabel(
+  key: keyof ImportDecision["createProduct"],
+): string {
+  return {
+    sku: "SKU",
+    unit: "Unidade",
+    name: "Nome do produto",
+    supplierCode: "Codigo do fornecedor",
+    barcode: "Codigo de barras",
+    ncm: "NCM",
+    cest: "CEST",
+    cfopDefault: "CFOP padrao",
+    originCode: "Origem",
+    cost: "Custo",
+    price: "Preco de venda",
+  }[key];
+}
+
 const balanceColumns: ErpColumn<StockBalance>[] = [
   {
     key: "product",
@@ -651,6 +669,7 @@ export default function ErpEstoquePage() {
         onSubmit={() => void handleImportSubmit()}
         isSubmitting={isImportSubmitting || isImportApplying}
         submitLabel={importSubmitLabel}
+        size="wide"
       >
         {importStep === 1 ? (
           <>
@@ -732,7 +751,7 @@ export default function ErpEstoquePage() {
               </p>
             </div>
 
-            <div className="max-h-[52vh] space-y-3 overflow-y-auto pr-1">
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
               {xmlImport.items.map((item) => {
                 const decision = importDecisions[item.id];
                 return (
@@ -794,31 +813,21 @@ export default function ErpEstoquePage() {
                     ) : null}
 
                     {decision?.action === "create" ? (
-                      <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {(["sku", "unit", "name", "supplierCode", "barcode", "ncm", "cest", "cfopDefault", "originCode", "cost", "price"] as const).map(
                           (fieldKey) => (
-                            <input
-                              key={fieldKey}
-                              type={fieldKey === "cost" || fieldKey === "price" ? "number" : "text"}
-                              value={decision.createProduct[fieldKey]}
-                              onChange={(event) => setDecisionDraftField(item.id, fieldKey, event.target.value)}
-                              placeholder={
-                                {
-                                  sku: "SKU",
-                                  unit: "Unidade",
-                                  name: "Nome do produto",
-                                  supplierCode: "Codigo do fornecedor",
-                                  barcode: "Codigo de barras",
-                                  ncm: "NCM",
-                                  cest: "CEST",
-                                  cfopDefault: "CFOP padrao",
-                                  originCode: "Origem",
-                                  cost: "Custo",
-                                  price: "Preco de venda",
-                                }[fieldKey]
-                              }
-                              className={`rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500 ${fieldKey === "name" ? "col-span-2" : ""}`}
-                            />
+                            <div key={fieldKey} className={fieldKey === "name" ? "md:col-span-2 xl:col-span-3" : ""}>
+                              <label className="mb-1 block text-xs font-medium text-marinha-700">
+                                {importFieldLabel(fieldKey)}
+                              </label>
+                              <input
+                                type={fieldKey === "cost" || fieldKey === "price" ? "number" : "text"}
+                                value={decision.createProduct[fieldKey]}
+                                onChange={(event) => setDecisionDraftField(item.id, fieldKey, event.target.value)}
+                                placeholder={importFieldLabel(fieldKey)}
+                                className="w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+                              />
+                            </div>
                           ),
                         )}
                       </div>

@@ -9,6 +9,7 @@ type ErpFormModalProps = {
   onSubmit: () => void;
   isSubmitting?: boolean;
   submitLabel?: string;
+  size?: "default" | "wide" | "full";
   children: ReactNode;
 };
 
@@ -19,6 +20,7 @@ export function ErpFormModal({
   onSubmit,
   isSubmitting = false,
   submitLabel = "Salvar",
+  size = "default",
   children,
 }: ErpFormModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -44,7 +46,9 @@ export function ErpFormModal({
   return (
     <dialog
       ref={dialogRef}
-      className="w-full max-w-lg rounded-btn bg-white p-0 shadow-xl backdrop:bg-black/40"
+      className={`w-full rounded-btn bg-white p-0 shadow-xl backdrop:bg-black/40 ${
+        size === "full" ? "max-w-[min(96vw,1320px)]" : size === "wide" ? "max-w-[min(94vw,1040px)]" : "max-w-lg"
+      }`}
       onClick={(e) => {
         if (e.target === dialogRef.current) onClose();
       }}
