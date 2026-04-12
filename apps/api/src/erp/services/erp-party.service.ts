@@ -27,6 +27,32 @@ export class ErpPartyService {
     return { items, total };
   }
 
+  async findByDocument(
+    business: ErpBusiness,
+    document: string,
+  ): Promise<ErpParty | null> {
+    const normalized = normalizeFiscalDocument(document);
+    if (!normalized) {
+      return null;
+    }
+
+    const rows = await this.parties.find({
+      where: {
+        businessId: business.id,
+        tenantId: business.tenantId,
+        document: normalized,
+        isActive: true,
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    return (
+      rows.find((row) => row.type === 'customer' || row.type === 'both') ??
+      rows[0] ??
+      null
+    );
+  }
+
   async create(business: ErpBusiness, dto: CreateErpPartyDto): Promise<ErpParty> {
     const row = this.parties.create({
       tenantId: business.tenantId,

@@ -20,6 +20,10 @@ export type ReceiptOrder = {
   createdAt: string;
   totalAmount: string;
   paymentMethod: ReceiptPaymentMethod;
+  party?: {
+    name: string;
+    document?: string | null;
+  } | null;
   items?: ReceiptOrderItem[];
 };
 
@@ -64,6 +68,8 @@ export function printSalesReceipt(order: ReceiptOrder): boolean {
   const paymentLabel =
     RECEIPT_PAYMENT_OPTIONS.find((option) => option.value === order.paymentMethod)?.label ??
     "Nao informado";
+  const customerLabel = order.party?.name?.trim() || "Consumidor final";
+  const customerDocument = order.party?.document?.trim() || null;
 
   receiptWindow.document.write(`
     <html>
@@ -75,6 +81,8 @@ export function printSalesReceipt(order: ReceiptOrder): boolean {
         <h2 style="margin:0 0 8px;">Comprovante de venda</h2>
         <p style="margin:0 0 4px;"><strong>Pedido:</strong> ${order.id.slice(0, 8).toUpperCase()}</p>
         <p style="margin:0 0 4px;"><strong>Emitido em:</strong> ${new Date(order.createdAt).toLocaleString("pt-BR")}</p>
+        <p style="margin:0 0 4px;"><strong>Cliente:</strong> ${customerLabel}</p>
+        ${customerDocument ? `<p style="margin:0 0 4px;"><strong>CPF/CNPJ:</strong> ${customerDocument}</p>` : ""}
         <p style="margin:0 0 12px;"><strong>Natureza:</strong> Recibo nao fiscal, sem validade tributaria.</p>
         <p style="margin:0 0 12px;"><strong>Pagamento:</strong> ${paymentLabel}</p>
         <table style="width:100%; border-collapse:collapse; font-size:12px;">

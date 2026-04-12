@@ -27,6 +27,15 @@ export class ErpPartiesController {
     return this.svc.list(business, take, skip);
   }
 
+  @Get('lookup-by-document')
+  @ApiOperation({ summary: 'Buscar cliente/fornecedor por CPF ou CNPJ' })
+  findByDocument(
+    @SelectedBusiness() business: ErpBusiness,
+    @Query('document') document?: string,
+  ) {
+    return this.svc.findByDocument(business, document ?? '');
+  }
+
   @Post()
   @ApiOperation({ summary: 'Cadastrar cliente ou fornecedor' })
   create(

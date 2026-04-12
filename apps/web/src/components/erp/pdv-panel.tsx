@@ -12,6 +12,7 @@ import { printSalesReceipt, RECEIPT_PAYMENT_OPTIONS } from "@/lib/erp-sales-rece
 import type { ErpListResponse } from "@/lib/erp-list";
 
 type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix" | "other";
+type CustomerMode = "consumer" | "cpf";
 
 type ApiProduct = {
   id: string;
@@ -35,6 +36,14 @@ type Line = {
   qty: number;
 };
 
+type PartySummary = {
+  id: string;
+  name: string;
+  document: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
+
 type SaleOrderDetail = {
   id: string;
   status: "draft" | "confirmed" | "cancelled";
@@ -43,6 +52,7 @@ type SaleOrderDetail = {
   paymentMethod: PaymentMethod | null;
   totalAmount: string;
   createdAt: string;
+  party?: PartySummary | null;
   items?: Array<{
     qty: string;
     unitPrice: string;
@@ -59,6 +69,18 @@ const fmt = new Intl.NumberFormat("pt-BR", {
 });
 
 const PAYMENT_OPTIONS = RECEIPT_PAYMENT_OPTIONS;
+
+function normalizeDocument(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function formatCpf(value: string) {
+  const digits = normalizeDocument(value).slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
 
 function mapProduct(product: ApiProduct): Product {
   return {
@@ -78,6 +100,14 @@ export function PdvPanel() {
   const [query, setQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [customerMode, setCustomerMode] = useState<CustomerMode>("consumer");
+  const [customerDocument, setCustomerDocument] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<PartySummary | null>(null);
+  const [customerLookupMessage, setCustomerLookupMessage] = useState<string | null>(null);
+  const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
+  const [quickCustomerName, setQuickCustomerName] = useState("");
+  const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -178,8 +208,110 @@ export function PdvPanel() {
     }
   }, [lastSale, setSaleError]);
 
+  const lookupCustomerByDocument = useCallback(async () => {
+    const normalized = normalizeDocument(customerDocument);
+    if (normalized.length !== 11) {
+      setSelectedCustomer(null);
+      setCustomerLookupMessage("Informe um CPF com 11 numeros.");
+      return null;
+    }
+
+    setIsLookingUpCustomer(true);
+    setCustomerLookupMessage(null);
+
+    const res = await erpFetch<PartySummary | null>(
+      `/api/v1/erp/parties/lookup-by-document?document=${normalized}`,
+    );
+
+    setIsLookingUpCustomer(false);
+
+    if (!res.ok) {
+      setSelectedCustomer(null);
+      setCustomerLookupMessage(res.error ?? "Nao foi possivel buscar o CPF.");
+      return null;
+    }
+
+    if (res.data) {
+      setSelectedCustomer(res.data);
+      setQuickCustomerName(res.data.name);
+      setQuickCustomerPhone(res.data.phone ?? "");
+      setCustomerLookupMessage(`Cliente encontrado: ${res.data.name}.`);
+      return res.data;
+    }
+
+    setSelectedCustomer(null);
+    setQuickCustomerName("");
+    setCustomerLookupMessage("CPF nao encontrado. Cadastre rapidamente para identificar a venda.");
+    return null;
+  }, [customerDocument]);
+
+  const createQuickCustomer = useCallback(async () => {
+    const normalized = normalizeDocument(customerDocument);
+    if (normalized.length !== 11) {
+      setCustomerLookupMessage("Informe um CPF com 11 numeros.");
+      return null;
+    }
+    if (quickCustomerName.trim().length < 2) {
+      setCustomerLookupMessage("Informe o nome do cliente para o cadastro rapido.");
+      return null;
+    }
+
+    setIsCreatingCustomer(true);
+    setCustomerLookupMessage(null);
+
+    const res = await erpFetch<PartySummary>("/api/v1/erp/parties", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "customer",
+        name: quickCustomerName.trim(),
+        document: normalized,
+        phone: quickCustomerPhone.trim() || undefined,
+        taxpayerType: "final_consumer",
+      }),
+    });
+
+    setIsCreatingCustomer(false);
+
+    if (!res.ok || !res.data) {
+      setCustomerLookupMessage(res.error ?? "Nao foi possivel criar o cliente rapidamente.");
+      return null;
+    }
+
+    setSelectedCustomer(res.data);
+    setQuickCustomerName(res.data.name);
+    setQuickCustomerPhone(res.data.phone ?? "");
+    setCustomerLookupMessage(`Cliente cadastrado: ${res.data.name}.`);
+    return res.data;
+  }, [customerDocument, quickCustomerName, quickCustomerPhone]);
+
   const finalizeSale = useCallback(async () => {
     if (lines.length === 0) return;
+
+    let partyId: string | undefined;
+
+    if (customerMode === "cpf") {
+      const normalized = normalizeDocument(customerDocument);
+      if (normalized.length !== 11) {
+        setSaleError("Informe um CPF valido ou escolha a opcao consumidor final.");
+        return;
+      }
+
+      let customer = selectedCustomer;
+      if (!customer || normalizeDocument(customer.document ?? "") !== normalized) {
+        customer = await lookupCustomerByDocument();
+      }
+
+      if (!customer) {
+        customer = await createQuickCustomer();
+      }
+
+      if (!customer) {
+        setSaleError("Nao foi possivel identificar o cliente pelo CPF informado.");
+        return;
+      }
+
+      partyId = customer.id;
+    }
 
     setIsSaving(true);
     setSaleError(null);
@@ -191,6 +323,7 @@ export function PdvPanel() {
       body: JSON.stringify({
         source: "pdv",
         paymentMethod,
+        partyId,
         items: lines.map((line) => ({
           productId: line.product.id,
           qty: String(line.qty),
@@ -226,7 +359,15 @@ export function PdvPanel() {
     setLastSale(confirmRes.data);
     setLines([]);
     setIsSaving(false);
-  }, [lines, paymentMethod]);
+  }, [
+    createQuickCustomer,
+    customerDocument,
+    customerMode,
+    lines,
+    lookupCustomerByDocument,
+    paymentMethod,
+    selectedCustomer,
+  ]);
 
   return (
     <>
@@ -306,6 +447,156 @@ export function PdvPanel() {
             </select>
           </div>
         </div>
+
+        <Card>
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">
+                Identificacao do comprador
+              </p>
+              <p className="mt-1 text-sm text-marinha-500">
+                Escolha se a venda vai como consumidor final ou com CPF identificado no caixa.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerMode("consumer");
+                  setSelectedCustomer(null);
+                  setCustomerLookupMessage("Venda sem CPF: consumidor final.");
+                }}
+                className={cn(
+                  "focus-ring rounded-btn border px-3 py-3 text-left text-sm font-semibold transition-colors",
+                  customerMode === "consumer"
+                    ? "border-municipal-600 bg-municipal-600 text-white"
+                    : "border-marinha-900/10 bg-white text-marinha-700 hover:border-municipal-600/35 hover:text-municipal-800",
+                )}
+              >
+                Consumidor final
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerMode("cpf");
+                  setCustomerLookupMessage(null);
+                }}
+                className={cn(
+                  "focus-ring rounded-btn border px-3 py-3 text-left text-sm font-semibold transition-colors",
+                  customerMode === "cpf"
+                    ? "border-municipal-600 bg-municipal-600 text-white"
+                    : "border-marinha-900/10 bg-white text-marinha-700 hover:border-municipal-600/35 hover:text-municipal-800",
+                )}
+              >
+                Informar CPF
+              </button>
+            </div>
+
+            {customerMode === "cpf" ? (
+              <div className="grid gap-3 md:grid-cols-[1.1fr,auto]">
+                <div>
+                  <label
+                    htmlFor="pdv-customer-document"
+                    className="mb-1 block text-xs font-semibold text-marinha-600"
+                  >
+                    CPF do cliente
+                  </label>
+                  <Input
+                    id="pdv-customer-document"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="000.000.000-00"
+                    value={customerDocument}
+                    onChange={(event) => {
+                      setCustomerDocument(formatCpf(event.target.value));
+                      setSelectedCustomer(null);
+                      setCustomerLookupMessage(null);
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="md:self-end"
+                  disabled={isLookingUpCustomer}
+                  onClick={() => void lookupCustomerByDocument()}
+                >
+                  {isLookingUpCustomer ? "Buscando..." : "Buscar CPF"}
+                </Button>
+              </div>
+            ) : null}
+
+            {customerMode === "cpf" && selectedCustomer ? (
+              <div className="rounded-btn border border-green-200 bg-green-50 px-3 py-3 text-sm text-green-800">
+                <p className="font-semibold">{selectedCustomer.name}</p>
+                <p className="mt-1">
+                  CPF identificado: {selectedCustomer.document ?? normalizeDocument(customerDocument)}
+                </p>
+              </div>
+            ) : null}
+
+            {customerMode === "cpf" && !selectedCustomer && normalizeDocument(customerDocument).length === 11 ? (
+              <div className="grid gap-3 rounded-btn border border-marinha-900/10 bg-white/80 p-3 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <p className="text-sm font-semibold text-marinha-900">Cadastro rapido</p>
+                  <p className="mt-1 text-xs text-marinha-500">
+                    Se o CPF nao existir ainda, cadastre o cliente em poucos segundos e finalize a venda.
+                  </p>
+                </div>
+                <div>
+                  <label
+                    htmlFor="pdv-quick-customer-name"
+                    className="mb-1 block text-xs font-semibold text-marinha-600"
+                  >
+                    Nome do cliente
+                  </label>
+                  <Input
+                    id="pdv-quick-customer-name"
+                    placeholder="Nome completo"
+                    value={quickCustomerName}
+                    onChange={(event) => setQuickCustomerName(event.target.value)}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="pdv-quick-customer-phone"
+                    className="mb-1 block text-xs font-semibold text-marinha-600"
+                  >
+                    Telefone
+                  </label>
+                  <Input
+                    id="pdv-quick-customer-phone"
+                    inputMode="tel"
+                    placeholder="Opcional"
+                    value={quickCustomerPhone}
+                    onChange={(event) => setQuickCustomerPhone(event.target.value)}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isCreatingCustomer}
+                    onClick={() => void createQuickCustomer()}
+                  >
+                    {isCreatingCustomer ? "Cadastrando..." : "Cadastrar cliente rapido"}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            <p className="text-xs text-marinha-500">
+              {customerMode === "consumer"
+                ? "Sem CPF informado, a venda fica como consumidor final."
+                : "Com CPF informado, o recibo e a NFC-e podem sair identificados com o cliente."}
+            </p>
+
+            {customerLookupMessage ? (
+              <p className="text-xs text-marinha-600">{customerLookupMessage}</p>
+            ) : null}
+          </div>
+        </Card>
 
         <div
           className={cn(
