@@ -12,6 +12,7 @@ import { DirectoryModule } from './directory/directory.module';
 import { ErpModule } from './erp/erp.module';
 import { PlatformModule } from './platform/platform.module';
 import { QuotationsModule } from './quotations/quotations.module';
+import { SupportModule } from './support/support.module';
 import { UsersModule } from './users/users.module';
 import {
   AcademyBadgeDefinition,
@@ -144,6 +145,7 @@ import {
     DirectoryModule,
     QuotationsModule,
     PlatformModule,
+    SupportModule,
     UsersModule,
     ErpModule,
   ],

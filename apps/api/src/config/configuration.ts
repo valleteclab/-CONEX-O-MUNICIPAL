@@ -44,4 +44,19 @@ export default () => ({
     openrouterBaseUrl:
       process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
   },
+  support: {
+    adminUsername: process.env.SUPPORT_ADMIN_USERNAME ?? '',
+    adminPassword: process.env.SUPPORT_ADMIN_PASSWORD ?? '',
+    sessionSecret:
+      process.env.SUPPORT_ADMIN_SESSION_SECRET ?? 'support-dev-only-change-me',
+    sessionExpires:
+      process.env.SUPPORT_ADMIN_SESSION_EXPIRES ?? '8h',
+  },
+  integrations: {
+    whatsappBaseUrl: process.env.WHATSAPP_API_BASE_URL ?? '',
+    whatsappApiToken: process.env.WHATSAPP_API_TOKEN ?? '',
+    whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? '',
+    whatsappBusinessAccountId:
+      process.env.WHATSAPP_BUSINESS_ACCOUNT_ID ?? '',
+  },
 });

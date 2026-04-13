@@ -1,5 +1,6 @@
 import { getPublicApiBaseUrl } from "./api-public";
 import { getAccessToken, getBusinessId, getTenantId } from "./auth-storage";
+import { getSupportToken } from "./support-auth-storage";
 
 function formatApiError(data: unknown, raw: string, statusText: string): string {
   if (data && typeof data === "object" && data !== null) {
@@ -89,6 +90,23 @@ export async function erpFetch<T>(
     headers: {
       ...(businessId ? { "X-Business-Id": businessId } : {}),
       ...(headers ?? {}),
+    },
+  });
+}
+
+export async function supportFetch<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ ok: boolean; data?: T; error?: string; status: number }> {
+  const token = getSupportToken();
+  if (!token) {
+    return { ok: false, status: 401, error: "Sessão de suporte expirada." };
+  }
+  return apiFetch<T>(path, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(init?.headers ?? {}),
     },
   });
 }
