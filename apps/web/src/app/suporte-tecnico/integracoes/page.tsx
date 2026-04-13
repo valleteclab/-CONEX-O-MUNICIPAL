@@ -71,10 +71,10 @@ export default function SupportIntegrationsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
           Integrações
         </p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">Monitoramento e testes</h1>
+        <h1 className="mt-2 text-3xl font-semibold text-marinha-900">Monitoramento e testes</h1>
       </div>
 
       {error ? <Card><p className="text-sm text-red-700">{error}</p></Card> : null}
@@ -83,27 +83,27 @@ export default function SupportIntegrationsPage() {
         {integrations.map((integration) => (
           <Card
             key={integration.integrationKey}
-            className="rounded-[24px] border border-white/10 bg-slate-900/80 p-6 text-slate-100"
+            className="rounded-[24px] border border-marinha-900/8 bg-white/92 p-6 text-marinha-900"
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-2xl font-semibold">{integration.label}</h2>
                   <Badge tone={toneForStatus(integration.status)}>{integration.status}</Badge>
-                  <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <span className="text-xs uppercase tracking-[0.2em] text-marinha-500">
                     {integration.environment}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-slate-300">{integration.summary}</p>
+                <p className="mt-3 text-sm leading-relaxed text-marinha-600">{integration.summary}</p>
                 <div className="mt-4 grid gap-2">
                   {integration.details.map((detail) => (
-                    <div key={detail} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <div key={detail} className="rounded-2xl border border-marinha-900/8 bg-surface px-4 py-3 text-sm text-marinha-700">
                       {detail}
                     </div>
                   ))}
                 </div>
                 {messages[integration.integrationKey] ? (
-                  <p className="mt-4 text-sm text-teal-300">{messages[integration.integrationKey]}</p>
+                  <p className="mt-4 text-sm text-municipal-700">{messages[integration.integrationKey]}</p>
                 ) : null}
               </div>
 

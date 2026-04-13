@@ -26,6 +26,21 @@ type OpenRouterChatResponse = {
   }>;
 };
 
+type OpenRouterModelResponse = {
+  data?: Array<{
+    id?: string;
+    name?: string;
+    context_length?: number;
+    pricing?: {
+      prompt?: string;
+      completion?: string;
+    };
+    top_provider?: {
+      context_length?: number;
+    };
+  }>;
+};
+
 @Injectable()
 export class OpenRouterService {
   private readonly logger = new Logger(OpenRouterService.name);
@@ -44,6 +59,14 @@ export class OpenRouterService {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.apiKey}`,
     };
+  }
+
+  private authHeaders(): Record<string, string> {
+    return this.apiKey
+      ? {
+          Authorization: `Bearer ${this.apiKey}`,
+        }
+      : {};
   }
 
   private async request<T>(path: string, body: object): Promise<T> {
@@ -79,6 +102,33 @@ export class OpenRouterService {
     }
   }
 
+  private async get<T>(path: string): Promise<T> {
+    const url = `${this.baseUrl.replace(/\/+$/, '')}${path}`;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: 'GET',
+        headers: this.authHeaders(),
+      });
+    } catch (err) {
+      this.logger.warn(`OpenRouter network error: ${(err as Error).message}`);
+      throw new BadGatewayException('Falha de comunicacao com o provedor de IA');
+    }
+
+    const text = await res.text().catch(() => '');
+    if (!res.ok) {
+      this.logger.warn(`OpenRouter ${res.status}: ${text}`);
+      throw new BadGatewayException(
+        `OpenRouter retornou ${res.status} ao consultar modelos.`,
+      );
+    }
+    try {
+      return (text ? JSON.parse(text) : {}) as T;
+    } catch {
+      return text as unknown as T;
+    }
+  }
+
   async chatJson(params: {
     model: string;
     messages: OpenRouterChatMessage[];
@@ -104,6 +154,39 @@ export class OpenRouterService {
       json = null;
     }
     return { rawId: res.id, json, text: content };
+  }
+
+  async listModels(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      contextLength: number | null;
+      promptPrice: string | null;
+      completionPrice: string | null;
+    }>
+  > {
+    const response = await this.get<OpenRouterModelResponse>('/models');
+    return (response.data ?? [])
+      .filter((model) => typeof model.id === 'string' && model.id.trim())
+      .map((model) => ({
+        id: model.id!.trim(),
+        name: model.name?.trim() || model.id!.trim(),
+        contextLength:
+          typeof model.context_length === 'number'
+            ? model.context_length
+            : typeof model.top_provider?.context_length === 'number'
+              ? model.top_provider.context_length
+              : null,
+        promptPrice:
+          typeof model.pricing?.prompt === 'string'
+            ? model.pricing.prompt
+            : null,
+        completionPrice:
+          typeof model.pricing?.completion === 'string'
+            ? model.pricing.completion
+            : null,
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id));
   }
 }
 

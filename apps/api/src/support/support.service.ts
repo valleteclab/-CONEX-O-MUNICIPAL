@@ -1,11 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { ErpBusiness } from '../entities/erp-business.entity';
 import { ErpFiscalDocument } from '../entities/erp-fiscal-document.entity';
+import { RefreshToken } from '../entities/refresh-token.entity';
+import { User } from '../entities/user.entity';
+import { OpenRouterService } from '../erp/services/openrouter.service';
 import { PlatformSettingsService } from '../platform/platform-settings.service';
 import { UpdateErpProductClassifierSettingDto } from '../platform/dto/update-erp-product-classifier-setting.dto';
+import { UpdateSupportUserDto } from './dto/update-support-user.dto';
 
 export type SupportIntegrationKey = 'plugnotas' | 'whatsapp';
 export type SupportIntegrationStatusKind =
@@ -52,7 +61,24 @@ export type SupportDashboardPayload = {
     activeBusinesses: number;
   };
   integrations: SupportIntegrationStatus[];
+  users: {
+    total: number;
+    online: number;
+  };
   quickActions: { key: string; label: string; target: string }[];
+};
+
+export type SupportUserSummary = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  lastLogin: string | null;
+  online: boolean;
+  activeSessionCount: number;
 };
 
 @Injectable()
@@ -60,18 +86,25 @@ export class SupportService {
   constructor(
     private readonly config: ConfigService,
     private readonly platformSettings: PlatformSettingsService,
+    private readonly openrouter: OpenRouterService,
     @InjectRepository(ErpFiscalDocument)
     private readonly fiscalDocs: Repository<ErpFiscalDocument>,
     @InjectRepository(ErpBusiness)
     private readonly businesses: Repository<ErpBusiness>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokens: Repository<RefreshToken>,
   ) {}
 
   async getDashboard(): Promise<SupportDashboardPayload> {
-    const [ai, integrations, plugnotasCounts, activeBusinesses] = await Promise.all([
+    const [ai, integrations, plugnotasCounts, activeBusinesses, userStats] =
+      await Promise.all([
       this.platformSettings.getErpProductClassifier(),
       this.listIntegrations(),
       this.getPlugNotasCounts(),
       this.businesses.count({ where: { isActive: true } }),
+      this.getUserStats(),
     ]);
 
     return {
@@ -102,6 +135,7 @@ export class SupportService {
         activeBusinesses,
       },
       integrations,
+      users: userStats,
       quickActions: [
         {
           key: 'ai-settings',
@@ -112,6 +146,11 @@ export class SupportService {
           key: 'test-plugnotas',
           label: 'Testar PlugNotas',
           target: '/suporte-tecnico/integracoes',
+        },
+        {
+          key: 'users',
+          label: 'Gerenciar usuarios',
+          target: '/suporte-tecnico/usuarios',
         },
       ],
     };
@@ -180,8 +219,62 @@ export class SupportService {
     return this.platformSettings.getErpProductClassifier();
   }
 
+  listAiModels() {
+    return this.openrouter.listModels();
+  }
+
   patchAiSettings(dto: UpdateErpProductClassifierSettingDto) {
     return this.platformSettings.patchErpProductClassifier(dto);
+  }
+
+  async listUsers(): Promise<SupportUserSummary[]> {
+    const rows = await this.users.find({
+      order: { createdAt: 'DESC' },
+    });
+    const activeSessionCounts = await this.getActiveRefreshTokenMap();
+    return rows.map((user) => this.mapUser(user, activeSessionCounts));
+  }
+
+  async updateUser(
+    id: string,
+    dto: UpdateSupportUserDto,
+  ): Promise<SupportUserSummary> {
+    const user = await this.users.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado');
+    }
+
+    if (dto.email !== undefined) {
+      const email = dto.email.trim().toLowerCase();
+      const existing = await this.users.findOne({ where: { email } });
+      if (existing && existing.id !== user.id) {
+        throw new BadRequestException('Ja existe outro usuario com este e-mail.');
+      }
+      user.email = email;
+    }
+    if (dto.fullName !== undefined) {
+      user.fullName = dto.fullName.trim();
+    }
+    if (dto.phone !== undefined) {
+      user.phone = dto.phone?.trim() || null;
+    }
+    if (dto.role !== undefined) {
+      user.role = dto.role;
+    }
+    if (dto.isActive !== undefined) {
+      user.isActive = dto.isActive;
+    }
+    if (dto.emailVerified !== undefined) {
+      user.emailVerified = dto.emailVerified;
+    }
+    if (dto.password !== undefined) {
+      user.passwordHash = await bcrypt.hash(dto.password, 12);
+      await this.refreshTokens.delete({ userId: user.id });
+    }
+
+    const saved = await this.users.save(user);
+    const activeSessionCounts = await this.getActiveRefreshTokenMap();
+    return this.mapUser(saved, activeSessionCounts);
   }
 
   private async getPlugNotasCounts(): Promise<{
@@ -210,6 +303,57 @@ export class SupportService {
     return {
       errorDocumentsLast7Days: errors,
       pendingDocuments: pending,
+    };
+  }
+
+  private async getUserStats(): Promise<{ total: number; online: number }> {
+    const [total, activeTokenRows] = await Promise.all([
+      this.users.count(),
+      this.refreshTokens
+        .createQueryBuilder('token')
+        .select('COUNT(DISTINCT token.userId)', 'count')
+        .where('token.expiresAt >= :now', { now: new Date().toISOString() })
+        .getRawOne<{ count?: string }>(),
+    ]);
+
+    return {
+      total,
+      online: Number(activeTokenRows?.count ?? 0),
+    };
+  }
+
+  private async getActiveRefreshTokenMap(): Promise<Map<string, number>> {
+    const rows = await this.refreshTokens
+      .createQueryBuilder('token')
+      .select('token.userId', 'userId')
+      .addSelect('COUNT(token.id)', 'count')
+      .where('token.expiresAt >= :now', { now: new Date().toISOString() })
+      .groupBy('token.userId')
+      .getRawMany<{ userId: string; count: string }>();
+
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      map.set(row.userId, Number(row.count));
+    }
+    return map;
+  }
+
+  private mapUser(
+    user: User,
+    activeSessionCounts: Map<string, number>,
+  ): SupportUserSummary {
+    const activeSessionCount = activeSessionCounts.get(user.id) ?? 0;
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      lastLogin: user.lastLogin?.toISOString() ?? null,
+      online: activeSessionCount > 0,
+      activeSessionCount,
     };
   }
 

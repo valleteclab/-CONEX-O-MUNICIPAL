@@ -13,6 +13,14 @@ type AiSettings = {
   maxItemsPerJob: number;
 };
 
+type OpenRouterModel = {
+  id: string;
+  name: string;
+  contextLength: number | null;
+  promptPrice: string | null;
+  completionPrice: string | null;
+};
+
 export default function SupportAiPage() {
   const [form, setForm] = useState<AiSettings>({
     provider: "openrouter",
@@ -23,16 +31,25 @@ export default function SupportAiPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [models, setModels] = useState<OpenRouterModel[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const res = await supportFetch<AiSettings>("/api/v1/support/ai-settings");
+      const [settingsRes, modelsRes] = await Promise.all([
+        supportFetch<AiSettings>("/api/v1/support/ai-settings"),
+        supportFetch<OpenRouterModel[]>("/api/v1/support/ai-models"),
+      ]);
       setLoading(false);
-      if (!res.ok || !res.data) {
-        setMessage(res.error ?? "Não foi possível carregar a configuração da IA.");
+      setModelsLoading(false);
+      if (!settingsRes.ok || !settingsRes.data) {
+        setMessage(settingsRes.error ?? "Não foi possível carregar a configuração da IA.");
         return;
       }
-      setForm(res.data);
+      setForm(settingsRes.data);
+      if (modelsRes.ok && modelsRes.data) {
+        setModels(modelsRes.data);
+      }
     }
     void load();
   }, []);
@@ -61,38 +78,51 @@ export default function SupportAiPage() {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
           IA operacional
         </p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">Modelo e parâmetros ativos</h1>
+        <h1 className="mt-2 text-3xl font-semibold text-marinha-900">Modelo e parâmetros ativos</h1>
       </div>
 
-      <Card className="rounded-[24px] border border-white/10 bg-slate-900/80 p-6 text-slate-100">
+      <Card className="rounded-[24px] border border-marinha-900/8 bg-white/92 p-6 text-marinha-900">
         {loading ? (
-          <p className="text-sm text-slate-300">Carregando configuração…</p>
+          <p className="text-sm text-marinha-600">Carregando configuração…</p>
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>
             {message ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+              <div className="rounded-2xl border border-marinha-900/8 bg-surface px-4 py-3 text-sm text-marinha-700">
                 {message}
               </div>
             ) : null}
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Provider</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Provider</label>
                 <Input value={form.provider} disabled />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Modelo</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Modelo</label>
                 <Input
+                  list="openrouter-models"
                   value={form.model}
                   onChange={(event) => setForm((prev) => ({ ...prev, model: event.target.value }))}
                   placeholder="openai/gpt-4o-mini"
                 />
+                <datalist id="openrouter-models">
+                  {models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}
+                    </option>
+                  ))}
+                </datalist>
+                <p className="mt-2 text-xs text-marinha-500">
+                  {modelsLoading
+                    ? "Consultando catálogo do OpenRouter..."
+                    : `${models.length} modelos disponíveis para seleção.`}
+                </p>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Temperatura</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Temperatura</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -103,7 +133,7 @@ export default function SupportAiPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Máx. itens por job</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Máx. itens por job</label>
                 <Input
                   type="number"
                   value={form.maxItemsPerJob}
@@ -113,6 +143,31 @@ export default function SupportAiPage() {
                 />
               </div>
             </div>
+
+            {models.length > 0 ? (
+              <div className="rounded-[20px] border border-marinha-900/8 bg-surface p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
+                  Sugestões do catálogo OpenRouter
+                </p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {models.slice(0, 8).map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, model: model.id }))}
+                      className="rounded-2xl border border-marinha-900/8 bg-white px-4 py-3 text-left transition hover:border-municipal-600/30 hover:bg-municipal-600/6"
+                    >
+                      <p className="text-sm font-semibold text-marinha-900">{model.id}</p>
+                      <p className="mt-1 text-xs text-marinha-500">
+                        {model.contextLength
+                          ? `${model.contextLength.toLocaleString("pt-BR")} tokens`
+                          : "contexto não informado"}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <Button type="submit" disabled={saving}>
               {saving ? "Salvando..." : "Salvar configuração"}

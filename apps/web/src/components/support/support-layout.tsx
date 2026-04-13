@@ -9,6 +9,7 @@ import { clearSupportToken } from "@/lib/support-auth-storage";
 
 const navItems = [
   { href: "/suporte-tecnico", label: "Dashboard" },
+  { href: "/suporte-tecnico/usuarios", label: "Usuários" },
   { href: "/suporte-tecnico/integracoes", label: "Integrações" },
   { href: "/suporte-tecnico/ia", label: "IA" },
 ];
@@ -61,28 +62,28 @@ export function SupportLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (checking) {
-    return <div className="min-h-screen bg-slate-950 text-white p-8">Validando acesso…</div>;
+    return <div className="min-h-screen bg-[#f4f8fb] p-8 text-marinha-900">Validando acesso…</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="border-b border-white/10 bg-slate-900/90 backdrop-blur">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(0,162,141,0.12),_transparent_30%),linear-gradient(180deg,_#f8fbfd,_#eef4f7)] text-marinha-900">
+      <div className="border-b border-marinha-900/8 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-300">
               Central de suporte
             </p>
-            <h1 className="mt-1 text-2xl font-semibold text-white">Operação técnica da plataforma</h1>
+            <h1 className="mt-1 text-2xl font-semibold text-marinha-900">Operação técnica da plataforma</h1>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300 sm:inline-flex">
+            <span className="hidden rounded-full border border-marinha-900/10 bg-surface px-3 py-1 text-sm text-marinha-700 sm:inline-flex">
               {session?.username}
             </span>
             <button
               type="button"
               onClick={() => void handleLogout()}
               disabled={loggingOut}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
+              className="rounded-full border border-marinha-900/10 bg-white px-4 py-2 text-sm font-semibold text-marinha-900 transition hover:bg-surface disabled:opacity-60"
             >
               {loggingOut ? "Saindo..." : "Sair"}
             </button>
@@ -91,8 +92,8 @@ export function SupportLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[260px,1fr]">
-        <aside className="rounded-[24px] border border-white/10 bg-slate-900/70 p-4 shadow-2xl">
-          <p className="px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+        <aside className="rounded-[24px] border border-marinha-900/8 bg-white/92 p-4 shadow-card">
+          <p className="px-3 text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
             Navegação
           </p>
           <nav className="mt-4 space-y-1">
@@ -108,8 +109,8 @@ export function SupportLayout({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "block rounded-2xl px-4 py-3 text-sm font-semibold transition",
                     active
-                      ? "bg-teal-500 text-slate-950"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white",
+                      ? "bg-municipal-600 text-white"
+                      : "text-marinha-700 hover:bg-municipal-600/8 hover:text-marinha-900",
                   )}
                 >
                   {item.label}

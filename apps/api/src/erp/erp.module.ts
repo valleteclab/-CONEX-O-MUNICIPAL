@@ -130,6 +130,6 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
     PlugNotasService,
     ErpFiscalService,
   ],
-  exports: [ErpBusinessService, ErpFiscalService],
+  exports: [ErpBusinessService, ErpFiscalService, OpenRouterService],
 })
 export class ErpModule {}
