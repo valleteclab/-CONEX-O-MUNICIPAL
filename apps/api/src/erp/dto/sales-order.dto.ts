@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { FISCAL_PAYMENT_METHODS } from './fiscal.dto';
@@ -75,4 +76,16 @@ export class PatchSalesOrderStatusDto {
   @IsOptional()
   @IsBoolean()
   cancelFiscalDocument?: boolean;
+}
+
+export class CancelSalesOrderDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(500)
+  reason!: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  cancelFiscalIfPossible?: boolean;
 }

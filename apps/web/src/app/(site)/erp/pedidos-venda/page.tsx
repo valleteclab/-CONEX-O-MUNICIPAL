@@ -18,6 +18,7 @@ type SalesOrder = {
   id: string;
   partyId: string | null;
   status: "draft" | "confirmed" | "cancelled";
+  commercialStatus: "draft" | "confirmed" | "cancelled" | "returned_partial" | "returned_full";
   fiscalStatus: "none" | "pending" | "authorized" | "cancelled" | "error";
   fiscalDocumentType: "nfse" | "nfe" | "nfce" | null;
   paymentMethod: "cash" | "credit_card" | "debit_card" | "pix" | "other" | null;
@@ -26,6 +27,7 @@ type SalesOrder = {
   createdAt: string;
   party?: { name: string };
   items?: Array<{
+    productId: string;
     qty: string;
     unitPrice: string;
     product?: {
@@ -33,6 +35,20 @@ type SalesOrder = {
       sku?: string | null;
     } | null;
   }>;
+};
+
+type OriginalFiscalDoc = {
+  id: string;
+  type: "nfse" | "nfe" | "nfce";
+  purpose: "sale" | "return";
+  status: "pending" | "processing" | "authorized" | "rejected" | "cancelled" | "error";
+};
+
+type ReturnLine = {
+  productId: string;
+  name: string;
+  soldQty: string;
+  qty: string;
 };
 
 type Product = {
@@ -64,12 +80,16 @@ const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
   confirmed: "Confirmado",
   cancelled: "Cancelado",
+  returned_partial: "Devolucao parcial",
+  returned_full: "Devolvido",
 };
 
 const STATUS_COLOR: Record<string, string> = {
   draft: "bg-marinha-100 text-marinha-600",
   confirmed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
+  returned_partial: "bg-amber-100 text-amber-700",
+  returned_full: "bg-blue-100 text-blue-700",
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -107,11 +127,17 @@ function ErpPedidosVendaContent() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [fiscalModalOrderId, setFiscalModalOrderId] = useState<string | null>(null);
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnOrder, setReturnOrder] = useState<SalesOrder | null>(null);
+  const [returnOriginalDoc, setReturnOriginalDoc] = useState<OriginalFiscalDoc | null>(null);
+  const [returnLines, setReturnLines] = useState<ReturnLine[]>([]);
+  const [returnError, setReturnError] = useState<string | null>(null);
   const [partyId, setPartyId] = useState("");
   const [lines, setLines] = useState<OrderLine[]>([{ productId: "", qty: "1", unitPrice: "0" }]);
   const [formError, setFormError] = useState<string | null>(null);
   const [statusPatchError, setStatusPatchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
 
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
@@ -183,12 +209,11 @@ function ErpPedidosVendaContent() {
   const patchStatus = async (
     order: SalesOrder,
     status: "confirmed" | "cancelled",
-    options?: { cancelFiscalDocument?: boolean },
   ) => {
     setStatusPatchError(null);
     const res = await erpFetch<SalesOrder>(`/api/v1/erp/sales-orders/${order.id}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status, ...(options ?? {}) }),
+      body: JSON.stringify({ status }),
     });
     if (res.ok && res.data) {
       setOrders((prev) => prev.map((current) => (current.id === order.id ? res.data! : current)));
@@ -198,28 +223,98 @@ function ErpPedidosVendaContent() {
   };
 
   const handleCancelOrder = async (order: SalesOrder) => {
-    let cancelFiscalDocument = false;
-    if (order.fiscalStatus === "authorized") {
-      cancelFiscalDocument = confirm(
-        "Esta venda possui nota fiscal emitida. Deseja cancelar a nota fiscal vinculada junto com a venda?",
-      );
-      if (!cancelFiscalDocument) {
-        return;
-      }
+    const reason = prompt("Informe o motivo do cancelamento da venda:");
+    if (!reason?.trim()) {
+      return;
     }
 
     const confirmed = confirm(
-      cancelFiscalDocument
-        ? "Confirmar cancelamento da nota fiscal e da venda?"
+      order.fiscalStatus === "authorized"
+        ? "A venda tem documento fiscal autorizado. O sistema vai tentar cancelar a nota primeiro e so depois cancelar a venda. Deseja continuar?"
         : "Confirmar cancelamento da venda? O sistema vai estornar estoque e contas a receber quando houver.",
     );
     if (!confirmed) {
       return;
     }
 
-    await patchStatus(order, "cancelled", {
-      cancelFiscalDocument: cancelFiscalDocument || undefined,
+    const res = await erpFetch<SalesOrder>(`/api/v1/erp/sales-orders/${order.id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({
+        reason: reason.trim(),
+        cancelFiscalIfPossible: true,
+      }),
     });
+    if (res.ok && res.data) {
+      setOrders((prev) => prev.map((current) => (current.id === order.id ? res.data! : current)));
+    } else {
+      setStatusPatchError(res.error ?? "Nao foi possivel cancelar a venda.");
+    }
+  };
+
+  const openReturnModal = async (order: SalesOrder) => {
+    setReturnError(null);
+    const orderRes = await erpFetch<SalesOrder>(`/api/v1/erp/sales-orders/${order.id}`);
+    if (!orderRes.ok || !orderRes.data) {
+      setStatusPatchError(orderRes.error ?? "Nao foi possivel carregar a venda para devolucao.");
+      return;
+    }
+    const docRes = await erpFetch<OriginalFiscalDoc>(`/api/v1/erp/fiscal/sales-orders/${order.id}/original`);
+    if (!docRes.ok || !docRes.data) {
+      setStatusPatchError(docRes.error ?? "Nao foi possivel localizar a nota original da venda.");
+      return;
+    }
+
+    const physicalItems = (orderRes.data.items ?? []).filter((item) => item.productId);
+    setReturnOrder(orderRes.data);
+    setReturnOriginalDoc(docRes.data);
+    setReturnLines(
+      physicalItems.map((item) => ({
+        productId: item.productId,
+        name: item.product?.name ?? item.productId,
+        soldQty: item.qty,
+        qty: "0",
+      })),
+    );
+    setReturnModalOpen(true);
+  };
+
+  const updateReturnQty = (productId: string, qty: string) => {
+    setReturnLines((current) =>
+      current.map((line) => (line.productId === productId ? { ...line, qty } : line)),
+    );
+  };
+
+  const submitReturn = async () => {
+    if (!returnOrder || !returnOriginalDoc) {
+      return;
+    }
+    const selectedLines = returnLines.filter((line) => Number(line.qty) > 0);
+    if (selectedLines.length === 0) {
+      setReturnError("Informe pelo menos uma quantidade para devolver.");
+      return;
+    }
+    const note = prompt("Observacao da devolucao (opcional):") ?? "";
+    setIsSubmittingReturn(true);
+    setReturnError(null);
+    const res = await erpFetch("/api/v1/erp/fiscal/returns", {
+      method: "POST",
+      body: JSON.stringify({
+        salesOrderId: returnOrder.id,
+        originalFiscalDocumentId: returnOriginalDoc.id,
+        items: selectedLines.map((line) => ({
+          productId: line.productId,
+          qty: line.qty,
+        })),
+        ...(note.trim() ? { note: note.trim() } : {}),
+      }),
+    });
+    setIsSubmittingReturn(false);
+    if (!res.ok) {
+      setReturnError(res.error ?? "Nao foi possivel emitir a devolucao.");
+      return;
+    }
+    setReturnModalOpen(false);
+    await load(true);
   };
 
   const addLine = () =>
@@ -298,8 +393,8 @@ function ErpPedidosVendaContent() {
       key: "status",
       label: "Status",
       render: (r) => (
-        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLOR[r.status]}`}>
-          {STATUS_LABEL[r.status]}
+        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLOR[r.commercialStatus]}`}>
+          {STATUS_LABEL[r.commercialStatus]}
         </span>
       ),
     },
@@ -347,11 +442,19 @@ function ErpPedidosVendaContent() {
             >
               Emitir NF
             </button>
+            {r.fiscalStatus === "authorized" && (r.fiscalDocumentType === "nfe" || r.fiscalDocumentType === "nfce") ? (
+              <button
+                onClick={() => void openReturnModal(r)}
+                className="rounded-btn border border-blue-300 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+              >
+                Devolver mercadoria
+              </button>
+            ) : null}
             <button
               onClick={() => void handleCancelOrder(r)}
               className="rounded-btn border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
             >
-              {r.fiscalStatus === "authorized" ? "Cancelar venda + NF" : "Cancelar venda"}
+              Cancelar venda
             </button>
           </div>
         ) : null,
@@ -535,6 +638,46 @@ function ErpPedidosVendaContent() {
         </div>
 
         {formError && <p className="text-sm text-red-600">{formError}</p>}
+      </ErpFormModal>
+
+      <ErpFormModal
+        title="Devolver mercadoria"
+        open={returnModalOpen}
+        onClose={() => setReturnModalOpen(false)}
+        onSubmit={() => void submitReturn()}
+        isSubmitting={isSubmittingReturn}
+        submitLabel="Emitir devolucao"
+      >
+        <p className="mb-4 text-sm text-marinha-500">
+          Informe as quantidades devolvidas. O ERP vai emitir a nota de devolucao referenciando a nota original.
+        </p>
+        {returnOriginalDoc ? (
+          <p className="mb-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-3 py-2 text-xs text-marinha-700">
+            Documento original: {returnOriginalDoc.type.toUpperCase()} autorizado.
+          </p>
+        ) : null}
+        <div className="space-y-3">
+          {returnLines.map((line) => (
+            <div key={line.productId} className="grid grid-cols-[1fr_140px] items-end gap-3">
+              <div>
+                <p className="text-sm font-semibold text-marinha-900">{line.name}</p>
+                <p className="text-xs text-marinha-500">Vendido: {line.soldQty}</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-marinha-700">Qtd a devolver</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={line.qty}
+                  onChange={(e) => updateReturnQty(line.productId, e.target.value)}
+                  className="w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        {returnError ? <p className="mt-3 text-sm text-red-600">{returnError}</p> : null}
       </ErpFormModal>
     </>
   );

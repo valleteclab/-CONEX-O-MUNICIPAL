@@ -13,6 +13,12 @@ import { ErpParty } from './erp-party.entity';
 import { ErpSalesOrderItem } from './erp-sales-order-item.entity';
 
 export type ErpSalesOrderStatus = 'draft' | 'confirmed' | 'cancelled';
+export type ErpSalesOrderCommercialStatus =
+  | 'draft'
+  | 'confirmed'
+  | 'cancelled'
+  | 'returned_partial'
+  | 'returned_full';
 export type ErpSalesOrderFiscalStatus =
   | 'none'
   | 'pending'
@@ -51,6 +57,9 @@ export class ErpSalesOrder {
 
   @Column({ type: 'varchar', length: 24, default: 'draft' })
   status!: ErpSalesOrderStatus;
+
+  @Column({ name: 'commercial_status', type: 'varchar', length: 24, default: 'draft' })
+  commercialStatus!: ErpSalesOrderCommercialStatus;
 
   @Column({
     name: 'total_amount',

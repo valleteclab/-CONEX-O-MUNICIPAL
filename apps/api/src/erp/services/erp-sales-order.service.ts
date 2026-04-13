@@ -19,6 +19,7 @@ import {
 } from '../../entities/erp-sales-order.entity';
 import { ErpSalesOrderItem } from '../../entities/erp-sales-order-item.entity';
 import {
+  CancelSalesOrderDto,
   CreateSalesOrderDto,
   PatchSalesOrderStatusDto,
 } from '../dto/sales-order.dto';
@@ -106,6 +107,7 @@ export class ErpSalesOrderService {
         businessId: business.id,
         partyId: dto.partyId ?? null,
         status: 'draft',
+        commercialStatus: 'draft',
         totalAmount: dec(total),
         note: dto.note?.trim() || null,
         source,
@@ -166,7 +168,9 @@ export class ErpSalesOrderService {
             'Nao foi encontrado o documento fiscal vinculado a esta venda.',
           );
         }
-        await this.fiscal.cancel(business, linkedDoc.id);
+        await this.fiscal.cancel(business, linkedDoc.id, {
+          reason: 'Cancelamento da venda solicitado no ERP.',
+        });
       }
     }
 
@@ -188,6 +192,7 @@ export class ErpSalesOrderService {
         await this.postStock(em, business, row);
         await this.postReceivable(em, business, row);
         row.stockPostedAt = new Date();
+        row.commercialStatus = 'confirmed';
       }
       if (dto.status === 'cancelled') {
         if (row.fiscalStatus === 'pending') {
@@ -205,11 +210,51 @@ export class ErpSalesOrderService {
           await this.cancelReceivable(em, business, row);
           row.stockPostedAt = null;
         }
+        row.commercialStatus = 'cancelled';
       }
       row.status = dto.status;
       await em.save(row);
     });
     return this.findOne(business, id);
+  }
+
+  async cancelOrder(
+    business: ErpBusiness,
+    id: string,
+    dto: CancelSalesOrderDto,
+  ): Promise<ErpSalesOrder> {
+    const reason = dto.reason?.trim();
+    if (!reason) {
+      throw new BadRequestException('Informe o motivo do cancelamento da venda.');
+    }
+
+    const order = await this.findOne(business, id);
+    await this.assertSaleCanBeCancelled(business, order);
+
+    if (order.fiscalStatus === 'authorized') {
+      if (dto.cancelFiscalIfPossible === false) {
+        throw new BadRequestException(
+          'Esta venda possui documento fiscal autorizado. Cancele a nota fiscal antes de cancelar a venda.',
+        );
+      }
+      const linkedDoc = await this.fiscalDocs.findOne({
+        where: {
+          tenantId: business.tenantId,
+          businessId: business.id,
+          salesOrderId: id,
+          purpose: 'sale',
+        },
+        order: { createdAt: 'DESC' },
+      });
+      if (!linkedDoc) {
+        throw new NotFoundException(
+          'Nao foi encontrado o documento fiscal vinculado a esta venda.',
+        );
+      }
+      await this.fiscal.cancel(business, linkedDoc.id, { reason });
+    }
+
+    return this.patchStatus(business, id, { status: 'cancelled' });
   }
 
   private async postStock(

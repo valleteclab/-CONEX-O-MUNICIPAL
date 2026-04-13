@@ -183,10 +183,15 @@ export class PlugNotasService {
   }
 
   /** Cancelar documento */
-  async cancel(type: 'nfse' | 'nfe' | 'nfce', plugnotasId: string): Promise<void> {
-    await this.request<unknown>(
+  async cancel(
+    type: 'nfse' | 'nfe' | 'nfce',
+    plugnotasId: string,
+    payload?: Record<string, unknown>,
+  ): Promise<unknown> {
+    return this.request<unknown>(
       'DELETE',
       `/${type}/${encodeURIComponent(plugnotasId)}`,
+      payload,
     );
   }
 

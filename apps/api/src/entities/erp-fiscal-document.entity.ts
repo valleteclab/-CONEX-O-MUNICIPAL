@@ -11,6 +11,7 @@ import { ErpBusiness } from './erp-business.entity';
 import { ErpSalesOrder } from './erp-sales-order.entity';
 
 export type ErpFiscalDocumentType = 'nfse' | 'nfe' | 'nfce';
+export type ErpFiscalDocumentPurpose = 'sale' | 'return';
 export type ErpFiscalDocumentStatus =
   | 'pending'
   | 'processing'
@@ -45,6 +46,19 @@ export class ErpFiscalDocument {
   @Column({ type: 'varchar', length: 8 })
   type: ErpFiscalDocumentType;
 
+  @Column({ type: 'varchar', length: 16, default: 'sale' })
+  purpose: ErpFiscalDocumentPurpose;
+
+  @Column({ name: 'related_document_id', type: 'uuid', nullable: true })
+  relatedDocumentId: string | null;
+
+  @ManyToOne(() => ErpFiscalDocument, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'related_document_id' })
+  relatedDocument: ErpFiscalDocument | null;
+
+  @Column({ name: 'related_access_key', type: 'varchar', length: 48, nullable: true })
+  relatedAccessKey: string | null;
+
   /** ID interno do PlugNotas (ObjectId MongoDB) */
   @Column({ name: 'plugnotas_id', type: 'varchar', length: 64, nullable: true })
   plugnotasId: string | null;
@@ -75,11 +89,29 @@ export class ErpFiscalDocument {
   @Column({ name: 'raw_response', type: 'jsonb', nullable: true })
   rawResponse: object | null;
 
+  @Column({ name: 'operation_snapshot', type: 'jsonb', nullable: true })
+  operationSnapshot: object | null;
+
+  @Column({ name: 'provider_event_payload', type: 'jsonb', nullable: true })
+  providerEventPayload: object | null;
+
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage: string | null;
 
+  @Column({ name: 'cancel_reason', type: 'text', nullable: true })
+  cancelReason: string | null;
+
+  @Column({ name: 'cancel_requested_at', type: 'timestamptz', nullable: true })
+  cancelRequestedAt: Date | null;
+
+  @Column({ name: 'cancel_authorized_at', type: 'timestamptz', nullable: true })
+  cancelAuthorizedAt: Date | null;
+
   @Column({ name: 'emitted_at', type: 'timestamptz', nullable: true })
   emittedAt: Date | null;
+
+  @Column({ name: 'effect_applied_at', type: 'timestamptz', nullable: true })
+  effectAppliedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

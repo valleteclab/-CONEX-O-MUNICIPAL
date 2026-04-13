@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import { erpFetch } from "@/lib/api-browser";
 type FiscalDoc = {
   id: string;
   type: "nfse" | "nfe" | "nfce";
+  purpose: "sale" | "return";
   status: "pending" | "processing" | "authorized" | "rejected" | "cancelled" | "error";
   numero: string | null;
   serie: string | null;
@@ -19,6 +21,7 @@ type FiscalDoc = {
   xmlUrl: string | null;
   emittedAt: string | null;
   createdAt: string;
+  relatedDocument?: { id: string; numero: string | null } | null;
   salesOrder?: { id: string; totalAmount: string } | null;
 };
 
@@ -62,6 +65,14 @@ function statusBadge(status: string) {
 }
 
 const TAKE = 50;
+
+function purposeBadge(purpose: FiscalDoc["purpose"]) {
+  return (
+    <span className="inline-block rounded bg-municipal-600/10 px-2 py-0.5 text-xs font-semibold text-municipal-700">
+      {purpose === "return" ? "Devolucao" : "Venda"}
+    </span>
+  );
+}
 
 export default function FiscalPage() {
   const businessId = useSelectedBusinessId();
@@ -110,24 +121,24 @@ export default function FiscalPage() {
     }
   }
 
-  async function handleCancel(id: string, options?: { cancelSale?: boolean }) {
-    if (
-      !confirm(
-        options?.cancelSale
-          ? "Cancelar esta nota fiscal e a venda vinculada? Esta ação não pode ser desfeita."
-          : "Cancelar esta nota fiscal? Esta ação não pode ser desfeita.",
-      )
-    ) {
+  async function handleCancel(doc: FiscalDoc) {
+    const reason = prompt("Informe o motivo do cancelamento fiscal:");
+    if (!reason?.trim()) {
       return;
     }
-    setCancellingId(id);
-    const res = await erpFetch<FiscalDoc>(
-      `/api/v1/erp/fiscal/${id}${options?.cancelSale ? "?cancelSale=true" : ""}`,
-      { method: "DELETE" },
-    );
+    if (!confirm("Cancelar esta nota fiscal? Esta acao depende da resposta do PlugNotas.")) {
+      return;
+    }
+    setCancellingId(doc.id);
+    const res = await erpFetch<FiscalDoc>(`/api/v1/erp/fiscal/${doc.id}`, {
+      method: "DELETE",
+      body: JSON.stringify({ reason: reason.trim() }),
+    });
     setCancellingId(null);
     if (res.ok && res.data) {
-      setDocs((prev) => prev.map((d) => (d.id === id ? res.data! : d)));
+      setDocs((prev) => prev.map((d) => (d.id === doc.id ? res.data! : d)));
+    } else {
+      setError(res.error ?? "Nao foi possivel cancelar a nota fiscal.");
     }
   }
 
@@ -223,6 +234,7 @@ export default function FiscalPage() {
             <thead>
               <tr className="border-b border-marinha-900/10 text-left text-xs font-semibold uppercase tracking-wide text-marinha-500">
                 <th className="px-4 py-3">Tipo</th>
+                <th className="px-4 py-3">Finalidade</th>
                 <th className="px-4 py-3">Pedido</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Número</th>
@@ -235,6 +247,7 @@ export default function FiscalPage() {
               {docs.map((doc) => (
                 <tr key={doc.id} className="border-b border-marinha-900/5 last:border-0">
                   <td className="px-4 py-3">{typeBadge(doc.type)}</td>
+                  <td className="px-4 py-3">{purposeBadge(doc.purpose)}</td>
                   <td className="px-4 py-3 font-mono text-xs text-marinha-600">
                     {doc.salesOrder?.id.slice(0, 8) ?? "—"}
                   </td>
@@ -288,20 +301,21 @@ export default function FiscalPage() {
                       {doc.status === "authorized" && (
                         <>
                           <button
-                            onClick={() => void handleCancel(doc.id)}
+                            onClick={() => void handleCancel(doc)}
                             disabled={cancellingId === doc.id}
                             className="focus-ring rounded px-2 py-1 text-xs font-semibold text-alerta-700 hover:bg-alerta-500/10 disabled:opacity-50"
                           >
                             {cancellingId === doc.id ? "…" : "Cancelar nota"}
                           </button>
-                          {doc.salesOrder?.id ? (
-                            <button
-                              onClick={() => void handleCancel(doc.id, { cancelSale: true })}
-                              disabled={cancellingId === doc.id}
-                              className="focus-ring rounded px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-500/10 disabled:opacity-50"
+                          {doc.purpose === "sale" &&
+                          doc.salesOrder?.id &&
+                          (doc.type === "nfe" || doc.type === "nfce") ? (
+                            <Link
+                              href={`/erp/pedidos-venda?focus=${doc.salesOrder.id}`}
+                              className="focus-ring rounded px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/5"
                             >
-                              {cancellingId === doc.id ? "…" : "Cancelar nota + venda"}
-                            </button>
+                              Abrir devolução
+                            </Link>
                           ) : null}
                         </>
                       )}

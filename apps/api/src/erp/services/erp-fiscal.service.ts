@@ -6,23 +6,39 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   parseFiscalDocument,
   supportsCurrentPlugNotasDocument,
 } from '../../common/fiscal-document';
+import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpBusiness } from '../../entities/erp-business.entity';
-import { ErpFiscalDocument } from '../../entities/erp-fiscal-document.entity';
-import { ErpSalesOrder } from '../../entities/erp-sales-order.entity';
 import {
+  ErpFiscalDocument,
+} from '../../entities/erp-fiscal-document.entity';
+import { ErpSalesOrder } from '../../entities/erp-sales-order.entity';
+import { ErpStockBalance } from '../../entities/erp-stock-balance.entity';
+import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
+import { ErpStockMovement } from '../../entities/erp-stock-movement.entity';
+import {
+  CancelFiscalDocumentDto,
+  CreateFiscalReturnDto,
   EmitFiscalDto,
   FiscalDocumentType,
   FiscalPaymentMethod,
 } from '../dto/fiscal.dto';
+import { dec } from '../utils/decimal';
 import {
   PlugNotasDocumentResponse,
   PlugNotasService,
 } from './plugnotas.service';
+
+type ReturnSnapshotItem = {
+  productId: string;
+  qty: string;
+  unitPrice: string;
+  totalAmount: string;
+};
 
 export type FiscalReadinessCheck = {
   id: string;
@@ -89,12 +105,21 @@ export class ErpFiscalService {
   private readonly logger = new Logger(ErpFiscalService.name);
 
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(ErpFiscalDocument)
     private readonly docs: Repository<ErpFiscalDocument>,
     @InjectRepository(ErpSalesOrder)
     private readonly orders: Repository<ErpSalesOrder>,
     @InjectRepository(ErpBusiness)
     private readonly businesses: Repository<ErpBusiness>,
+    @InjectRepository(ErpStockLocation)
+    private readonly locations: Repository<ErpStockLocation>,
+    @InjectRepository(ErpStockBalance)
+    private readonly balances: Repository<ErpStockBalance>,
+    @InjectRepository(ErpStockMovement)
+    private readonly movements: Repository<ErpStockMovement>,
+    @InjectRepository(ErpAccountReceivable)
+    private readonly receivables: Repository<ErpAccountReceivable>,
     private readonly plugnotas: PlugNotasService,
     private readonly config: ConfigService,
   ) {}
@@ -109,7 +134,7 @@ export class ErpFiscalService {
       order: { createdAt: 'DESC' },
       take: Math.min(take, 100),
       skip,
-      relations: ['salesOrder'],
+      relations: ['salesOrder', 'relatedDocument'],
     });
     return { items, total };
   }
@@ -117,12 +142,27 @@ export class ErpFiscalService {
   async findOne(business: ErpBusiness, id: string): Promise<ErpFiscalDocument> {
     const doc = await this.docs.findOne({
       where: { id, businessId: business.id, tenantId: business.tenantId },
-      relations: ['salesOrder'],
+      relations: ['salesOrder', 'relatedDocument'],
     });
     if (!doc) {
       throw new NotFoundException('Documento fiscal nao encontrado');
     }
     return doc;
+  }
+
+  async findActiveSalesDocument(
+    business: ErpBusiness,
+    salesOrderId: string,
+  ): Promise<ErpFiscalDocument | null> {
+    return this.docs.findOne({
+      where: {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        salesOrderId,
+        purpose: 'sale',
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async registerEmitentePlugnotas(
@@ -317,6 +357,7 @@ export class ErpFiscalService {
       where: {
         salesOrderId: dto.orderId,
         type: dto.type,
+        purpose: 'sale',
         businessId: business.id,
         tenantId: business.tenantId,
       },
@@ -385,6 +426,7 @@ export class ErpFiscalService {
       errDoc.businessId = business.id;
       errDoc.salesOrderId = order.id;
       errDoc.type = dto.type;
+      errDoc.purpose = 'sale';
       errDoc.idIntegracao = integrationId;
       errDoc.status = 'error';
       errDoc.errorMessage = (error as Error).message;
@@ -400,6 +442,7 @@ export class ErpFiscalService {
     doc.businessId = business.id;
     doc.salesOrderId = order.id;
     doc.type = dto.type;
+    doc.purpose = 'sale';
     doc.plugnotasId = remote.id ?? null;
     doc.idIntegracao = remote.idIntegracao ?? integrationId;
     doc.status = normalizeStatus(remote.status ?? 'processing');
@@ -416,6 +459,189 @@ export class ErpFiscalService {
     order.fiscalDocumentType = savedDoc.type;
     await this.orders.save(order);
     return savedDoc;
+  }
+
+  async createReturnFromOrder(
+    business: ErpBusiness,
+    dto: CreateFiscalReturnDto,
+  ): Promise<ErpFiscalDocument> {
+    const originalDoc = await this.findOne(business, dto.originalFiscalDocumentId);
+    if (originalDoc.purpose !== 'sale') {
+      throw new BadRequestException(
+        'A devolucao deve referenciar um documento fiscal original de venda.',
+      );
+    }
+    if (originalDoc.salesOrderId !== dto.salesOrderId) {
+      throw new BadRequestException(
+        'Documento fiscal e pedido informados nao pertencem a mesma venda.',
+      );
+    }
+    if (originalDoc.type === 'nfse') {
+      throw new BadRequestException(
+        'NFS-e nao possui fluxo de devolucao fiscal nesta fase.',
+      );
+    }
+    if (originalDoc.status !== 'authorized') {
+      throw new BadRequestException(
+        'Somente documento fiscal autorizado pode gerar devolucao.',
+      );
+    }
+
+    const order = await this.orders.findOne({
+      where: {
+        id: dto.salesOrderId,
+        businessId: business.id,
+        tenantId: business.tenantId,
+      },
+      relations: ['items', 'items.product', 'party'],
+    });
+    if (!order) {
+      throw new NotFoundException('Pedido de venda nao encontrado');
+    }
+    if (order.status !== 'confirmed') {
+      throw new BadRequestException(
+        'Somente vendas confirmadas podem gerar nota de devolucao.',
+      );
+    }
+
+    const requestedItems = dto.items.map((item) => {
+      const orderItem = order.items.find((line) => line.productId === item.productId);
+      if (!orderItem) {
+        throw new BadRequestException(
+          `Produto ${item.productId} nao pertence a esta venda.`,
+        );
+      }
+      const requestedQty = Number(item.qty);
+      if (!Number.isFinite(requestedQty) || requestedQty <= 0) {
+        throw new BadRequestException('Quantidade de devolucao invalida.');
+      }
+      return { dtoItem: item, orderItem };
+    });
+
+    const priorReturns = await this.docs.find({
+      where: {
+        tenantId: business.tenantId,
+        businessId: business.id,
+        purpose: 'return',
+        relatedDocumentId: originalDoc.id,
+      },
+    });
+    const alreadyReturned = new Map<string, number>();
+    for (const prior of priorReturns) {
+      if (!['authorized', 'processing', 'pending'].includes(prior.status)) {
+        continue;
+      }
+      const snapshot = this.getReturnSnapshot(prior);
+      for (const item of snapshot.items) {
+        alreadyReturned.set(
+          item.productId,
+          (alreadyReturned.get(item.productId) ?? 0) + Number(item.qty),
+        );
+      }
+    }
+
+    const snapshotItems: ReturnSnapshotItem[] = requestedItems.map(({ dtoItem, orderItem }) => {
+      const soldQty = Number(orderItem.qty);
+      const requestedQty = Number(dtoItem.qty);
+      const priorQty = alreadyReturned.get(orderItem.productId) ?? 0;
+      if (requestedQty + priorQty > soldQty + 0.0001) {
+        throw new BadRequestException(
+          `A devolucao do item ${orderItem.product?.name ?? orderItem.productId} ultrapassa a quantidade vendida.`,
+        );
+      }
+      const unitPrice = Number(orderItem.unitPrice);
+      return {
+        productId: orderItem.productId,
+        qty: dec(requestedQty),
+        unitPrice: dec(unitPrice),
+        totalAmount: dec(requestedQty * unitPrice),
+      };
+    });
+
+    const totalAmount = snapshotItems.reduce(
+      (sum, item) => sum + Number(item.totalAmount),
+      0,
+    );
+    const integrationId = `${order.id}-${originalDoc.type}-return-${Date.now()}`;
+    await this.ensureEmpresaRegistered(business);
+
+    let remote: PlugNotasDocumentResponse;
+    try {
+      if (originalDoc.type === 'nfce') {
+        remote = (
+          await this.plugnotas.emitNfce(
+            this.buildNfceReturnPayload(
+              business,
+              order,
+              originalDoc,
+              snapshotItems,
+              integrationId,
+            ),
+          )
+        )[0];
+      } else {
+        remote = (
+          await this.plugnotas.emitNfe(
+            this.buildNfeReturnPayload(
+              business,
+              order,
+              originalDoc,
+              snapshotItems,
+              integrationId,
+            ),
+          )
+        )[0];
+      }
+    } catch (error) {
+      const errDoc = this.docs.create({
+        tenantId: business.tenantId,
+        businessId: business.id,
+        salesOrderId: order.id,
+        type: originalDoc.type,
+        purpose: 'return',
+        relatedDocumentId: originalDoc.id,
+        relatedAccessKey: originalDoc.chave,
+        idIntegracao: integrationId,
+        status: 'error',
+        operationSnapshot: {
+          items: snapshotItems,
+          totalAmount: dec(totalAmount),
+          note: dto.note?.trim() || null,
+        },
+        errorMessage: (error as Error).message,
+      });
+      await this.docs.save(errDoc);
+      throw error;
+    }
+
+    const returnDoc = this.docs.create({
+      tenantId: business.tenantId,
+      businessId: business.id,
+      salesOrderId: order.id,
+      type: originalDoc.type,
+      purpose: 'return',
+      relatedDocumentId: originalDoc.id,
+      relatedAccessKey: originalDoc.chave,
+      plugnotasId: remote.id ?? null,
+      idIntegracao: remote.idIntegracao ?? integrationId,
+      status: normalizeStatus(remote.status ?? 'processing'),
+      numero: remote.numero ?? null,
+      serie: remote.serie ?? null,
+      chave: remote.chave ?? null,
+      xmlUrl: remote.xml ?? null,
+      pdfUrl: remote.pdf ?? null,
+      rawResponse: remote as unknown as object,
+      operationSnapshot: {
+        items: snapshotItems,
+        totalAmount: dec(totalAmount),
+        note: dto.note?.trim() || null,
+      },
+      emittedAt: new Date(),
+      errorMessage: null,
+    });
+    const savedDoc = await this.docs.save(returnDoc);
+    await this.applyAuthorizedReturnEffects(savedDoc);
+    return this.findOne(business, savedDoc.id);
   }
 
   async refreshStatus(
@@ -437,14 +663,19 @@ export class ErpFiscalService {
     doc.xmlUrl = remote.xml ?? doc.xmlUrl;
     doc.pdfUrl = remote.pdf ?? doc.pdfUrl;
     doc.rawResponse = remote as unknown as object;
+    if (doc.status === 'cancelled' && !doc.cancelAuthorizedAt) {
+      doc.cancelAuthorizedAt = new Date();
+    }
     const savedDoc = await this.docs.save(doc);
     await this.syncOrderFiscalStatus(savedDoc);
+    await this.applyAuthorizedReturnEffects(savedDoc);
     return savedDoc;
   }
 
   async cancel(
     business: ErpBusiness,
     docId: string,
+    dto: CancelFiscalDocumentDto,
   ): Promise<ErpFiscalDocument> {
     const doc = await this.findOne(business, docId);
     if (doc.status !== 'authorized') {
@@ -455,9 +686,37 @@ export class ErpFiscalService {
     if (!doc.plugnotasId) {
       throw new BadRequestException('Documento sem ID PlugNotas.');
     }
+    const reason = dto.reason?.trim();
+    if (!reason) {
+      throw new BadRequestException('Informe o motivo do cancelamento fiscal.');
+    }
 
-    await this.plugnotas.cancel(doc.type, doc.plugnotasId);
+    doc.cancelReason = reason;
+    doc.cancelRequestedAt = new Date();
+    await this.docs.save(doc);
+
+    let providerPayload: unknown;
+    try {
+      providerPayload = await this.plugnotas.cancel(doc.type, doc.plugnotasId, {
+        justificativa: reason,
+      });
+    } catch (error) {
+      doc.providerEventPayload = {
+        ...(doc.providerEventPayload ?? {}),
+        cancelError: this.describeError(error),
+        cancelReason: reason,
+      };
+      await this.docs.save(doc);
+      throw error;
+    }
+
     doc.status = 'cancelled';
+    doc.cancelAuthorizedAt = new Date();
+    doc.providerEventPayload = {
+      ...(doc.providerEventPayload ?? {}),
+      cancelResponse: providerPayload ?? null,
+      cancelReason: reason,
+    };
     const savedDoc = await this.docs.save(doc);
     await this.syncOrderFiscalStatus(savedDoc);
     return savedDoc;
@@ -482,8 +741,12 @@ export class ErpFiscalService {
     doc.xmlUrl = typeof payload.xml === 'string' ? payload.xml : doc.xmlUrl;
     doc.pdfUrl = typeof payload.pdf === 'string' ? payload.pdf : doc.pdfUrl;
     doc.rawResponse = payload;
+    if (doc.status === 'cancelled' && !doc.cancelAuthorizedAt) {
+      doc.cancelAuthorizedAt = new Date();
+    }
     await this.docs.save(doc);
     await this.syncOrderFiscalStatus(doc);
+    await this.applyAuthorizedReturnEffects(doc);
 
     this.logger.log(
       `Webhook PlugNotas: documento ${doc.id} atualizado para ${doc.status}.`,
@@ -491,7 +754,7 @@ export class ErpFiscalService {
   }
 
   private async syncOrderFiscalStatus(doc: ErpFiscalDocument): Promise<void> {
-    if (!doc.salesOrderId) {
+    if (!doc.salesOrderId || doc.purpose !== 'sale') {
       return;
     }
 
@@ -509,6 +772,162 @@ export class ErpFiscalService {
     order.fiscalStatus = mapOrderFiscalStatus(doc.status);
     order.fiscalDocumentType = doc.type;
     await this.orders.save(order);
+  }
+
+  private async applyAuthorizedReturnEffects(
+    doc: ErpFiscalDocument,
+  ): Promise<void> {
+    if (
+      doc.purpose !== 'return' ||
+      doc.status !== 'authorized' ||
+      doc.effectAppliedAt ||
+      !doc.salesOrderId
+    ) {
+      return;
+    }
+
+    await this.dataSource.transaction(async (em) => {
+      const freshDoc = await em.findOne(ErpFiscalDocument, {
+        where: { id: doc.id, tenantId: doc.tenantId, businessId: doc.businessId },
+      });
+      if (!freshDoc || freshDoc.effectAppliedAt || freshDoc.status !== 'authorized') {
+        return;
+      }
+
+      const order = await em.findOne(ErpSalesOrder, {
+        where: {
+          id: freshDoc.salesOrderId!,
+          tenantId: doc.tenantId,
+          businessId: doc.businessId,
+        },
+        relations: ['items', 'items.product'],
+      });
+      if (!order) {
+        return;
+      }
+
+      const defaultLocation = await em.findOne(ErpStockLocation, {
+        where: {
+          tenantId: doc.tenantId,
+          businessId: doc.businessId,
+          isDefault: true,
+        },
+      });
+      if (!defaultLocation) {
+        throw new BadRequestException(
+          'Defina um local de estoque padrao antes de processar a devolucao.',
+        );
+      }
+
+      const snapshot = this.getReturnSnapshot(freshDoc);
+      for (const item of snapshot.items) {
+        let balance = await em.findOne(ErpStockBalance, {
+          where: {
+            tenantId: doc.tenantId,
+            businessId: doc.businessId,
+            productId: item.productId,
+            locationId: defaultLocation.id,
+          },
+        });
+        const current = balance ? parseFloat(balance.quantity) : 0;
+        const next = current + Number(item.qty);
+
+        await em.save(
+          em.create(ErpStockMovement, {
+            tenantId: doc.tenantId,
+            businessId: doc.businessId,
+            type: 'in',
+            productId: item.productId,
+            locationId: defaultLocation.id,
+            quantity: dec(item.qty),
+            refType: 'fiscal_return',
+            refId: freshDoc.id,
+            userId: null,
+            note: `Entrada por devolucao fiscal ${freshDoc.id}`,
+          }),
+        );
+
+        if (!balance) {
+          balance = em.create(ErpStockBalance, {
+            tenantId: doc.tenantId,
+            businessId: doc.businessId,
+            productId: item.productId,
+            locationId: defaultLocation.id,
+            quantity: dec(next),
+          });
+        } else {
+          balance.quantity = dec(next);
+        }
+        await em.save(balance);
+      }
+
+      const receivable = await em.findOne(ErpAccountReceivable, {
+        where: {
+          tenantId: doc.tenantId,
+          businessId: doc.businessId,
+          linkRef: 'sales_order',
+          linkId: order.id,
+        },
+      });
+      if (receivable && receivable.status === 'open') {
+        const remaining = parseFloat(receivable.amount) - Number(snapshot.totalAmount);
+        if (remaining <= 0.0001) {
+          receivable.amount = dec(0);
+          receivable.status = 'cancelled';
+        } else {
+          receivable.amount = dec(remaining);
+        }
+        receivable.note = `${receivable.note ?? ''}\nAjustado pela devolucao fiscal ${freshDoc.id}.`
+          .trim();
+        await em.save(receivable);
+      }
+
+      const allReturnDocs = await em.find(ErpFiscalDocument, {
+        where: {
+          tenantId: doc.tenantId,
+          businessId: doc.businessId,
+          purpose: 'return',
+          salesOrderId: order.id,
+        },
+      });
+      const returnedMap = new Map<string, number>();
+      for (const returnDoc of allReturnDocs) {
+        if (returnDoc.status !== 'authorized') continue;
+        const returnSnapshot = this.getReturnSnapshot(returnDoc);
+        for (const item of returnSnapshot.items) {
+          returnedMap.set(
+            item.productId,
+            (returnedMap.get(item.productId) ?? 0) + Number(item.qty),
+          );
+        }
+      }
+
+      const fullReturn = order.items.every((item) => {
+        if (item.product?.kind === 'service') {
+          return true;
+        }
+        return (returnedMap.get(item.productId) ?? 0) >= Number(item.qty) - 0.0001;
+      });
+      order.commercialStatus = fullReturn ? 'returned_full' : 'returned_partial';
+      await em.save(order);
+
+      freshDoc.effectAppliedAt = new Date();
+      await em.save(freshDoc);
+    });
+  }
+
+  private getReturnSnapshot(doc: ErpFiscalDocument): {
+    items: ReturnSnapshotItem[];
+    totalAmount: string;
+  } {
+    const snapshot = (doc.operationSnapshot ?? {}) as {
+      items?: ReturnSnapshotItem[];
+      totalAmount?: string;
+    };
+    return {
+      items: Array.isArray(snapshot.items) ? snapshot.items : [],
+      totalAmount: typeof snapshot.totalAmount === 'string' ? snapshot.totalAmount : '0',
+    };
   }
 
   private assertEmitPrerequisites(
@@ -805,6 +1224,72 @@ export class ErpFiscalService {
     ];
   }
 
+  private buildNfeReturnPayload(
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+    originalDoc: ErpFiscalDocument,
+    items: ReturnSnapshotItem[],
+    integrationId: string,
+  ): object[] {
+    const address = this.getAddress(business);
+    return [
+      {
+        idIntegracao: integrationId,
+        naturezaOperacao: 'Devolucao de mercadoria',
+        finalidade: 4,
+        emitente: {
+          cpfCnpj: this.getRequiredPlugNotasDocument(business.document),
+          razaoSocial: business.legalName ?? business.tradeName,
+          inscricaoEstadual: business.inscricaoEstadual ?? '',
+          endereco: {
+            logradouro: address.logradouro || 'Endereco nao informado',
+            numero: address.numero || 'S/N',
+            codigoMunicipio: business.cityIbgeCode ?? undefined,
+            cep: this.onlyDigits(address.cep),
+            uf: address.uf || 'BA',
+          },
+          regimeTributario: this.mapRegime(business.taxRegime),
+        },
+        destinatario: order.party
+          ? {
+              cpfCnpj: this.getOptionalPlugNotasDocument(order.party.document),
+              razaoSocial: order.party.legalName ?? order.party.name,
+              email: order.party.email ?? undefined,
+            }
+          : undefined,
+        produtos: items.map((item, index) => {
+          const originalItem = order.items.find((line) => line.productId === item.productId);
+          const product = originalItem?.product;
+          return {
+            codigo: product?.sku ?? String(index + 1),
+            descricao: product?.name ?? 'Produto',
+            ncm: product?.ncm ?? '00000000',
+            cfop: product?.cfopDefault ?? '1202',
+            unidadeComercial: product?.unit ?? 'UN',
+            quantidade: Number(item.qty),
+            valorUnitario: Number(item.unitPrice),
+            valorTotal: Number(item.totalAmount),
+            origem: Number(product?.originCode ?? 0),
+            tributacao: {
+              icms: { situacaoTributaria: '400' },
+              pis: { situacaoTributaria: '07' },
+              cofins: { situacaoTributaria: '07' },
+            },
+          };
+        }),
+        documentoReferenciado: {
+          chaveAcesso: originalDoc.chave ?? originalDoc.relatedAccessKey ?? undefined,
+        },
+        totalNfe: {
+          valorProdutos: items.reduce((sum, item) => sum + Number(item.totalAmount), 0),
+          valorNfe: items.reduce((sum, item) => sum + Number(item.totalAmount), 0),
+        },
+        transporte: { modalidadeFrete: 9 },
+        informacoesAdicionais: `Devolucao da nota ${originalDoc.numero ?? originalDoc.id.slice(0, 8)}`,
+      },
+    ];
+  }
+
   private buildNfcePayload(
     business: ErpBusiness,
     order: ErpSalesOrder,
@@ -886,6 +1371,97 @@ export class ErpFiscalService {
         consumidorFinal: true,
         presencaComprador: 1,
         informacoesAdicionais: `Pedido ${order.id.slice(0, 8)}`,
+        ...(technicalResponsible
+          ? { responsavelTecnico: technicalResponsible }
+          : {}),
+      },
+    ];
+  }
+
+  private buildNfceReturnPayload(
+    business: ErpBusiness,
+    order: ErpSalesOrder,
+    originalDoc: ErpFiscalDocument,
+    items: ReturnSnapshotItem[],
+    integrationId: string,
+  ): object[] {
+    const technicalResponsible = this.buildTechnicalResponsible(business);
+    const totalAmount = items.reduce((sum, item) => sum + Number(item.totalAmount), 0);
+    return [
+      {
+        idIntegracao: integrationId,
+        natureza: 'DEVOLUCAO',
+        finalidade: 4,
+        emitente: {
+          cpfCnpj: this.getRequiredPlugNotasDocument(business.document),
+        },
+        destinatario: order.party
+          ? {
+              cpfCnpj: this.getOptionalPlugNotasDocument(order.party.document),
+              razaoSocial: order.party.legalName ?? order.party.name,
+              email: order.party.email ?? undefined,
+            }
+          : undefined,
+        itens: items.map((item, index) => {
+          const originalItem = order.items.find((line) => line.productId === item.productId);
+          const product = originalItem?.product;
+          const unitPrice = Number(item.unitPrice);
+          return {
+            codigo: product?.sku ?? String(index + 1),
+            descricao: product?.name ?? 'Produto',
+            ncm: product?.ncm ?? '00000000',
+            cfop: product?.cfopDefault ?? '1202',
+            unidade: product?.unit ?? 'UN',
+            quantidade: Number(item.qty),
+            valorUnitario: {
+              comercial: unitPrice,
+              tributavel: unitPrice,
+            },
+            valor: Number(item.totalAmount),
+            tributos: {
+              icms: {
+                origem: String(product?.originCode ?? '0'),
+                cst: '00',
+                baseCalculo: {
+                  modalidadeDeterminacao: 0,
+                  valor: 0,
+                },
+                aliquota: 0,
+                valor: 0,
+              },
+              pis: {
+                cst: '99',
+                baseCalculo: {
+                  valor: 0,
+                  quantidade: 0,
+                },
+                aliquota: 0,
+                valor: 0,
+              },
+              cofins: {
+                cst: '07',
+                baseCalculo: {
+                  valor: 0,
+                },
+                aliquota: 0,
+                valor: 0,
+              },
+            },
+          };
+        }),
+        pagamentos: [
+          {
+            aVista: true,
+            meio: '99',
+            valor: totalAmount,
+          },
+        ],
+        consumidorFinal: true,
+        presencaComprador: 1,
+        documentoReferenciado: {
+          chaveAcesso: originalDoc.chave ?? originalDoc.relatedAccessKey ?? undefined,
+        },
+        informacoesAdicionais: `Devolucao da nota ${originalDoc.numero ?? originalDoc.id.slice(0, 8)}`,
         ...(technicalResponsible
           ? { responsavelTecnico: technicalResponsible }
           : {}),

@@ -26,17 +26,17 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ErpBusinessGuard } from '../guards/erp-business.guard';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
 import { ErpBusiness } from '../../entities/erp-business.entity';
-import { ErpSalesOrderService } from '../services/erp-sales-order.service';
 import { ErpFiscalService } from '../services/erp-fiscal.service';
-import { EmitFiscalDto } from '../dto/fiscal.dto';
+import {
+  CancelFiscalDocumentDto,
+  CreateFiscalReturnDto,
+  EmitFiscalDto,
+} from '../dto/fiscal.dto';
 
 @ApiTags('erp — fiscal')
 @Controller('erp/fiscal')
 export class ErpFiscalController {
-  constructor(
-    private readonly svc: ErpFiscalService,
-    private readonly salesOrders: ErpSalesOrderService,
-  ) {}
+  constructor(private readonly svc: ErpFiscalService) {}
 
   // ─── Webhook — sem autenticação ─────────────────────────────────────
   @Post('webhook')
@@ -179,25 +179,53 @@ export class ErpFiscalController {
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)
   @ApiBearerAuth()
   @ApiHeader({ name: 'X-Business-Id', required: true })
-  @Delete(':id')
-  @ApiOperation({ summary: 'Cancelar documento fiscal autorizado' })
-  async cancel(
+  @Get('sales-orders/:salesOrderId/original')
+  @ApiOperation({ summary: 'Buscar documento fiscal original ativo da venda' })
+  async findOriginalBySalesOrder(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('salesOrderId', ParseUUIDPipe) salesOrderId: string,
+  ) {
+    const doc = await this.svc.findActiveSalesDocument(business, salesOrderId);
+    if (!doc) {
+      throw new BadRequestException('Nenhum documento fiscal ativo encontrado para esta venda.');
+    }
+    return doc;
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Post('returns')
+  @ApiOperation({ summary: 'Emitir nota fiscal de devolucao a partir de venda autorizada' })
+  createReturn(
+    @SelectedBusiness() business: ErpBusiness,
+    @Body() dto: CreateFiscalReturnDto,
+  ) {
+    return this.svc.createReturnFromOrder(business, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Get('returns/:id')
+  @ApiOperation({ summary: 'Detalhar devolucao fiscal' })
+  getReturn(
     @SelectedBusiness() business: ErpBusiness,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('cancelSale') cancelSaleStr?: string,
   ) {
-    const cancelSale = cancelSaleStr === 'true' || cancelSaleStr === '1';
-    const currentDoc =
-      cancelSale && id ? await this.svc.findOne(business, id) : null;
-    if (cancelSale && currentDoc?.salesOrderId) {
-      await this.salesOrders.validateCancellation(business, currentDoc.salesOrderId);
-    }
-    const doc = await this.svc.cancel(business, id);
-    if (cancelSale && doc.salesOrderId) {
-      await this.salesOrders.patchStatus(business, doc.salesOrderId, {
-        status: 'cancelled',
-      });
-    }
     return this.svc.findOne(business, id);
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Cancelar documento fiscal autorizado' })
+  cancel(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelFiscalDocumentDto,
+  ) {
+    return this.svc.cancel(business, id, dto);
   }
 }

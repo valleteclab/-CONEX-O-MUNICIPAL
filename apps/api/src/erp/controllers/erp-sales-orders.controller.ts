@@ -15,6 +15,7 @@ import { ErpBusinessGuard } from '../guards/erp-business.guard';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import {
+  CancelSalesOrderDto,
   CreateSalesOrderDto,
   PatchSalesOrderStatusDto,
 } from '../dto/sales-order.dto';
@@ -68,5 +69,15 @@ export class ErpSalesOrdersController {
     @Body() dto: PatchSalesOrderStatusDto,
   ) {
     return this.svc.patchStatus(business, id, dto);
+  }
+
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancelar venda com tratamento fiscal quando aplicavel' })
+  cancel(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelSalesOrderDto,
+  ) {
+    return this.svc.cancelOrder(business, id, dto);
   }
 }
