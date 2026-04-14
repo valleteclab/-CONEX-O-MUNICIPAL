@@ -107,6 +107,42 @@ export class ErpBusinessService {
     return b;
   }
 
+  async listMembersForUser(
+    userId: string,
+    tenantId: string,
+    businessId: string,
+  ): Promise<
+    Array<{
+      id: string;
+      userId: string;
+      role: string;
+      fullName: string;
+      email: string;
+      phone: string | null;
+      isActive: boolean;
+    }>
+  > {
+    await this.findOneForUser(userId, tenantId, businessId);
+
+    const rows = await this.members.find({
+      where: { businessId },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+
+    return rows
+      .filter((row) => row.user)
+      .map((row) => ({
+        id: row.id,
+        userId: row.userId,
+        role: row.role,
+        fullName: row.user.fullName,
+        email: row.user.email,
+        phone: row.user.phone,
+        isActive: row.user.isActive,
+      }));
+  }
+
   async updateProfile(
     userId: string,
     tenantId: string,

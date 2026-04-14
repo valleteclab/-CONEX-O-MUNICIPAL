@@ -74,6 +74,18 @@ export class ErpBusinessController {
     return this.svc.findOneForUser(user.id, tenantId, id);
   }
 
+  @Get(':id/members')
+  @ApiOperation({
+    summary: 'Listar membros do negócio para atribuição operacional no ERP',
+  })
+  listMembers(
+    @CurrentUser() user: User,
+    @CurrentTenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.svc.listMembersForUser(user.id, tenantId, id);
+  }
+
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar dados cadastrais e fiscais do emitente (CNPJ, endereço, IM/IE, IBGE, config NFS-e)',

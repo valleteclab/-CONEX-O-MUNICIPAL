@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpBusiness } from '../../entities/erp-business.entity';
+import { ErpBusinessUser } from '../../entities/erp-business-user.entity';
 import { ErpParty } from '../../entities/erp-party.entity';
 import { ErpProduct } from '../../entities/erp-product.entity';
 import { ErpQuote } from '../../entities/erp-quote.entity';
@@ -42,7 +43,14 @@ export class ErpServiceOrderService {
       order: { createdAt: 'DESC' },
       take: Math.min(take, 100),
       skip,
-      relations: ['party'],
+      relations: [
+        'party',
+        'assignedUser',
+        'createdByUser',
+        'startedByUser',
+        'completedByUser',
+        'cancelledByUser',
+      ],
     });
     return { items, total };
   }
@@ -50,7 +58,16 @@ export class ErpServiceOrderService {
   async findOne(business: ErpBusiness, id: string): Promise<ErpServiceOrder> {
     const row = await this.orders.findOne({
       where: { id, businessId: business.id, tenantId: business.tenantId },
-      relations: ['items', 'items.product', 'party'],
+      relations: [
+        'items',
+        'items.product',
+        'party',
+        'assignedUser',
+        'createdByUser',
+        'startedByUser',
+        'completedByUser',
+        'cancelledByUser',
+      ],
     });
     if (!row) {
       throw new NotFoundException('Ordem de serviço não encontrada');
@@ -61,6 +78,7 @@ export class ErpServiceOrderService {
   async create(
     business: ErpBusiness,
     dto: CreateServiceOrderDto,
+    actorUserId?: string,
   ): Promise<ErpServiceOrder> {
     return this.dataSource.transaction(async (em) => {
       if (dto.partyId) {
@@ -89,6 +107,19 @@ export class ErpServiceOrderService {
         }
       }
 
+      if (dto.assignedUserId) {
+        const member = await em.findOne(ErpBusinessUser, {
+          where: {
+            userId: dto.assignedUserId,
+            businessId: business.id,
+          },
+          relations: ['user'],
+        });
+        if (!member || !member.user?.isActive) {
+          throw new BadRequestException('Responsavel informado e invalido');
+        }
+      }
+
       let total = 0;
       for (const line of dto.items) {
         const product = await em.findOne(ErpProduct, {
@@ -110,10 +141,22 @@ export class ErpServiceOrderService {
         partyId: dto.partyId ?? null,
         quoteId: dto.quoteId ?? null,
         title: dto.title.trim(),
+        createdByUserId: actorUserId ?? null,
         status: dto.scheduledFor ? 'scheduled' : 'draft',
+        priority: dto.priority ?? 'medium',
+        serviceCategory: dto.serviceCategory?.trim() || null,
         description: dto.description?.trim() || null,
         scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
+        promisedFor: dto.promisedFor ? new Date(dto.promisedFor) : null,
         assignedTo: dto.assignedTo?.trim() || null,
+        assignedUserId: dto.assignedUserId ?? null,
+        contactName: dto.contactName?.trim() || null,
+        contactPhone: dto.contactPhone?.trim() || null,
+        serviceLocation: dto.serviceLocation?.trim() || null,
+        serviceAddress: { ...(dto.serviceAddress ?? {}) },
+        diagnosis: dto.diagnosis?.trim() || null,
+        resolution: dto.resolution?.trim() || null,
+        checklist: (dto.checklist ?? []).map((item) => item.trim()).filter(Boolean),
         totalAmount: dec(total),
         note: dto.note?.trim() || null,
       });
@@ -132,7 +175,16 @@ export class ErpServiceOrderService {
 
       const full = await em.findOne(ErpServiceOrder, {
         where: { id: order.id },
-        relations: ['items', 'items.product', 'party'],
+        relations: [
+          'items',
+          'items.product',
+          'party',
+          'assignedUser',
+          'createdByUser',
+          'startedByUser',
+          'completedByUser',
+          'cancelledByUser',
+        ],
       });
       if (!full) {
         throw new NotFoundException('Ordem de serviço recém-criada não encontrada');
@@ -145,6 +197,7 @@ export class ErpServiceOrderService {
     business: ErpBusiness,
     id: string,
     dto: PatchServiceOrderStatusDto,
+    actorUserId?: string,
   ): Promise<ErpServiceOrder> {
     const allowedTransitions: Record<ErpServiceOrderStatus, ErpServiceOrderStatus[]> = {
       draft: ['scheduled', 'in_progress', 'completed', 'cancelled'],
@@ -157,7 +210,16 @@ export class ErpServiceOrderService {
     await this.dataSource.transaction(async (em) => {
       const row = await em.findOne(ErpServiceOrder, {
         where: { id, businessId: business.id, tenantId: business.tenantId },
-        relations: ['items', 'items.product', 'party'],
+        relations: [
+          'items',
+          'items.product',
+          'party',
+          'assignedUser',
+          'createdByUser',
+          'startedByUser',
+          'completedByUser',
+          'cancelledByUser',
+        ],
       });
       if (!row) {
         throw new NotFoundException('Ordem de serviço não encontrada');
@@ -168,8 +230,21 @@ export class ErpServiceOrderService {
       if (dto.status === 'completed') {
         await this.postStock(em, business, row);
         await this.postReceivable(em, business, row);
+        row.startedAt = row.startedAt ?? new Date();
+        row.startedByUserId = row.startedByUserId ?? actorUserId ?? null;
+        row.completedAt = row.completedAt ?? new Date();
+        row.completedByUserId = actorUserId ?? row.completedByUserId;
         row.stockPostedAt = row.stockPostedAt ?? new Date();
         row.receivablePostedAt = row.receivablePostedAt ?? new Date();
+      }
+      if (dto.status === 'in_progress') {
+        row.startedAt = row.startedAt ?? new Date();
+        row.startedByUserId = row.startedByUserId ?? actorUserId ?? null;
+      }
+      if (dto.status === 'cancelled') {
+        row.cancelledAt = row.cancelledAt ?? new Date();
+        row.cancelledByUserId = actorUserId ?? row.cancelledByUserId;
+        row.cancellationReason = dto.cancellationReason?.trim() || row.cancellationReason;
       }
       row.status = dto.status;
       await em.save(row);

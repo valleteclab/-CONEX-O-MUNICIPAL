@@ -198,6 +198,7 @@ export class ErpQuoteService {
   async convertToServiceOrder(
     business: ErpBusiness,
     id: string,
+    actorUserId?: string,
   ): Promise<ErpQuote> {
     await this.dataSource.transaction(async (em) => {
       const quote = await em.findOne(ErpQuote, {
@@ -220,12 +221,28 @@ export class ErpQuoteService {
         partyId: quote.partyId,
         quoteId: quote.id,
         title: quote.title,
+        createdByUserId: actorUserId ?? null,
         status: 'draft',
+        priority: 'medium',
+        serviceCategory: null,
         description: quote.note,
         scheduledFor: null,
+        promisedFor: null,
         assignedTo: null,
+        assignedUserId: null,
+        contactName: null,
+        contactPhone: null,
+        serviceLocation: null,
+        serviceAddress: {},
+        diagnosis: null,
+        resolution: null,
+        checklist: [],
         totalAmount: dec(quote.totalAmount),
         note: `Gerado a partir do orçamento ${quote.title}`,
+        startedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+        cancellationReason: null,
       });
       await em.save(order);
 

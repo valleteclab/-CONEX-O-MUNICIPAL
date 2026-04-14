@@ -12,6 +12,8 @@ import {
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ErpBusiness } from '../../entities/erp-business.entity';
+import { User } from '../../entities/user.entity';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
 import {
   CreateServiceOrderDto,
@@ -43,10 +45,11 @@ export class ErpServiceOrdersController {
   @Post()
   @ApiOperation({ summary: 'Criar ordem de serviço' })
   create(
+    @CurrentUser() user: User,
     @SelectedBusiness() business: ErpBusiness,
     @Body() dto: CreateServiceOrderDto,
   ) {
-    return this.svc.create(business, dto);
+    return this.svc.create(business, dto, user.id);
   }
 
   @Get(':id')
@@ -61,10 +64,11 @@ export class ErpServiceOrdersController {
   @Patch(':id/status')
   @ApiOperation({ summary: 'Alterar status da ordem de serviço' })
   patchStatus(
+    @CurrentUser() user: User,
     @SelectedBusiness() business: ErpBusiness,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: PatchServiceOrderStatusDto,
   ) {
-    return this.svc.patchStatus(business, id, dto);
+    return this.svc.patchStatus(business, id, dto, user.id);
   }
 }

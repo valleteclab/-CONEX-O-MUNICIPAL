@@ -5,6 +5,7 @@ import {
   IsArray,
   IsDateString,
   IsIn,
+  IsObject,
   IsNumberString,
   IsOptional,
   IsString,
@@ -27,6 +28,50 @@ export class ServiceOrderLineDto {
   unitPrice!: string;
 }
 
+export class ServiceOrderAddressDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  zipCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  street?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  number?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  neighborhood?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  city?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  state?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  reference?: string;
+}
+
 export class CreateServiceOrderDto {
   @ApiProperty()
   @IsString()
@@ -43,6 +88,18 @@ export class CreateServiceOrderDto {
   @IsUUID()
   quoteId?: string;
 
+  @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['low', 'medium', 'high', 'urgent'])
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  serviceCategory?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -55,9 +112,57 @@ export class CreateServiceOrderDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsDateString()
+  promisedFor?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
   @MaxLength(160)
   assignedTo?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  assignedUserId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  contactName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  contactPhone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  serviceLocation?: string;
+
+  @ApiPropertyOptional({ type: ServiceOrderAddressDto })
+  @IsOptional()
+  @IsObject()
+  serviceAddress?: ServiceOrderAddressDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  diagnosis?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  resolution?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  checklist?: string[];
 
   @ApiProperty({ type: [ServiceOrderLineDto] })
   @IsArray()
@@ -79,4 +184,9 @@ export class PatchServiceOrderStatusDto {
   @IsString()
   @IsIn(['draft', 'scheduled', 'in_progress', 'completed', 'cancelled'])
   status!: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cancellationReason?: string;
 }

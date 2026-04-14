@@ -12,6 +12,8 @@ import {
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ErpBusiness } from '../../entities/erp-business.entity';
+import { User } from '../../entities/user.entity';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SelectedBusiness } from '../decorators/selected-business.decorator';
 import { CreateQuoteDto, PatchQuoteStatusDto } from '../dto/quote.dto';
 import { ErpBusinessGuard } from '../guards/erp-business.guard';
@@ -77,9 +79,10 @@ export class ErpQuotesController {
   @Post(':id/convert-service-order')
   @ApiOperation({ summary: 'Converter orçamento em ordem de serviço' })
   convertToServiceOrder(
+    @CurrentUser() user: User,
     @SelectedBusiness() business: ErpBusiness,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.svc.convertToServiceOrder(business, id);
+    return this.svc.convertToServiceOrder(business, id, user.id);
   }
 }
