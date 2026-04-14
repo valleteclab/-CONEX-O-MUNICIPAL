@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -123,7 +123,7 @@ function currentOwner(order: ServiceOrder) {
 }
 
 function healthLabel(order: ServiceOrder) {
-  if (order.status === "completed") return { text: "Servico encerrado", tone: "bg-green-100 text-green-700" };
+  if (order.status === "completed") return { text: "Serviço encerrado", tone: "bg-green-100 text-green-700" };
   if (order.status === "cancelled") return { text: "Cancelada", tone: "bg-red-100 text-red-700" };
   if (order.promisedFor && new Date(order.promisedFor).getTime() < Date.now()) {
     return { text: "Prazo vencido", tone: "bg-red-100 text-red-700" };
@@ -174,7 +174,7 @@ export default function ErpServiceOrderDetailPage({
       if (res.ok && res.data) {
         setOrder(res.data);
       } else {
-        setError(res.error ?? "Nao foi possivel carregar a ordem de servico.");
+        setError(res.error ?? "Não foi possível carregar a ordem de serviço.");
       }
 
       setIsLoading(false);
@@ -258,7 +258,7 @@ export default function ErpServiceOrderDetailPage({
   if (isLoading) {
     return (
       <>
-        <PageIntro title="Detalhe da OS" description="Carregando ordem de servico." badge="Servicos" />
+        <PageIntro title="Detalhe da OS" description="Carregando ordem de serviço." badge="Servicos" />
         <Card>
           <div className="space-y-4">
             <div className="h-7 w-64 animate-pulse rounded bg-marinha-900/10" />
@@ -273,7 +273,7 @@ export default function ErpServiceOrderDetailPage({
   if (!order) {
     return (
       <>
-        <PageIntro title="Detalhe da OS" description="Nao foi possivel carregar a ordem de servico." badge="Servicos" />
+        <PageIntro title="Detalhe da OS" description="Não foi possível carregar a ordem de serviço." badge="Servicos" />
         <Card>
           <div className="space-y-4">
             <p className="text-sm text-red-600">{error ?? "OS nao encontrada."}</p>
@@ -294,8 +294,8 @@ export default function ErpServiceOrderDetailPage({
     <>
       <PageIntro
         title={order.title}
-        description="Detalhes da ordem de servico."
-        badge="Ordem de servico"
+        description="Detalhes da ordem de serviÃ§o."
+        badge="Ordem de serviÃ§o"
       >
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link href="/erp/ordens-servico">
@@ -308,68 +308,20 @@ export default function ErpServiceOrderDetailPage({
         </div>
       </PageIntro>
 
-      <Card variant="featured" className="mb-6 overflow-hidden">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Acompanhamento da ordem</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-marinha-900">Visao completa da OS</h2>
-            <p className="mt-2 max-w-2xl text-sm text-marinha-600">
-              Status, atendimento, itens e historico reunidos em uma tela propria para consulta e acompanhamento.
-            </p>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-4">
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="1" label="Situacao" />
-              </div>
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="2" label="Timeline" />
-              </div>
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="3" label="Tecnico" />
-              </div>
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="4" label="Itens" />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] bg-marinha-950 p-5 text-white shadow-xl shadow-marinha-950/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Resumo rapido</p>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-white/8 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">Status atual</p>
-                <p className="mt-1 text-2xl font-bold">{STATUS_LABEL[order.status]}</p>
-                <p className="mt-2 text-sm text-white/75">{health.text}</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Responsavel</p>
-                  <p className="mt-1 text-sm font-semibold">{currentOwner(order)}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Tempo aberto</p>
-                  <p className="mt-1 text-sm font-semibold">{fmtDurationSince(order.createdAt)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]">
         <div className="space-y-6">
           <Card variant="featured">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <SectionBadge index="1" label="Situacao" />
-                <h2 className="mt-2 font-serif text-2xl font-bold text-marinha-900">Situacao atual</h2>
+                <SectionBadge index="1" label="Situação" />
+                <h2 className="mt-2 font-serif text-2xl font-bold text-marinha-900">Situação atual</h2>
               </div>
               <Badge tone="accent">{PRIORITY_LABEL[order.priority]}</Badge>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-3xl bg-white/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Responsavel atual</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Responsável atual</p>
                 <p className="mt-2 text-xl font-semibold text-marinha-900">{currentOwner(order)}</p>
               </div>
               <div className="rounded-3xl bg-white/70 p-5">
@@ -438,7 +390,7 @@ export default function ErpServiceOrderDetailPage({
           <Card>
             <div className="mb-4">
               <SectionBadge index="3" label="Tecnico" />
-              <h2 className="font-serif text-xl font-bold text-marinha-900">Informacoes tecnicas</h2>
+              <h2 className="font-serif text-xl font-bold text-marinha-900">Informações técnicas</h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -474,7 +426,7 @@ export default function ErpServiceOrderDetailPage({
           <Card>
             <div className="mb-4">
               <SectionBadge index="4" label="Itens" />
-              <h2 className="font-serif text-xl font-bold text-marinha-900">Materiais e servicos</h2>
+              <h2 className="font-serif text-xl font-bold text-marinha-900">Materiais e serviços</h2>
             </div>
 
             <div className="space-y-3">
@@ -482,7 +434,7 @@ export default function ErpServiceOrderDetailPage({
                 <div key={item.id} className="grid gap-3 rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-4 md:grid-cols-[minmax(0,1.4fr)_120px_140px_140px] md:items-center">
                   <div>
                     <p className="font-semibold text-marinha-900">{item.product?.name ?? "Item removido"}</p>
-                    <p className="mt-1 text-sm text-marinha-500">{item.product?.sku ?? "-"} {item.product?.kind === "service" ? "• servico" : "• material"}</p>
+                    <p className="mt-1 text-sm text-marinha-500">{item.product?.sku ?? "-"} {item.product?.kind === "service" ? "- serviço" : "- material"}</p>
                   </div>
                   <div className="text-sm text-marinha-700">
                     <p className="text-xs uppercase tracking-wide text-marinha-500">Qtd</p>
@@ -526,7 +478,7 @@ export default function ErpServiceOrderDetailPage({
                 <p className="mt-1 text-sm text-marinha-500">{fullAddress(order.serviceAddress)}</p>
               </div>
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
-                <p className="text-xs uppercase tracking-wide text-marinha-500">Descricao da OS</p>
+                <p className="text-xs uppercase tracking-wide text-marinha-500">Descrição da OS</p>
                 <p className="mt-2 text-sm text-marinha-700">{order.description || "Sem descricao informada."}</p>
               </div>
               {error ? (
@@ -541,3 +493,4 @@ export default function ErpServiceOrderDetailPage({
     </>
   );
 }
+

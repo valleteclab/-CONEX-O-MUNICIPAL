@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -259,7 +259,7 @@ export default function ErpNovaOrdemServicoPage() {
       .filter(Boolean);
 
     if (!title.trim()) {
-      setFormError("Informe um titulo para a ordem de servico.");
+      setFormError("Informe um título para a ordem de serviço.");
       return;
     }
 
@@ -302,7 +302,7 @@ export default function ErpNovaOrdemServicoPage() {
     setIsSubmitting(false);
 
     if (!res.ok || !res.data) {
-      setFormError(res.error ?? "Nao foi possivel criar a ordem de servico.");
+      setFormError(res.error ?? "Não foi possível criar a ordem de serviço.");
       return;
     }
 
@@ -327,9 +327,9 @@ export default function ErpNovaOrdemServicoPage() {
   return (
     <>
       <PageIntro
-        title="Nova ordem de servico"
-        description="Cadastro completo da ordem de servico."
-        badge="Servicos"
+        title="Nova ordem de serviÃ§o"
+        description="Cadastro da ordem de serviÃ§o."
+        badge="ServiÃ§os"
       >
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/erp/ordens-servico">
@@ -338,63 +338,15 @@ export default function ErpNovaOrdemServicoPage() {
         </div>
       </PageIntro>
 
-      <Card variant="featured" className="mb-6 overflow-hidden">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Abertura da ordem</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-marinha-900">Cadastro em etapas claras</h2>
-            <p className="mt-2 max-w-2xl text-sm text-marinha-600">
-              Dados principais, local, itens e informacoes tecnicas ficam organizados para acelerar a abertura sem misturar com a gestao diaria.
-            </p>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-4">
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="1" label="Dados principais" />
-              </div>
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="2" label="Contato e local" />
-              </div>
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="3" label="Itens" />
-              </div>
-              <div className="rounded-3xl bg-white/75 p-4">
-                <SectionBadge index="4" label="Informacoes tecnicas" />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] bg-marinha-950 p-5 text-white shadow-xl shadow-marinha-950/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Situacao do cadastro</p>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-white/8 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">Base de apoio</p>
-                <p className="mt-1 text-2xl font-bold">{isLoadingSupport ? "Carregando..." : "Disponivel"}</p>
-                <p className="mt-2 text-sm text-white/75">Clientes, itens e equipe carregados para a abertura da OS.</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Clientes</p>
-                  <p className="mt-1 text-xl font-semibold">{parties.length}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Equipe</p>
-                  <p className="mt-1 text-xl font-semibold">{members.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.82fr)]">
         <div className="space-y-6">
           <Card className="border border-marinha-900/10 bg-white">
             <div className="mb-6 flex items-center justify-between gap-3 border-b border-marinha-900/10 pb-4">
               <div>
                 <h2 className="font-serif text-2xl font-bold text-marinha-900">Cadastro</h2>
-                <p className="mt-1 text-sm text-marinha-500">Preencha os dados e revise o resumo antes de criar a ordem.</p>
+                <p className="mt-1 text-sm text-marinha-500">Preencha os dados da ordem.</p>
               </div>
-              <Badge tone="accent">{isLoadingSupport ? "Carregando" : "Pronto"}</Badge>
+              <Badge tone="accent">{isLoadingSupport ? "Carregando" : "DisponÃ­vel"}</Badge>
             </div>
 
             <div className="space-y-6">
@@ -406,7 +358,7 @@ export default function ErpNovaOrdemServicoPage() {
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Titulo da ordem</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Título da ordem</label>
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
@@ -430,7 +382,7 @@ export default function ErpNovaOrdemServicoPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Categoria do servico</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Categoria do serviço</label>
                     <input
                       value={serviceCategory}
                       onChange={(e) => setServiceCategory(e.target.value)}
@@ -453,7 +405,7 @@ export default function ErpNovaOrdemServicoPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Responsavel</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Responsável</label>
                     <select
                       value={assignedUserId}
                       onChange={(e) => handleAssignedUserChange(e.target.value)}
@@ -486,7 +438,7 @@ export default function ErpNovaOrdemServicoPage() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Descricao</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Descrição</label>
                     <input
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -575,7 +527,7 @@ export default function ErpNovaOrdemServicoPage() {
                 </div>
 
                 <div className="hidden grid-cols-[minmax(0,1.6fr)_120px_150px_150px_44px] gap-3 px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-marinha-500 md:grid">
-                  <span>Produto ou servico</span>
+                  <span>Produto ou serviço</span>
                   <span>Qtd</span>
                   <span>Valor unitario</span>
                   <span>Subtotal</span>
@@ -589,13 +541,13 @@ export default function ErpNovaOrdemServicoPage() {
                       className="grid gap-3 rounded-2xl border border-marinha-900/10 bg-slate-50/70 p-3 md:grid-cols-[minmax(0,1.6fr)_120px_150px_150px_44px] md:items-center"
                     >
                       <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-marinha-500 md:hidden">Produto ou servico</label>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-marinha-500 md:hidden">Produto ou serviço</label>
                         <select value={line.productId} onChange={(e) => updateLine(index, "productId", e.target.value)} className="focus-ring min-h-[48px] w-full rounded-btn border-2 border-marinha-900/20 bg-white px-3 py-3 text-sm">
-                          <option value="">-- Produto ou servico --</option>
+                          <option value="">-- Produto ou serviço --</option>
                           {products.map((product) => (
                             <option key={product.id} value={product.id}>
                               {product.sku} - {product.name}
-                              {product.kind === "service" ? " (servico)" : ""}
+                              {product.kind === "service" ? " (serviço)" : ""}
                             </option>
                           ))}
                         </select>
@@ -626,7 +578,7 @@ export default function ErpNovaOrdemServicoPage() {
 
               <section className="rounded-[28px] border border-marinha-900/10 bg-white p-5">
                 <div className="mb-4">
-                  <SectionBadge index="4" label="Informacoes tecnicas" />
+                  <SectionBadge index="4" label="Informações técnicas" />
                 </div>
 
                 <div className="mt-4 space-y-4">
@@ -670,7 +622,7 @@ export default function ErpNovaOrdemServicoPage() {
                   <p className="mt-1 text-xl font-semibold">{checklistCount}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Responsavel</p>
+                  <p className="text-xs uppercase tracking-wide text-white/60">Responsável</p>
                   <p className="mt-1 text-sm font-medium text-white/85">{assignedTo.trim() || "Nao definido"}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 p-4 sm:col-span-2 xl:col-span-1">
@@ -684,11 +636,11 @@ export default function ErpNovaOrdemServicoPage() {
           <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Resumo do cadastro</h3>
             <div className="mt-4 space-y-3 text-sm text-marinha-600">
-              <p>Titulo: <strong>{title.trim() || "Nao informado"}</strong></p>
+              <p>Título: <strong>{title.trim() || "Não informado"}</strong></p>
               <p>Prioridade: <strong>{PRIORITY_LABEL[priority]}</strong></p>
-              <p>Cliente: <strong>{parties.find((row) => row.id === partyId)?.name || "Nao informado"}</strong></p>
+              <p>Cliente: <strong>{parties.find((row) => row.id === partyId)?.name || "Não informado"}</strong></p>
               <p>Prazo: <strong>{fmtDate(promisedFor)}</strong></p>
-              <p>Local: <strong>{serviceLocation || serviceAddressPreview || "Nao informado"}</strong></p>
+              <p>Local: <strong>{serviceLocation || serviceAddressPreview || "Não informado"}</strong></p>
             </div>
           </div>
 
@@ -728,3 +680,5 @@ export default function ErpNovaOrdemServicoPage() {
     </>
   );
 }
+
+

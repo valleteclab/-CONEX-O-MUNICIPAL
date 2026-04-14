@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -69,7 +69,7 @@ function fmtDurationSince(date?: string | null) {
 }
 
 function getLifecycleStage(order: ServiceOrder) {
-  if (order.status === "completed") return "Concluida";
+  if (order.status === "completed") return "Concluída";
   if (order.status === "cancelled") return "Cancelada";
   if (order.status === "in_progress") return "Em andamento";
   if (order.status === "scheduled") return "Agendada";
@@ -95,7 +95,7 @@ function getOperationalHealth(order: ServiceOrder) {
     return { label: "Atrasada", tone: "text-red-700 bg-red-100" };
   }
   if (!order.assignedUserId && !order.assignedTo) {
-    return { label: "Sem responsavel", tone: "text-amber-700 bg-amber-100" };
+    return { label: "Sem responsável", tone: "text-amber-700 bg-amber-100" };
   }
   if (order.status === "in_progress") {
     return { label: "Em andamento", tone: "text-amber-700 bg-amber-100" };
@@ -107,7 +107,7 @@ const STATUS_LABEL: Record<ServiceOrderStatus, string> = {
   draft: "Rascunho",
   scheduled: "Agendada",
   in_progress: "Em andamento",
-  completed: "Concluida",
+  completed: "Concluída",
   cancelled: "Cancelada",
 };
 
@@ -157,7 +157,7 @@ export default function ErpOrdensServicoPage() {
         setSkip(currentSkip + items.length);
         setHasMore(currentSkip + items.length < total);
       } else {
-        setError(res.error ?? "Erro ao carregar ordens de servico.");
+        setError(res.error ?? "Erro ao carregar ordens de serviço.");
       }
 
       setIsLoading(false);
@@ -183,7 +183,7 @@ export default function ErpOrdensServicoPage() {
     });
 
     if (!res.ok || !res.data) {
-      setError(res.error ?? "Nao foi possivel atualizar a ordem de servico.");
+      setError(res.error ?? "Não foi possível atualizar a ordem de serviço.");
       return;
     }
 
@@ -293,7 +293,7 @@ export default function ErpOrdensServicoPage() {
     },
     {
       key: "assigned",
-      label: "Responsavel",
+      label: "Responsável",
       render: (row) => (
         <div className="text-sm text-marinha-700">
           <div>{getCurrentOwner(row)}</div>
@@ -391,9 +391,9 @@ export default function ErpOrdensServicoPage() {
   return (
     <>
       <PageIntro
-        title="Ordens de servico"
-        description="Acompanhe abertura, agenda, execucao e conclusao das ordens de servico."
-        badge="Servicos"
+        title="Ordens de serviço"
+        description="Acompanhe abertura, agenda, execução e conclusão das ordens de serviço."
+        badge="Serviços"
       >
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/erp/ordens-servico/nova">
@@ -435,11 +435,8 @@ export default function ErpOrdensServicoPage() {
         <Card className="border border-marinha-900/10 bg-white">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-marinha-900/10 pb-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Gestao</p>
-              <h2 className="mt-2 font-serif text-2xl font-bold text-marinha-900">Painel de acompanhamento</h2>
-              <p className="mt-2 max-w-3xl text-sm text-marinha-500">
-                Abertura, execucao e acompanhamento da OS ficam separados para deixar a operacao mais clara.
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Ordens</p>
+              <h2 className="mt-2 font-serif text-2xl font-bold text-marinha-900">Central de ordens</h2>
             </div>
             <Link href="/erp/ordens-servico/nova">
               <Button variant="primary" disabled={noBusinessId}>
@@ -447,27 +444,12 @@ export default function ErpOrdensServicoPage() {
               </Button>
             </Link>
           </div>
-
-          <div className="grid gap-4 pt-6 md:grid-cols-3">
-            <div className="rounded-3xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Cadastro separado</p>
-              <p className="mt-2 text-sm text-marinha-600">Abertura da OS em pagina propria.</p>
-            </div>
-            <div className="rounded-3xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Acompanhamento central</p>
-              <p className="mt-2 text-sm text-marinha-600">Lista focada em status, prazo e responsavel.</p>
-            </div>
-            <div className="rounded-3xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Detalhe completo</p>
-              <p className="mt-2 text-sm text-marinha-600">Cada ordem pode ser acompanhada em tela propria.</p>
-            </div>
-          </div>
         </Card>
 
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Indicadores</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{orders.length} ordens carregadas</p>
-          <p className="mt-1 text-sm text-marinha-500">Visao rapida da operacao atual.</p>
+          <p className="mt-1 text-sm text-marinha-500">Resumo da operaÃ§Ã£o atual.</p>
 
           <div className="mt-4 space-y-3">
             <div className="rounded-2xl bg-slate-50/70 p-4">
@@ -475,11 +457,11 @@ export default function ErpOrdensServicoPage() {
               <p className="mt-1 text-lg font-bold text-marinha-900">{inProgressOrders.length}</p>
             </div>
             <div className="rounded-2xl bg-slate-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Concluidas</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Concluídas</p>
               <p className="mt-1 text-lg font-bold text-marinha-900">{completedOrders.length}</p>
             </div>
             <div className="rounded-2xl bg-slate-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Sem responsavel</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Sem responsável</p>
               <p className="mt-1 text-lg font-bold text-marinha-900">{unassignedActiveOrders.length}</p>
             </div>
             <div className="rounded-2xl bg-slate-50/70 p-4">
@@ -520,16 +502,16 @@ export default function ErpOrdensServicoPage() {
                               {order.title}
                             </Link>
                             <p className="mt-1 text-sm text-marinha-500">
-                              {order.party?.name ?? order.contactName ?? "Cliente nao informado"} • {getLifecycleStage(order)}
+                              {order.party?.name ?? order.contactName ?? "Cliente nao informado"} â€¢ {getLifecycleStage(order)}
                             </p>
                           </div>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${health.tone}`}>{health.label}</span>
                         </div>
 
                         <div className="mt-3 grid gap-3 text-sm text-marinha-600 md:grid-cols-2">
-                          <p>Responsavel: <strong>{getCurrentOwner(order)}</strong></p>
+                          <p>Responsável: <strong>{getCurrentOwner(order)}</strong></p>
                           <p>Aberta ha: <strong>{fmtDurationSince(order.createdAt)}</strong></p>
-                          <p>Local: <strong>{order.serviceLocation ?? "Nao informado"}</strong></p>
+                          <p>Local: <strong>{order.serviceLocation ?? "Não informado"}</strong></p>
                           <p>Prazo: <strong>{fmtDateTime(order.promisedFor)}</strong></p>
                         </div>
                       </div>
@@ -563,7 +545,7 @@ export default function ErpOrdensServicoPage() {
                 <p className="mt-1 text-xl font-semibold">{overdueOrders.length}</p>
               </div>
               <div className="rounded-2xl border border-white/10 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">Sem responsavel</p>
+                <p className="text-xs uppercase tracking-wide text-white/60">Sem responsável</p>
                 <p className="mt-1 text-xl font-semibold">{unassignedActiveOrders.length}</p>
               </div>
             </div>
@@ -584,7 +566,7 @@ export default function ErpOrdensServicoPage() {
           data={orders}
           isLoading={isLoading}
           error={error}
-          emptyMessage="Nenhuma ordem de servico cadastrada."
+          emptyMessage="Nenhuma ordem de serviço cadastrada."
           onRetry={() => load(true)}
           onLoadMore={() => load(false)}
           hasMore={hasMore}
@@ -594,3 +576,5 @@ export default function ErpOrdensServicoPage() {
     </>
   );
 }
+
+
