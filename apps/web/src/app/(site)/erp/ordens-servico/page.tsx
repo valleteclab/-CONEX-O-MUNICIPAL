@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { PageIntro } from "@/components/layout/page-intro";
@@ -535,7 +536,9 @@ export default function ErpOrdensServicoPage() {
       label: "OS",
       render: (row) => (
         <div>
-          <div className="font-semibold text-marinha-900">{row.title}</div>
+          <Link href={`/erp/ordens-servico/${row.id}`} className="font-semibold text-marinha-900 transition hover:text-marinha-700 hover:underline">
+            {row.title}
+          </Link>
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
             <span className={`rounded-full px-2 py-0.5 font-semibold ${PRIORITY_COLOR[row.priority]}`}>
               {PRIORITY_LABEL[row.priority]}
@@ -632,6 +635,12 @@ export default function ErpOrdensServicoPage() {
       label: "",
       render: (row) => (
         <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/erp/ordens-servico/${row.id}`}
+            className="rounded-btn border border-marinha-900/20 px-2 py-1 text-xs font-semibold text-marinha-700 transition hover:bg-marinha-50"
+          >
+            Abrir
+          </Link>
           {row.status === "draft" ? (
             <>
               <button
@@ -681,20 +690,20 @@ export default function ErpOrdensServicoPage() {
     <>
       <PageIntro
         title="Ordens de servico"
-        description="Acompanhe agenda, execucao, contexto do atendimento, consumo de materiais e geracao de recebiveis para negocios de servico."
+        description="Acompanhe abertura, agenda, execucao e conclusao das ordens de servico."
         badge="Servicos"
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <Card variant="featured">
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Execucao</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Ordens abertas</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{activeOrders.length} ativas</p>
-          <p className="mt-1 text-sm text-marinha-500">Ordens abertas em agenda ou campo.</p>
+          <p className="mt-1 text-sm text-marinha-500">Ordens em andamento no fluxo.</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Agenda viva</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Agendadas e em andamento</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{scheduledOrders.length + inProgressOrders.length}</p>
-          <p className="mt-1 text-sm text-marinha-500">OS prontas para campo ou em execucao.</p>
+          <p className="mt-1 text-sm text-marinha-500">Ordens com atendimento previsto ou iniciado.</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Receita concluida</p>
@@ -716,14 +725,10 @@ export default function ErpOrdensServicoPage() {
         <Card className="border border-marinha-900/10 bg-white">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-marinha-900/10 pb-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Workspace da OS</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Nova ordem de servico</p>
               <h2 className="mt-2 font-serif text-2xl font-bold text-marinha-900">
-                {composerOpen ? "Montando uma OS operacional de verdade" : "Abra uma OS com contexto, equipe e execucao"}
+                {composerOpen ? "Cadastro de ordem de servico" : "Registrar nova ordem"}
               </h2>
-              <p className="mt-2 max-w-3xl text-sm text-marinha-500">
-                A OS deixa de ser so cadastro de itens e passa a registrar promessa, responsavel, local,
-                contato, diagnostico e orientacoes de campo.
-              </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button variant="primary" onClick={openComposer} disabled={noBusinessId}>
@@ -743,10 +748,9 @@ export default function ErpOrdensServicoPage() {
                 <section className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Cabecalho e promessa</h3>
-                      <p className="mt-1 text-sm text-marinha-500">Aqui a equipe entende o que sera feito, para quem e com qual urgencia.</p>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Dados principais</h3>
                     </div>
-                    <Badge tone="accent">OS forte</Badge>
+                    <Badge tone="accent">Cadastro</Badge>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
@@ -835,7 +839,7 @@ export default function ErpOrdensServicoPage() {
                       <input
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Resumo objetivo para a operacao"
+                        placeholder="Resumo do atendimento"
                         className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                       />
                     </div>
@@ -843,8 +847,7 @@ export default function ErpOrdensServicoPage() {
                 </section>
 
                 <section className="rounded-3xl border border-marinha-900/10 bg-white p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Contato e local de atendimento</h3>
-                  <p className="mt-1 text-sm text-marinha-500">Sem local e contato a OS nao guia a equipe. Esses dados precisam entrar logo na abertura.</p>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Contato e local</h3>
 
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <div>
@@ -892,8 +895,7 @@ export default function ErpOrdensServicoPage() {
                 <section className="rounded-3xl border border-marinha-900/10 bg-white p-5">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Itens da execucao</h3>
-                      <p className="mt-1 text-sm text-marinha-500">A OS precisa refletir o que sera consumido e cobrado.</p>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Itens</h3>
                     </div>
                     <Button variant="ghost" onClick={addLine}>
                       Adicionar item
@@ -951,8 +953,7 @@ export default function ErpOrdensServicoPage() {
                 </section>
 
                 <section className="rounded-3xl border border-marinha-900/10 bg-white p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Execucao e fechamento tecnico</h3>
-                  <p className="mt-1 text-sm text-marinha-500">Esses campos transformam a OS em prova de servico, nao so registro financeiro.</p>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Informacoes tecnicas</h3>
 
                   <div className="mt-4 space-y-4">
                     <div>
@@ -1001,21 +1002,12 @@ export default function ErpOrdensServicoPage() {
                 </div>
 
                 <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Leitura rapida da OS</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Resumo</h3>
                   <div className="mt-4 space-y-3 text-sm text-marinha-600">
                     <p>Prioridade: <strong>{PRIORITY_LABEL[priority]}</strong></p>
                     <p>Cliente: <strong>{parties.find((row) => row.id === partyId)?.name || "Nao informado"}</strong></p>
                     <p>Promessa: <strong>{fmtDate(promisedFor)}</strong></p>
                     <p>Local: <strong>{serviceLocation || serviceAddressPreview || "Nao informado"}</strong></p>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">O que mudou</h3>
-                  <div className="mt-4 space-y-3 text-sm text-marinha-600">
-                    <p>A OS agora registra contexto de atendimento, nao so titulo e itens.</p>
-                    <p>Responsavel passa a vir da equipe do negocio, e nao apenas de texto livre.</p>
-                    <p>Diagnostico, solucao e checklist preparam a trilha para laudo e aceite.</p>
                   </div>
                 </div>
 
@@ -1040,16 +1032,16 @@ export default function ErpOrdensServicoPage() {
           ) : (
             <div className="grid gap-4 pt-6 md:grid-cols-3">
               <div className="rounded-3xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Contexto real</p>
-                <p className="mt-2 text-sm text-marinha-600">Abertura com contato, local, promessa, prioridade e equipe.</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Cliente e local</p>
+                <p className="mt-2 text-sm text-marinha-600">Cadastre contato, local e prazo do atendimento.</p>
               </div>
               <div className="rounded-3xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Execucao guiada</p>
-                <p className="mt-2 text-sm text-marinha-600">Diagnostico, checklist e solucao deixam a OS pronta para campo.</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Responsavel e status</p>
+                <p className="mt-2 text-sm text-marinha-600">Acompanhe responsavel e status da ordem.</p>
               </div>
               <div className="rounded-3xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Menos retrabalho</p>
-                <p className="mt-2 text-sm text-marinha-600">A equipe, o financeiro e o cliente passam a falar da mesma ordem.</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Itens e observacoes</p>
+                <p className="mt-2 text-sm text-marinha-600">Registre materiais, servicos e informacoes do atendimento.</p>
               </div>
             </div>
           )}
@@ -1058,7 +1050,7 @@ export default function ErpOrdensServicoPage() {
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Painel rapido</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{products.length} itens disponiveis</p>
-          <p className="mt-1 text-sm text-marinha-500">Servicos e materiais compartilham a mesma base do ERP para refletir no estoque e na cobranca.</p>
+          <p className="mt-1 text-sm text-marinha-500">Base unificada de materiais e servicos.</p>
 
           <div className="mt-4 space-y-3">
             <div className="rounded-2xl bg-slate-50/70 p-4">
@@ -1093,10 +1085,7 @@ export default function ErpOrdensServicoPage() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_380px]">
           <div>
             <div className="mb-4">
-              <h2 className="font-serif text-lg font-bold text-marinha-900">Radar da operacao</h2>
-              <p className="mt-1 text-sm text-marinha-500">
-                Aqui o gestor enxerga rapidamente quem esta com a OS, onde ela esta no fluxo e quais ordens pedem atencao primeiro.
-              </p>
+              <h2 className="font-serif text-lg font-bold text-marinha-900">Visao geral</h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1104,7 +1093,6 @@ export default function ErpOrdensServicoPage() {
                 <div key={bucket.label} className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-marinha-500">{bucket.label}</p>
                   <p className="mt-2 text-3xl font-bold text-marinha-900">{bucket.count}</p>
-                  <p className="mt-2 text-sm text-marinha-500">{bucket.helper}</p>
                 </div>
               ))}
             </div>
@@ -1112,8 +1100,7 @@ export default function ErpOrdensServicoPage() {
             <div className="mt-5 rounded-3xl border border-marinha-900/10 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Ordens que merecem atencao</h3>
-                  <p className="mt-1 text-sm text-marinha-500">Mistura atraso, prioridade, falta de responsavel e tempo aberto.</p>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Ordens prioritarias</h3>
                 </div>
                 <Badge tone="accent">{managerRadarOrders.length} em foco</Badge>
               </div>
@@ -1135,7 +1122,7 @@ export default function ErpOrdensServicoPage() {
                         </div>
 
                         <div className="mt-3 grid gap-3 text-sm text-marinha-600 md:grid-cols-2">
-                          <p>Dono atual: <strong>{getCurrentOwner(order)}</strong></p>
+                          <p>Responsavel: <strong>{getCurrentOwner(order)}</strong></p>
                           <p>Aberta ha: <strong>{fmtDurationSince(order.createdAt)}</strong></p>
                           <p>Local: <strong>{order.serviceLocation ?? "Nao informado"}</strong></p>
                           <p>Promessa: <strong>{fmtDateTime(order.promisedFor)}</strong></p>
@@ -1145,7 +1132,7 @@ export default function ErpOrdensServicoPage() {
                   })
                 ) : (
                   <div className="rounded-2xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5 text-sm text-marinha-500">
-                    Nenhuma OS aberta pedindo atencao agora.
+                    Nenhuma ordem em destaque no momento.
                   </div>
                 )}
               </div>
@@ -1153,7 +1140,7 @@ export default function ErpOrdensServicoPage() {
           </div>
 
           <div className="rounded-3xl bg-marinha-950 p-5 text-white shadow-xl shadow-marinha-950/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Leitura do gestor</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Indicadores</p>
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl bg-white/8 p-4">
                 <p className="text-xs uppercase tracking-wide text-white/60">OS mais antiga aberta</p>
@@ -1165,17 +1152,14 @@ export default function ErpOrdensServicoPage() {
               <div className="rounded-2xl border border-white/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-white/60">Em campo agora</p>
                 <p className="mt-1 text-xl font-semibold">{inProgressOrders.length}</p>
-                <p className="mt-2 text-sm text-white/75">Servico ja iniciado e exigindo acompanhamento de execucao.</p>
               </div>
               <div className="rounded-2xl border border-white/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-white/60">Atrasadas</p>
                 <p className="mt-1 text-xl font-semibold">{overdueOrders.length}</p>
-                <p className="mt-2 text-sm text-white/75">Ordens com promessa vencida e ainda sem encerramento.</p>
               </div>
               <div className="rounded-2xl border border-white/10 p-4">
                 <p className="text-xs uppercase tracking-wide text-white/60">Sem dono</p>
                 <p className="mt-1 text-xl font-semibold">{unassignedActiveOrders.length}</p>
-                <p className="mt-2 text-sm text-white/75">As mais perigosas para perder prazo e visibilidade.</p>
               </div>
             </div>
           </div>
@@ -1185,8 +1169,8 @@ export default function ErpOrdensServicoPage() {
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-marinha-900">Execucao de servicos</h2>
-            <p className="mt-1 text-sm text-marinha-500">A OS agora mostra prioridade, local, agenda, dono atual, ciclo de vida e tempo de permanencia em cada etapa.</p>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de ordens</h2>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe status, responsavel, prazo e atendimento.</p>
           </div>
           <Badge tone="accent">Conclusao baixa estoque e gera recebivel</Badge>
         </div>
