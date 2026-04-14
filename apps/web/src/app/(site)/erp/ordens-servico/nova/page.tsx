@@ -80,6 +80,19 @@ function fullAddress(address: ServiceAddress) {
     .join(", ");
 }
 
+function SectionBadge({ index, label }: { index: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-marinha-900 text-sm font-semibold text-white">
+        {index}
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-marinha-500">{label}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ErpNovaOrdemServicoPage() {
   const businessId = useSelectedBusinessId();
   const noBusinessId = !businessId;
@@ -315,7 +328,7 @@ export default function ErpNovaOrdemServicoPage() {
     <>
       <PageIntro
         title="Nova ordem de servico"
-        description="Cadastro da ordem de servico em tela propria."
+        description="Cadastro completo da ordem de servico."
         badge="Servicos"
       >
         <div className="mt-4 flex flex-wrap gap-3">
@@ -325,20 +338,71 @@ export default function ErpNovaOrdemServicoPage() {
         </div>
       </PageIntro>
 
+      <Card variant="featured" className="mb-6 overflow-hidden">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Abertura da ordem</p>
+            <h2 className="mt-2 font-serif text-3xl font-bold text-marinha-900">Cadastro em etapas claras</h2>
+            <p className="mt-2 max-w-2xl text-sm text-marinha-600">
+              Dados principais, local, itens e informacoes tecnicas ficam organizados para acelerar a abertura sem misturar com a gestao diaria.
+            </p>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-4">
+              <div className="rounded-3xl bg-white/75 p-4">
+                <SectionBadge index="1" label="Dados principais" />
+              </div>
+              <div className="rounded-3xl bg-white/75 p-4">
+                <SectionBadge index="2" label="Contato e local" />
+              </div>
+              <div className="rounded-3xl bg-white/75 p-4">
+                <SectionBadge index="3" label="Itens" />
+              </div>
+              <div className="rounded-3xl bg-white/75 p-4">
+                <SectionBadge index="4" label="Informacoes tecnicas" />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] bg-marinha-950 p-5 text-white shadow-xl shadow-marinha-950/10">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Situacao do cadastro</p>
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl bg-white/8 p-4">
+                <p className="text-xs uppercase tracking-wide text-white/60">Base de apoio</p>
+                <p className="mt-1 text-2xl font-bold">{isLoadingSupport ? "Carregando..." : "Disponivel"}</p>
+                <p className="mt-2 text-sm text-white/75">Clientes, itens e equipe carregados para a abertura da OS.</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 p-4">
+                  <p className="text-xs uppercase tracking-wide text-white/60">Clientes</p>
+                  <p className="mt-1 text-xl font-semibold">{parties.length}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 p-4">
+                  <p className="text-xs uppercase tracking-wide text-white/60">Equipe</p>
+                  <p className="mt-1 text-xl font-semibold">{members.length}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.82fr)]">
         <div className="space-y-6">
           <Card className="border border-marinha-900/10 bg-white">
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-6 flex items-center justify-between gap-3 border-b border-marinha-900/10 pb-4">
               <div>
                 <h2 className="font-serif text-2xl font-bold text-marinha-900">Cadastro</h2>
-                <p className="mt-1 text-sm text-marinha-500">Preencha os dados da nova ordem.</p>
+                <p className="mt-1 text-sm text-marinha-500">Preencha os dados e revise o resumo antes de criar a ordem.</p>
               </div>
               <Badge tone="accent">{isLoadingSupport ? "Carregando" : "Pronto"}</Badge>
             </div>
 
             <div className="space-y-6">
-              <section className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Dados principais</h3>
+              <section className="rounded-[28px] border border-marinha-900/10 bg-gradient-to-br from-slate-50 to-white p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <SectionBadge index="1" label="Dados principais" />
+                  <span className="rounded-full bg-marinha-100 px-3 py-1 text-xs font-semibold text-marinha-700">Obrigatorio</span>
+                </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
@@ -433,8 +497,10 @@ export default function ErpNovaOrdemServicoPage() {
                 </div>
               </section>
 
-              <section className="rounded-3xl border border-marinha-900/10 bg-white p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Contato e local</h3>
+              <section className="rounded-[28px] border border-marinha-900/10 bg-white p-5">
+                <div className="mb-4">
+                  <SectionBadge index="2" label="Contato e local" />
+                </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div>
@@ -500,9 +566,9 @@ export default function ErpNovaOrdemServicoPage() {
                 </div>
               </section>
 
-              <section className="rounded-3xl border border-marinha-900/10 bg-white p-5">
+              <section className="rounded-[28px] border border-marinha-900/10 bg-white p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Itens</h3>
+                  <SectionBadge index="3" label="Itens" />
                   <Button variant="ghost" onClick={addLine}>
                     Adicionar item
                   </Button>
@@ -550,7 +616,7 @@ export default function ErpNovaOrdemServicoPage() {
                       </div>
                       <div className="flex items-center justify-end">
                         <button type="button" onClick={() => removeLine(index)} aria-label={`Remover item ${index + 1}`} className="rounded-full border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">
-                          x
+                          Remover
                         </button>
                       </div>
                     </div>
@@ -558,8 +624,10 @@ export default function ErpNovaOrdemServicoPage() {
                 </div>
               </section>
 
-              <section className="rounded-3xl border border-marinha-900/10 bg-white p-5">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Informacoes tecnicas</h3>
+              <section className="rounded-[28px] border border-marinha-900/10 bg-white p-5">
+                <div className="mb-4">
+                  <SectionBadge index="4" label="Informacoes tecnicas" />
+                </div>
 
                 <div className="mt-4 space-y-4">
                   <div>
@@ -605,6 +673,10 @@ export default function ErpNovaOrdemServicoPage() {
                   <p className="text-xs uppercase tracking-wide text-white/60">Responsavel</p>
                   <p className="mt-1 text-sm font-medium text-white/85">{assignedTo.trim() || "Nao definido"}</p>
                 </div>
+                <div className="rounded-2xl border border-white/10 p-4 sm:col-span-2 xl:col-span-1">
+                  <p className="text-xs uppercase tracking-wide text-white/60">Prazo</p>
+                  <p className="mt-1 text-sm font-medium text-white/85">{fmtDate(promisedFor)}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -612,6 +684,7 @@ export default function ErpNovaOrdemServicoPage() {
           <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Resumo do cadastro</h3>
             <div className="mt-4 space-y-3 text-sm text-marinha-600">
+              <p>Titulo: <strong>{title.trim() || "Nao informado"}</strong></p>
               <p>Prioridade: <strong>{PRIORITY_LABEL[priority]}</strong></p>
               <p>Cliente: <strong>{parties.find((row) => row.id === partyId)?.name || "Nao informado"}</strong></p>
               <p>Prazo: <strong>{fmtDate(promisedFor)}</strong></p>
@@ -637,10 +710,13 @@ export default function ErpNovaOrdemServicoPage() {
             </div>
           ) : null}
 
-          <div className="sticky top-24 rounded-3xl border border-marinha-900/10 bg-white p-4 shadow-lg shadow-marinha-900/5">
+          <div className="sticky top-24 rounded-[28px] border border-marinha-900/10 bg-white p-4 shadow-lg shadow-marinha-900/5">
             <div className="flex flex-col gap-3">
               <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || noBusinessId}>
                 {isSubmitting ? "Salvando..." : "Criar OS"}
+              </Button>
+              <Button variant="ghost" onClick={resetForm} disabled={isSubmitting}>
+                Limpar formulario
               </Button>
               <Link href="/erp/ordens-servico">
                 <Button variant="ghost">Cancelar</Button>
