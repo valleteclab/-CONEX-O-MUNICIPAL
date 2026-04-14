@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErpDataTable, type ErpColumn } from "@/components/erp/erp-data-table";
 import { PageIntro } from "@/components/layout/page-intro";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSelectedBusinessId } from "@/hooks/use-selected-business-id";
@@ -282,12 +281,12 @@ export default function ErpOrdensServicoPage() {
     },
     {
       key: "where",
-      label: "Situacao",
+      label: "Situação",
       render: (row) => (
         <div className="text-sm text-marinha-700">
           <div>{getLifecycleStage(row)}</div>
-          <div className="text-xs text-marinha-500">{row.serviceLocation ?? "Local nao informado"}</div>
-          <div className="text-xs text-marinha-500">Etapa ha {fmtDurationSince(getStageStartedAt(row))}</div>
+          <div className="text-xs text-marinha-500">{row.serviceLocation ?? "Local não informado"}</div>
+          <div className="text-xs text-marinha-500">Etapa há {fmtDurationSince(getStageStartedAt(row))}</div>
         </div>
       ),
     },
@@ -307,13 +306,13 @@ export default function ErpOrdensServicoPage() {
     },
     {
       key: "lifecycle",
-      label: "Historico",
+      label: "Histórico",
       render: (row) => (
         <div className="space-y-1 text-xs text-marinha-600">
           <div>Aberta por: <strong>{row.createdByUser?.fullName ?? "-"}</strong></div>
-          <div>Aberta ha: <strong>{fmtDurationSince(row.createdAt)}</strong></div>
-          <div>Inicio: <strong>{fmtDateTime(row.startedAt)}</strong></div>
-          {row.completedAt ? <div>Conclusao: <strong>{fmtDateTime(row.completedAt)}</strong></div> : null}
+          <div>Aberta há: <strong>{fmtDurationSince(row.createdAt)}</strong></div>
+          <div>Início: <strong>{fmtDateTime(row.startedAt)}</strong></div>
+          {row.completedAt ? <div>Conclusão: <strong>{fmtDateTime(row.completedAt)}</strong></div> : null}
           {row.cancelledAt ? <div>Cancelamento: <strong>{fmtDateTime(row.cancelledAt)}</strong></div> : null}
         </div>
       ),
@@ -404,160 +403,108 @@ export default function ErpOrdensServicoPage() {
         </div>
       </PageIntro>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
-        <Card variant="featured">
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Ordens abertas</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{activeOrders.length} ativas</p>
-          <p className="mt-1 text-sm text-marinha-500">Ordens em andamento no fluxo.</p>
+      <div className="mb-6 grid gap-4 md:grid-cols-5">
+        <Card variant="compact">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Abertas</p>
+          <p className="mt-2 text-2xl font-bold text-marinha-900">{activeOrders.length}</p>
         </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Agendadas e em andamento</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{scheduledOrders.length + inProgressOrders.length}</p>
-          <p className="mt-1 text-sm text-marinha-500">Ordens com atendimento previsto ou iniciado.</p>
+        <Card variant="compact">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Em andamento</p>
+          <p className="mt-2 text-2xl font-bold text-marinha-900">{inProgressOrders.length}</p>
         </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Receita concluida</p>
+        <Card variant="compact">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Atrasadas</p>
+          <p className="mt-2 text-2xl font-bold text-marinha-900">{overdueOrders.length}</p>
+        </Card>
+        <Card variant="compact">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Sem responsável</p>
+          <p className="mt-2 text-2xl font-bold text-marinha-900">{unassignedActiveOrders.length}</p>
+        </Card>
+        <Card variant="compact">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Receita concluída</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{fmtMoney(String(completedAmount))}</p>
-          <p className="mt-1 text-sm text-marinha-500">Volume concluido e refletido no financeiro.</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">OS mais antiga aberta</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">
-            {oldestOpenOrder ? fmtDurationSince(oldestOpenOrder.createdAt) : "-"}
-          </p>
-          <p className="mt-1 text-sm text-marinha-500">
-            {oldestOpenOrder ? oldestOpenOrder.title : "Nenhuma OS aberta no momento."}
-          </p>
         </Card>
       </div>
 
-      <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_360px]">
-        <Card className="border border-marinha-900/10 bg-white">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-marinha-900/10 pb-4">
+      <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_320px]">
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-marinha-500">Ordens</p>
-              <h2 className="mt-2 font-serif text-2xl font-bold text-marinha-900">Central de ordens</h2>
+              <h2 className="font-serif text-lg font-bold text-marinha-900">Ordens prioritárias</h2>
+              <p className="mt-1 text-sm text-marinha-500">Ordens com maior urgência operacional.</p>
             </div>
             <Link href="/erp/ordens-servico/nova">
               <Button variant="primary" disabled={noBusinessId}>
-                Abrir nova OS
+                Nova OS
               </Button>
             </Link>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {managerRadarOrders.length ? (
+              managerRadarOrders.map((order) => {
+                const health = getOperationalHealth(order);
+                return (
+                  <div key={order.id} className="rounded-2xl border border-marinha-900/10 bg-slate-50/70 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <Link
+                          href={`/erp/ordens-servico/${order.id}`}
+                          className="font-semibold text-marinha-900 transition hover:text-marinha-700 hover:underline"
+                        >
+                          {order.title}
+                        </Link>
+                        <p className="mt-1 text-sm text-marinha-500">
+                          {order.party?.name ?? order.contactName ?? "Cliente não informado"} • {getLifecycleStage(order)}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${health.tone}`}>{health.label}</span>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 text-sm text-marinha-600 md:grid-cols-4">
+                      <p>Responsável: <strong>{getCurrentOwner(order)}</strong></p>
+                      <p>Aberta há: <strong>{fmtDurationSince(order.createdAt)}</strong></p>
+                      <p>Local: <strong>{order.serviceLocation ?? "Não informado"}</strong></p>
+                      <p>Prazo: <strong>{fmtDate(order.promisedFor)}</strong></p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5 text-sm text-marinha-500">
+                Nenhuma ordem em destaque no momento.
+              </div>
+            )}
           </div>
         </Card>
 
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Indicadores</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{orders.length} ordens carregadas</p>
-          <p className="mt-1 text-sm text-marinha-500">Resumo da operaÃ§Ã£o atual.</p>
-
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Resumo</p>
           <div className="mt-4 space-y-3">
             <div className="rounded-2xl bg-slate-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Em andamento</p>
-              <p className="mt-1 text-lg font-bold text-marinha-900">{inProgressOrders.length}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Mais antiga aberta</p>
+              <p className="mt-1 text-lg font-bold text-marinha-900">
+                {oldestOpenOrder ? fmtDurationSince(oldestOpenOrder.createdAt) : "-"}
+              </p>
+              <p className="mt-1 text-sm text-marinha-500">{oldestOpenOrder?.title ?? "Nenhuma ordem aberta"}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Agendadas</p>
+              <p className="mt-1 text-lg font-bold text-marinha-900">{scheduledOrders.length}</p>
             </div>
             <div className="rounded-2xl bg-slate-50/70 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Concluídas</p>
               <p className="mt-1 text-lg font-bold text-marinha-900">{completedOrders.length}</p>
             </div>
-            <div className="rounded-2xl bg-slate-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Sem responsável</p>
-              <p className="mt-1 text-lg font-bold text-marinha-900">{unassignedActiveOrders.length}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Atrasadas</p>
-              <p className="mt-1 text-lg font-bold text-marinha-900">{overdueOrders.length}</p>
-            </div>
           </div>
         </Card>
       </div>
 
       <Card>
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_380px]">
-          <div>
-            <div className="mb-4">
-              <h2 className="font-serif text-lg font-bold text-marinha-900">Ordens prioritarias</h2>
-            </div>
-
-            <div className="mt-5 rounded-3xl border border-marinha-900/10 bg-white p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-marinha-500">Em destaque</h3>
-                </div>
-                <Badge tone="accent">{managerRadarOrders.length} em foco</Badge>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {managerRadarOrders.length ? (
-                  managerRadarOrders.map((order) => {
-                    const health = getOperationalHealth(order);
-                    return (
-                      <div key={order.id} className="rounded-2xl border border-marinha-900/10 bg-slate-50/70 p-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <Link
-                              href={`/erp/ordens-servico/${order.id}`}
-                              className="font-semibold text-marinha-900 transition hover:text-marinha-700 hover:underline"
-                            >
-                              {order.title}
-                            </Link>
-                            <p className="mt-1 text-sm text-marinha-500">
-                              {order.party?.name ?? order.contactName ?? "Cliente nao informado"} â€¢ {getLifecycleStage(order)}
-                            </p>
-                          </div>
-                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${health.tone}`}>{health.label}</span>
-                        </div>
-
-                        <div className="mt-3 grid gap-3 text-sm text-marinha-600 md:grid-cols-2">
-                          <p>Responsável: <strong>{getCurrentOwner(order)}</strong></p>
-                          <p>Aberta ha: <strong>{fmtDurationSince(order.createdAt)}</strong></p>
-                          <p>Local: <strong>{order.serviceLocation ?? "Não informado"}</strong></p>
-                          <p>Prazo: <strong>{fmtDateTime(order.promisedFor)}</strong></p>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-marinha-900/15 bg-slate-50/70 p-5 text-sm text-marinha-500">
-                    Nenhuma ordem em destaque no momento.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-marinha-950 p-5 text-white shadow-xl shadow-marinha-950/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Resumo</p>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-white/8 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">OS mais antiga aberta</p>
-                <p className="mt-1 text-xl font-semibold">
-                  {oldestOpenOrder ? fmtDurationSince(oldestOpenOrder.createdAt) : "-"}
-                </p>
-                <p className="mt-2 text-sm text-white/75">{oldestOpenOrder?.title ?? "Nenhuma ordem aberta"}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">Em andamento</p>
-                <p className="mt-1 text-xl font-semibold">{inProgressOrders.length}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">Atrasadas</p>
-                <p className="mt-1 text-xl font-semibold">{overdueOrders.length}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 p-4">
-                <p className="text-xs uppercase tracking-wide text-white/60">Sem responsável</p>
-                <p className="mt-1 text-xl font-semibold">{unassignedActiveOrders.length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de ordens</h2>
-            <p className="mt-1 text-sm text-marinha-500">Acompanhe status, responsavel, prazo e atendimento.</p>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe status, responsável, prazo e atendimento.</p>
           </div>
         </div>
 
