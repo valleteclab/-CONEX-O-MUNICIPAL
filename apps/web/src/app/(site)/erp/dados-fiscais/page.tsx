@@ -22,7 +22,12 @@ type ErpBusinessDetail = {
   fiscalConfig: Record<string, unknown>;
 };
 
-type FiscalReadinessCheck = { id: string; ok: boolean; message: string };
+type FiscalReadinessCheck = {
+  id: string;
+  ok: boolean;
+  message: string;
+  section: "emitente" | "destinatario" | "itens";
+};
 
 type ReadinessPayload = {
   type: "nfse" | "nfe" | "nfce";
@@ -30,6 +35,14 @@ type ReadinessPayload = {
   ready: boolean;
   checks: FiscalReadinessCheck[];
   productionNotes: string[];
+};
+
+type SalesOrderOption = { id: string; label: string };
+
+const SECTION_LABELS: Record<string, string> = {
+  emitente: "Emitente (dados da empresa)",
+  destinatario: "Destinatário (dados do cliente)",
+  itens: "Itens do pedido",
 };
 
 const TAX_OPTIONS: { value: string; label: string }[] = [
@@ -72,6 +85,8 @@ export default function ErpDadosFiscaisPage() {
   const [readinessType, setReadinessType] = useState<"nfse" | "nfe" | "nfce">("nfse");
   const [readiness, setReadiness] = useState<ReadinessPayload | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
+  const [salesOrders, setSalesOrders] = useState<SalesOrderOption[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [plugnotasRegistered, setPlugnotasRegistered] = useState(false);
   const [registeringPn, setRegisteringPn] = useState(false);
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
@@ -119,23 +134,42 @@ export default function ErpDadosFiscaisPage() {
     setPlugnotasRegistered(Boolean(b.fiscalConfig?.plugnotasRegistered));
   }, [businessId]);
 
-  const loadReadiness = useCallback(async () => {
+  const loadReadiness = useCallback(async (orderId?: string) => {
     if (!businessId) return;
     setReadinessLoading(true);
+    const qs = orderId ? `&orderId=${encodeURIComponent(orderId)}` : "";
     const res = await erpFetch<ReadinessPayload>(
-      `/api/v1/erp/fiscal/readiness?type=${readinessType}`,
+      `/api/v1/erp/fiscal/readiness?type=${readinessType}${qs}`,
     );
     setReadinessLoading(false);
     if (res.ok && res.data) setReadiness(res.data);
   }, [businessId, readinessType]);
+
+  const loadSalesOrders = useCallback(async () => {
+    if (!businessId) return;
+    const res = await erpFetch<{ items: { id: string; code?: string | null; totalAmount: string }[] }>(
+      "/api/v1/erp/sales-orders?take=50&skip=0&status=confirmed",
+    );
+    if (res.ok && res.data) {
+      setSalesOrders(
+        res.data.items.map((o) => ({
+          id: o.id,
+          label: `${o.code ?? o.id.slice(0, 8)} — R$ ${Number(o.totalAmount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+        })),
+      );
+    }
+  }, [businessId]);
 
   useEffect(() => {
     void loadBusiness();
   }, [loadBusiness]);
 
   useEffect(() => {
-    if (businessId) void loadReadiness();
-  }, [businessId, readinessType, loadReadiness]);
+    if (businessId) {
+      void loadReadiness(selectedOrderId || undefined);
+      if (readinessType !== "nfse") void loadSalesOrders();
+    }
+  }, [businessId, readinessType, selectedOrderId, loadReadiness, loadSalesOrders]);
 
   async function saveFiscalData(options?: { silent?: boolean }) {
     if (!businessId) return;
@@ -529,7 +563,7 @@ export default function ErpDadosFiscaisPage() {
             <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
               <h3 className="text-sm font-semibold text-marinha-800">PlugNotas e NFC-e</h3>
               <p className="mt-1 text-xs text-marinha-500">
-                Envie o certificado A1 do cliente para o PlugNotas e informe os dados CSC da NFC-e para preparar a emissao em producao.
+                Envie o certificado A1 do cliente para o PlugNotas e informe os dados CSC da NFC-e para preparar a emissão em produção.
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm font-medium text-marinha-700">
@@ -567,7 +601,7 @@ export default function ErpDadosFiscaisPage() {
                     {plugnotasCertificateId || "Nenhum certificado enviado ainda"}
                   </p>
                   <p className="mt-2 text-xs text-marinha-500">
-                    O upload e enviado ao PlugNotas e o ID retornado fica salvo no cadastro fiscal do negocio.
+                    O upload é enviado ao PlugNotas e o ID retornado fica salvo no cadastro fiscal do negócio.
                   </p>
                 </div>
               </div>
@@ -603,12 +637,12 @@ export default function ErpDadosFiscaisPage() {
                   />
                 </label>
                 <label className="block text-sm font-medium text-marinha-700">
-                  CSC codigo (NFC-e)
+                  Código CSC (NFC-e)
                   <input
                     value={nfceCscCode}
                     onChange={(e) => setNfceCscCode(e.target.value)}
                     className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm font-mono"
-                    placeholder="Codigo fornecido pela SEFAZ"
+                    placeholder="Código fornecido pela SEFAZ"
                   />
                 </label>
               </div>
@@ -661,76 +695,102 @@ export default function ErpDadosFiscaisPage() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="font-serif text-lg text-marinha-900">Checklist de emissão</h2>
+          <h2 className="font-serif text-lg text-marinha-900">Simulação de emissão</h2>
           <p className="mt-1 text-sm text-marinha-500">
-            Veja abaixo o que já está pronto e o que ainda precisa ser ajustado para emitir notas.
+            Selecione o tipo de nota e, opcionalmente, um pedido para ver o checklist completo antes de emitir.
           </p>
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setReadinessType("nfse")}
-              className={`rounded-btn px-3 py-1.5 text-sm font-semibold ${
-                readinessType === "nfse" ?
-                  "bg-municipal-600 text-white"
-                : "bg-marinha-900/10 text-marinha-700"
-              }`}
-            >
-              NFS-e
-            </button>
-            <button
-              type="button"
-              onClick={() => setReadinessType("nfe")}
-              className={`rounded-btn px-3 py-1.5 text-sm font-semibold ${
-                readinessType === "nfe" ?
-                  "bg-municipal-600 text-white"
-                : "bg-marinha-900/10 text-marinha-700"
-              }`}
-            >
-              NF-e
-            </button>
-            <button
-              type="button"
-              onClick={() => setReadinessType("nfce")}
-              className={`rounded-btn px-3 py-1.5 text-sm font-semibold ${
-                readinessType === "nfce" ?
-                  "bg-municipal-600 text-white"
-                : "bg-marinha-900/10 text-marinha-700"
-              }`}
-            >
-              NFC-e
-            </button>
+
+          {/* Tipo de nota */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(["nfse", "nfe", "nfce"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => { setReadinessType(t); setSelectedOrderId(""); }}
+                className={`rounded-btn px-3 py-1.5 text-sm font-semibold ${
+                  readinessType === t ? "bg-municipal-600 text-white" : "bg-marinha-900/10 text-marinha-700"
+                }`}
+              >
+                {t.toUpperCase().replace("NFSE", "NFS-e").replace("NFCE", "NFC-e")}
+              </button>
+            ))}
             <Button
               type="button"
               variant="ghost"
               className="ml-auto text-sm"
-              onClick={() => void loadReadiness()}
+              onClick={() => void loadReadiness(selectedOrderId || undefined)}
               disabled={readinessLoading}
             >
               Atualizar
             </Button>
           </div>
 
+          {/* Seletor de pedido (NF-e e NFC-e) */}
+          {readinessType !== "nfse" && (
+            <div className="mt-3">
+              <label className="block text-xs font-semibold text-marinha-700">
+                Simular com pedido de venda (opcional)
+              </label>
+              <select
+                value={selectedOrderId}
+                onChange={(e) => setSelectedOrderId(e.target.value)}
+                className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
+              >
+                <option value="">— somente dados do emitente —</option>
+                {salesOrders.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+              {salesOrders.length === 0 && (
+                <p className="mt-1 text-xs text-marinha-400">Nenhum pedido confirmado encontrado.</p>
+              )}
+            </div>
+          )}
+
           {readinessLoading && !readiness && (
             <div className="mt-4 h-24 animate-pulse rounded-btn bg-marinha-900/10" />
           )}
 
-          {readiness && (
-            <ul className="mt-4 space-y-2">
-              {readiness.checks.map((c) => (
-                <li
-                  key={c.id}
-                  className={`rounded-btn border px-3 py-2 text-sm ${
-                    c.ok ? "border-green-200 bg-green-50 text-green-900" : (
-                      "border-amber-200 bg-amber-50 text-amber-900"
-                    )
-                  }`}
-                >
-                  {c.ok ? "✓ " : "• "}
-                  {c.message}
-                </li>
-              ))}
-            </ul>
-          )}
+          {readiness && (() => {
+            const sections = (["emitente", "destinatario", "itens"] as const).filter(
+              (s) => readiness.checks.some((c) => c.section === s),
+            );
+            return (
+              <div className="mt-4 space-y-4">
+                {sections.map((section) => {
+                  const sectionChecks = readiness.checks.filter((c) => c.section === section);
+                  const allOk = sectionChecks.every((c) => c.ok);
+                  return (
+                    <div key={section} className={`rounded-btn border p-3 ${allOk ? "border-green-200 bg-green-50/50" : "border-amber-200 bg-amber-50/50"}`}>
+                      <p className={`mb-2 text-xs font-bold uppercase tracking-wide ${allOk ? "text-green-800" : "text-amber-800"}`}>
+                        {allOk ? "✓ " : "• "}
+                        {SECTION_LABELS[section]}
+                      </p>
+                      <ul className="space-y-1.5">
+                        {sectionChecks.map((c) => (
+                          <li
+                            key={c.id}
+                            className={`rounded border px-3 py-1.5 text-sm ${
+                              c.ok ? "border-green-200 bg-green-50 text-green-900" : "border-amber-200 bg-amber-50 text-amber-900"
+                            }`}
+                          >
+                            {c.ok ? "✓ " : "• "}
+                            {c.message}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+
+                <div className={`rounded-btn border px-4 py-3 text-sm font-semibold ${readiness.ready ? "border-green-300 bg-green-100 text-green-900" : "border-red-200 bg-red-50 text-red-900"}`}>
+                  {readiness.ready
+                    ? `Pronto para emitir ${readiness.type.toUpperCase().replace("NFSE", "NFS-e").replace("NFCE", "NFC-e")}.`
+                    : `Pendências encontradas — resolva os itens acima antes de emitir.`}
+                </div>
+              </div>
+            );
+          })()}
 
           {readiness && (
             <div className="mt-4 rounded-btn border border-marinha-900/15 bg-marinha-900/5 p-3 text-xs text-marinha-600">

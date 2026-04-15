@@ -74,10 +74,11 @@ export class ErpFiscalController {
   readiness(
     @SelectedBusiness() business: ErpBusiness,
     @Query('type') typeStr?: string,
+    @Query('orderId') orderId?: string,
   ) {
     const type =
       typeStr === 'nfe' ? 'nfe' : typeStr === 'nfce' ? 'nfce' : 'nfse';
-    return this.svc.getEmitReadiness(business, type);
+    return this.svc.getEmitReadiness(business, type, orderId);
   }
 
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)

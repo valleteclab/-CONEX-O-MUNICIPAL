@@ -45,6 +45,7 @@ export type FiscalReadinessCheck = {
   id: string;
   ok: boolean;
   message: string;
+  section: 'emitente' | 'destinatario' | 'itens';
 };
 
 export type FiscalReadinessPayload = {
@@ -292,12 +293,28 @@ export class ErpFiscalService {
     }
   }
 
-  getEmitReadiness(
+  async getEmitReadiness(
     business: ErpBusiness,
     type: FiscalDocumentType,
-  ): FiscalReadinessPayload {
+    orderId?: string,
+  ): Promise<FiscalReadinessPayload> {
     const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
     const checks = this.buildBusinessChecks(business, type);
+
+    if (orderId) {
+      const order = await this.orders.findOne({
+        where: {
+          id: orderId,
+          businessId: business.id,
+          tenantId: business.tenantId,
+        },
+        relations: ['items', 'items.product', 'party'],
+      });
+      if (order) {
+        checks.push(...this.buildOrderChecks(order, type));
+      }
+    }
+
     const productionNotes: string[] = [];
 
     if (sandbox) {
@@ -1035,6 +1052,7 @@ export class ErpFiscalService {
 
     checks.push({
       id: 'emitente_documento',
+      section: 'emitente',
       ok: plugNotasSupportsDocument,
       message:
         plugNotasSupportsDocument
@@ -1045,6 +1063,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'emitente_razao',
+      section: 'emitente',
       ok: legalName.length >= 2,
       message:
         legalName.length >= 2
@@ -1053,6 +1072,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'emitente_logradouro',
+      section: 'emitente',
       ok: address.logradouro.length >= 3,
       message:
         address.logradouro.length >= 3
@@ -1061,6 +1081,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'emitente_numero',
+      section: 'emitente',
       ok: address.numero.length >= 1,
       message:
         address.numero.length >= 1
@@ -1069,6 +1090,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'emitente_cep',
+      section: 'emitente',
       ok: cep.length === 8,
       message:
         cep.length === 8
@@ -1077,6 +1099,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'emitente_ibge',
+      section: 'emitente',
       ok: /^\d{7}$/.test(ibgeCode),
       message: /^\d{7}$/.test(ibgeCode)
         ? 'Codigo IBGE do municipio informado.'
@@ -1084,6 +1107,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'plugnotas_certificado',
+      section: 'emitente',
       ok: typeof fiscalConfig['plugnotasCertificateId'] === 'string' &&
         String(fiscalConfig['plugnotasCertificateId']).trim().length > 0,
       message:
@@ -1097,6 +1121,7 @@ export class ErpFiscalService {
       const inscricaoMunicipal = (business.inscricaoMunicipal ?? '').trim();
       checks.push({
         id: 'nfse_im',
+        section: 'emitente',
         ok: inscricaoMunicipal.length >= 1,
         message:
           inscricaoMunicipal.length >= 1
@@ -1112,6 +1137,7 @@ export class ErpFiscalService {
 
     checks.push({
       id: 'comercial_uf',
+      section: 'emitente',
       ok: uf.length === 2,
       message:
         uf.length === 2
@@ -1120,6 +1146,7 @@ export class ErpFiscalService {
     });
     checks.push({
       id: 'comercial_ie',
+      section: 'emitente',
       ok: inscricaoEstadual.length >= 1 || isMei,
       message:
         inscricaoEstadual.length >= 1
@@ -1136,6 +1163,7 @@ export class ErpFiscalService {
 
       checks.push({
         id: 'nfce_csc_id',
+        section: 'emitente',
         ok: cscId.length >= 1,
         message:
           cscId.length >= 1
@@ -1144,12 +1172,92 @@ export class ErpFiscalService {
       });
       checks.push({
         id: 'nfce_csc_code',
+        section: 'emitente',
         ok: cscCode.length >= 6,
         message:
           cscCode.length >= 6
             ? 'Codigo CSC configurado.'
             : 'Informe o codigo CSC da NFC-e em Dados Fiscais.',
       });
+    }
+
+    return checks;
+  }
+
+  private buildOrderChecks(
+    order: ErpSalesOrder,
+    type: FiscalDocumentType,
+  ): FiscalReadinessCheck[] {
+    const checks: FiscalReadinessCheck[] = [];
+
+    // --- Destinatário ---
+    const party = order.party;
+    const partyName = (party?.legalName ?? party?.name ?? '').trim();
+    checks.push({
+      id: 'destinatario_nome',
+      section: 'destinatario',
+      ok: partyName.length >= 2,
+      message:
+        partyName.length >= 2
+          ? `Destinatario identificado: ${partyName}.`
+          : 'Pedido sem cliente vinculado. Para NF-e, o destinatario pode ser omitido somente em venda a consumidor final.',
+    });
+
+    if (party?.document) {
+      const partyDoc = parseFiscalDocument(party.document);
+      checks.push({
+        id: 'destinatario_documento',
+        section: 'destinatario',
+        ok: partyDoc.isValid,
+        message: partyDoc.isValid
+          ? `Documento do destinatario valido (${partyDoc.kind}).`
+          : 'Documento (CPF/CNPJ) do cliente invalido; corrija antes de emitir.',
+      });
+    }
+
+    // --- Itens ---
+    const items = order.items ?? [];
+    if (items.length === 0) {
+      checks.push({
+        id: 'itens_existem',
+        section: 'itens',
+        ok: false,
+        message: 'O pedido nao possui itens.',
+      });
+    } else {
+      checks.push({
+        id: 'itens_existem',
+        section: 'itens',
+        ok: true,
+        message: `${items.length} item(ns) no pedido.`,
+      });
+    }
+
+    if (type !== 'nfse') {
+      for (const item of items) {
+        const product = item.product;
+        const name = product?.name ?? item.productId;
+        const ncm = this.onlyDigits(product?.ncm);
+        checks.push({
+          id: `item_ncm_${item.productId}`,
+          section: 'itens',
+          ok: ncm.length === 8,
+          message:
+            ncm.length === 8
+              ? `"${name}" — NCM ${product!.ncm} preenchido.`
+              : `"${name}" — NCM ausente ou invalido (precisa ter 8 digitos).`,
+        });
+        const cfop = (product?.cfopDefault ?? '').trim();
+        checks.push({
+          id: `item_cfop_${item.productId}`,
+          section: 'itens',
+          ok: /^\d{4}$/.test(cfop),
+          message:
+            /^\d{4}$/.test(cfop)
+              ? `"${name}" — CFOP ${cfop} configurado.`
+              : `"${name}" — CFOP ausente; sera usado 5102 como padrao.`,
+        });
+      }
     }
 
     return checks;

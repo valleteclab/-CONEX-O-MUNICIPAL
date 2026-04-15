@@ -90,7 +90,7 @@ describe('ErpFiscalService', () => {
     );
   });
 
-  it('marks NFC-e readiness as pending when CSC is missing', () => {
+  it('marks NFC-e readiness as pending when CSC is missing', async () => {
     const business = {
       id: 'business-1',
       tenantId: 'tenant-1',
@@ -109,7 +109,7 @@ describe('ErpFiscalService', () => {
       fiscalConfig: {},
     } as unknown as ErpBusiness;
 
-    const readiness = service.getEmitReadiness(business, 'nfce');
+    const readiness = await service.getEmitReadiness(business, 'nfce');
 
     expect(readiness.ready).toBe(false);
     expect(readiness.checks).toEqual(
