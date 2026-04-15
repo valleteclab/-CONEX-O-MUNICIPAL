@@ -1030,7 +1030,7 @@ export class ErpFiscalService {
     const legalName = (business.legalName ?? business.tradeName ?? '').trim();
     const address = this.getAddress(business);
     const cep = this.onlyDigits(address.cep);
-    const ibgeCode = (business.cityIbgeCode ?? '').trim();
+    const ibgeCode = this.getBusinessCityIbgeCode(business);
     const fiscalConfig = this.getFiscalConfig(business);
 
     checks.push({
@@ -1161,6 +1161,7 @@ export class ErpFiscalService {
     integrationId: string,
   ): object[] {
     const address = this.getAddress(business);
+    const cityIbgeCode = this.getBusinessCityIbgeCode(business);
     const nfseConfig = this.getNestedConfig(business, 'nfse');
     const description = order.items
       .map((item) => `${item.product?.name ?? item.productId} (${item.qty})`)
@@ -1178,7 +1179,7 @@ export class ErpFiscalService {
             numero: address.numero || 'S/N',
             complemento: address.complemento || undefined,
             bairro: address.bairro || undefined,
-            codigoMunicipio: business.cityIbgeCode ?? undefined,
+            codigoMunicipio: cityIbgeCode || undefined,
             cep: this.onlyDigits(address.cep),
           },
         },
@@ -1210,6 +1211,7 @@ export class ErpFiscalService {
     integrationId: string,
   ): object[] {
     const address = this.getAddress(business);
+    const cityIbgeCode = this.getBusinessCityIbgeCode(business);
 
     const products = (order.items ?? []).map((item, index) => {
       const product = item.product;
@@ -1242,7 +1244,7 @@ export class ErpFiscalService {
           endereco: {
             logradouro: address.logradouro || 'Endereco nao informado',
             numero: address.numero || 'S/N',
-            codigoMunicipio: business.cityIbgeCode ?? undefined,
+            codigoMunicipio: cityIbgeCode || undefined,
             cep: this.onlyDigits(address.cep),
             uf: address.uf || 'BA',
           },
@@ -1274,6 +1276,7 @@ export class ErpFiscalService {
     integrationId: string,
   ): object[] {
     const address = this.getAddress(business);
+    const cityIbgeCode = this.getBusinessCityIbgeCode(business);
     return [
       {
         idIntegracao: integrationId,
@@ -1286,7 +1289,7 @@ export class ErpFiscalService {
           endereco: {
             logradouro: address.logradouro || 'Endereco nao informado',
             numero: address.numero || 'S/N',
-            codigoMunicipio: business.cityIbgeCode ?? undefined,
+            codigoMunicipio: cityIbgeCode || undefined,
             cep: this.onlyDigits(address.cep),
             uf: address.uf || 'BA',
           },
@@ -1515,6 +1518,7 @@ export class ErpFiscalService {
     const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
     const fiscalConfig = this.getFiscalConfig(business);
     const address = this.getAddress(business);
+    const cityIbgeCode = this.getBusinessCityIbgeCode(business);
     const documentDigits = this.getRequiredPlugNotasDocument(business.document);
     const phone = this.parsePhone(business.responsiblePhone);
     const nfseConfig = this.getNestedConfig(business, 'nfse');
@@ -1560,7 +1564,7 @@ export class ErpFiscalService {
         bairro: address.bairro || undefined,
         codigoPais: '1058',
         descricaoPais: 'Brasil',
-        codigoCidade: business.cityIbgeCode ?? undefined,
+        codigoCidade: cityIbgeCode || undefined,
         descricaoCidade: address.city || undefined,
         estado: address.uf || undefined,
         cep: this.onlyDigits(address.cep) || undefined,
@@ -1673,20 +1677,36 @@ export class ErpFiscalService {
   private getFiscalConfig(
     business: ErpBusiness,
   ): Record<string, unknown> {
-    return (business.fiscalConfig ?? {}) as Record<string, unknown>;
+    return this.asRecord(business.fiscalConfig);
   }
 
   private getNestedConfig(
     business: ErpBusiness,
     key: 'nfse' | 'nfe' | 'nfce',
   ): Record<string, unknown> {
-    return (this.getFiscalConfig(business)[key] ?? {}) as Record<string, unknown>;
+    return this.asRecord(this.getFiscalConfig(business)[key]);
   }
 
   private getAddress(
     business: ErpBusiness,
   ): Record<string, string> {
-    return (business.address ?? {}) as Record<string, string>;
+    return this.asRecord(business.address) as Record<string, string>;
+  }
+
+  private getBusinessCityIbgeCode(business: ErpBusiness): string {
+    const primary = (business.cityIbgeCode ?? '').trim();
+    if (primary) {
+      return primary;
+    }
+    const address = this.getAddress(business);
+    return String(address.cityIbgeCode ?? '').trim();
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return {};
+    }
+    return value as Record<string, unknown>;
   }
 
   private onlyDigits(value: string | null | undefined): string {
