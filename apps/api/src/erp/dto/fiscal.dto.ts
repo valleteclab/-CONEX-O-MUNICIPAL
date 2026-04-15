@@ -79,6 +79,15 @@ export class FiscalReturnLineDto {
   qty!: string;
 }
 
+export class SendCceDto {
+  @ApiProperty({
+    description: 'Texto da correção (mínimo 15 caracteres conforme SEFAZ)',
+  })
+  @IsString()
+  @MaxLength(1000)
+  correcao!: string;
+}
+
 export class CreateFiscalReturnDto {
   @ApiProperty()
   @IsUUID()

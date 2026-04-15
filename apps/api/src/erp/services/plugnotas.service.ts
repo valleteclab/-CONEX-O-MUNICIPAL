@@ -16,6 +16,12 @@ export interface PlugNotasDocumentResponse {
   [key: string]: unknown;
 }
 
+interface PlugNotasEmitResponse {
+  documents: PlugNotasDocumentResponse[];
+  message?: string;
+  protocol?: string;
+}
+
 export interface PlugNotasCertificateResponse {
   message?: string;
   data?: {
@@ -89,14 +95,23 @@ export class PlugNotasService {
     }
   }
 
+  private unwrapEmitResponse(
+    raw: PlugNotasEmitResponse | PlugNotasDocumentResponse[],
+  ): PlugNotasDocumentResponse[] {
+    if (Array.isArray(raw)) return raw;
+    return raw.documents ?? [];
+  }
+
   /** Emitir NFS-e — aceita array de notas */
   async emitNfse(payload: object[]): Promise<PlugNotasDocumentResponse[]> {
-    return this.request<PlugNotasDocumentResponse[]>('POST', '/nfse', payload);
+    const raw = await this.request<PlugNotasEmitResponse | PlugNotasDocumentResponse[]>('POST', '/nfse', payload);
+    return this.unwrapEmitResponse(raw);
   }
 
   /** Emitir NF-e — aceita array de notas */
   async emitNfe(payload: object[]): Promise<PlugNotasDocumentResponse[]> {
-    return this.request<PlugNotasDocumentResponse[]>('POST', '/nfe', payload);
+    const raw = await this.request<PlugNotasEmitResponse | PlugNotasDocumentResponse[]>('POST', '/nfe', payload);
+    return this.unwrapEmitResponse(raw);
   }
 
   private authHeaders(): Record<string, string> {
@@ -107,7 +122,8 @@ export class PlugNotasService {
 
   /** Emitir NFC-e — aceita array de notas */
   async emitNfce(payload: object[]): Promise<PlugNotasDocumentResponse[]> {
-    return this.request<PlugNotasDocumentResponse[]>('POST', '/nfce', payload);
+    const raw = await this.request<PlugNotasEmitResponse | PlugNotasDocumentResponse[]>('POST', '/nfce', payload);
+    return this.unwrapEmitResponse(raw);
   }
 
   async uploadCertificate(params: {
@@ -171,27 +187,62 @@ export class PlugNotasService {
     }
   }
 
-  /** Consultar status de um documento */
+  /** Consultar status de um documento.
+   * NFC-e usa endpoint /nfce/:id/resumo que retorna array — os demais retornam objeto direto.
+   */
   async getStatus(
     type: 'nfse' | 'nfe' | 'nfce',
     plugnotasId: string,
   ): Promise<PlugNotasDocumentResponse> {
+    if (type === 'nfce') {
+      const result = await this.request<PlugNotasDocumentResponse[]>(
+        'GET',
+        `/nfce/${encodeURIComponent(plugnotasId)}/resumo`,
+      );
+      return Array.isArray(result) ? result[0] : result;
+    }
     return this.request<PlugNotasDocumentResponse>(
       'GET',
       `/${type}/${encodeURIComponent(plugnotasId)}`,
     );
   }
 
-  /** Cancelar documento */
+  /**
+   * Cancelar documento.
+   * Rotas confirmadas via sandbox:
+   *   NFS-e → POST /nfse/eventos/cancelamento  { id, justificativa }
+   *   NF-e  → POST /nfe/:id/cancelamento        { justificativa }
+   *   NFC-e → POST /nfce/:id/cancelamento       { justificativa }
+   */
   async cancel(
     type: 'nfse' | 'nfe' | 'nfce',
     plugnotasId: string,
     payload?: Record<string, unknown>,
   ): Promise<unknown> {
+    const justificativa = payload?.justificativa;
+    if (type === 'nfse') {
+      return this.request<unknown>('POST', '/nfse/eventos/cancelamento', {
+        id: plugnotasId,
+        justificativa,
+      });
+    }
     return this.request<unknown>(
-      'DELETE',
-      `/${type}/${encodeURIComponent(plugnotasId)}`,
-      payload,
+      'POST',
+      `/${type}/${encodeURIComponent(plugnotasId)}/cancelamento`,
+      { justificativa },
+    );
+  }
+
+  /**
+   * Enviar Carta de Correção Eletrônica (CC-e) — exclusivo NF-e.
+   * Rota: POST /nfe/:idOrChave/cce  { correcao }
+   * Requer documento com status CONCLUIDO e texto mínimo de 15 caracteres (SEFAZ).
+   */
+  async sendCce(plugnotasId: string, correcao: string): Promise<unknown> {
+    return this.request<unknown>(
+      'POST',
+      `/nfe/${encodeURIComponent(plugnotasId)}/cce`,
+      { correcao },
     );
   }
 

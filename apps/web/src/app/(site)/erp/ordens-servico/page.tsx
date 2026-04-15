@@ -70,7 +70,7 @@ function fmtDurationSince(date?: string | null) {
 function getLifecycleStage(order: ServiceOrder) {
   if (order.status === "completed") return "Concluída";
   if (order.status === "cancelled") return "Cancelada";
-  if (order.status === "in_progress") return "Em andamento";
+  if (order.status === "in_progress") return "Em campo";
   if (order.status === "scheduled") return "Agendada";
   return "Triagem";
 }
@@ -103,9 +103,9 @@ function getOperationalHealth(order: ServiceOrder) {
 }
 
 const STATUS_LABEL: Record<ServiceOrderStatus, string> = {
-  draft: "Rascunho",
+  draft: "Triagem",
   scheduled: "Agendada",
-  in_progress: "Em andamento",
+  in_progress: "Em campo",
   completed: "Concluída",
   cancelled: "Cancelada",
 };
@@ -120,7 +120,7 @@ const STATUS_COLOR: Record<ServiceOrderStatus, string> = {
 
 const PRIORITY_LABEL: Record<ServiceOrderPriority, string> = {
   low: "Baixa",
-  medium: "Media",
+  medium: "Média",
   high: "Alta",
   urgent: "Urgente",
 };
@@ -298,7 +298,7 @@ export default function ErpOrdensServicoPage() {
           <div>{getCurrentOwner(row)}</div>
           <div className="text-xs text-marinha-500">
             {row.status === "in_progress"
-              ? `Inicio: ${row.startedByUser?.fullName ?? "-"}`
+              ? `Início: ${row.startedByUser?.fullName ?? "-"}`
               : `Designada para: ${row.assignedUser?.fullName ?? row.assignedTo ?? "-"}`}
           </div>
         </div>

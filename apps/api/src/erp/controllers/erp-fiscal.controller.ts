@@ -31,6 +31,7 @@ import {
   CancelFiscalDocumentDto,
   CreateFiscalReturnDto,
   EmitFiscalDto,
+  SendCceDto,
 } from '../dto/fiscal.dto';
 
 @ApiTags('erp — fiscal')
@@ -214,6 +215,21 @@ export class ErpFiscalController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.svc.findOne(business, id);
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Post(':id/cce')
+  @ApiOperation({
+    summary: 'Enviar Carta de Correção Eletrônica (CC-e) — exclusivo NF-e autorizada',
+  })
+  sendCce(
+    @SelectedBusiness() business: ErpBusiness,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SendCceDto,
+  ) {
+    return this.svc.sendCce(business, id, dto);
   }
 
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)

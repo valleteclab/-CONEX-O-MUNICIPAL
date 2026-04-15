@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PageIntro } from "@/components/layout/page-intro";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,10 @@ type FiscalDoc = {
   salesOrder?: { id: string; totalAmount: string } | null;
 };
 
+// ─── Helpers de badge ────────────────────────────────────────────────────────
+
 function typeBadge(type: string) {
-  const map: Record<string, string> = {
-    nfse: "NFS-e",
-    nfe: "NF-e",
-    nfce: "NFC-e",
-  };
+  const map: Record<string, string> = { nfse: "NFS-e", nfe: "NF-e", nfce: "NFC-e" };
   return (
     <span className="inline-block rounded bg-marinha-900/10 px-2 py-0.5 text-xs font-bold text-marinha-700">
       {map[type] ?? type.toUpperCase()}
@@ -56,23 +54,222 @@ function statusBadge(status: string) {
     error: "Erro",
   };
   return (
-    <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${styles[status] ?? "bg-marinha-500/10 text-marinha-600"}`}
-    >
+    <span className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${styles[status] ?? "bg-marinha-500/10 text-marinha-600"}`}>
       {labels[status] ?? status}
     </span>
   );
 }
 
-const TAKE = 50;
-
 function purposeBadge(purpose: FiscalDoc["purpose"]) {
   return (
     <span className="inline-block rounded bg-municipal-600/10 px-2 py-0.5 text-xs font-semibold text-municipal-700">
-      {purpose === "return" ? "Devolucao" : "Venda"}
+      {purpose === "return" ? "Devolução" : "Venda"}
     </span>
   );
 }
+
+// ─── Modal de cancelamento ────────────────────────────────────────────────────
+
+function CancelModal({
+  doc,
+  onClose,
+  onSuccess,
+}: {
+  doc: FiscalDoc;
+  onClose: () => void;
+  onSuccess: (updated: FiscalDoc) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  async function handleConfirm() {
+    if (!reason.trim()) {
+      setError("Informe o motivo do cancelamento.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const res = await erpFetch<FiscalDoc>(`/api/v1/erp/fiscal/${doc.id}`, {
+      method: "DELETE",
+      body: JSON.stringify({ reason: reason.trim() }),
+    });
+    setLoading(false);
+    if (res.ok && res.data) {
+      onSuccess(res.data);
+    } else {
+      setError(res.error ?? "Não foi possível cancelar a nota fiscal.");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-card bg-white shadow-xl">
+        <div className="border-b border-marinha-900/10 px-6 py-4">
+          <h2 className="font-serif text-lg text-marinha-900">Cancelar nota fiscal</h2>
+          <p className="mt-1 text-sm text-marinha-500">
+            Esta ação é irreversível e depende da confirmação da SEFAZ.{" "}
+            {doc.type === "nfe" || doc.type === "nfce"
+              ? "Notas NF-e e NFC-e só podem ser canceladas em até 24h após a autorização."
+              : "NFS-e pode ser cancelada conforme prazo do município."}
+          </p>
+        </div>
+        <div className="px-6 py-4">
+          <label className="block text-sm font-semibold text-marinha-700">
+            Motivo do cancelamento
+          </label>
+          <textarea
+            ref={textareaRef}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={500}
+            rows={3}
+            placeholder="Descreva o motivo (obrigatório pela SEFAZ)"
+            className="mt-2 w-full rounded-input border border-marinha-900/20 bg-surface-input px-3 py-2 text-sm text-marinha-900 placeholder:text-marinha-400 focus:outline-none focus:ring-2 focus:ring-municipal-500"
+          />
+          <p className="mt-1 text-right text-xs text-marinha-400">{reason.length}/500</p>
+          {error && <p className="mt-2 text-sm text-alerta-700">{error}</p>}
+        </div>
+        <div className="flex justify-end gap-3 border-t border-marinha-900/10 px-6 py-4">
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Voltar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => void handleConfirm()}
+            disabled={loading || !reason.trim()}
+            className="bg-alerta-700 hover:bg-alerta-800"
+          >
+            {loading ? "Cancelando…" : "Confirmar cancelamento"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal de CC-e ────────────────────────────────────────────────────────────
+
+function CceModal({
+  doc,
+  onClose,
+  onSuccess,
+}: {
+  doc: FiscalDoc;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [correcao, setCorrecao] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  async function handleConfirm() {
+    if (correcao.trim().length < 15) {
+      setError("O texto deve ter pelo menos 15 caracteres (exigência da SEFAZ).");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const res = await erpFetch<unknown>(`/api/v1/erp/fiscal/${doc.id}/cce`, {
+      method: "POST",
+      body: JSON.stringify({ correcao: correcao.trim() }),
+    });
+    setLoading(false);
+    if (res.ok) {
+      onSuccess();
+    } else {
+      setError(res.error ?? "Não foi possível enviar a carta de correção.");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-lg rounded-card bg-white shadow-xl">
+        <div className="border-b border-marinha-900/10 px-6 py-4">
+          <h2 className="font-serif text-lg text-marinha-900">Carta de Correção Eletrônica (CC-e)</h2>
+          <p className="mt-1 text-sm text-marinha-500">
+            Permite corrigir informações auxiliares de uma NF-e já autorizada. Exclusivo para NF-e.
+          </p>
+        </div>
+
+        <div className="px-6 py-4">
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">O que pode ser corrigido pela CC-e:</p>
+            <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs">
+              <li>Dados do emitente ou destinatário (exceto CNPJ/CPF e IE)</li>
+              <li>Descrição complementar de itens</li>
+              <li>Informações adicionais e observações</li>
+            </ul>
+            <p className="mt-2 font-semibold">O que NÃO pode ser corrigido:</p>
+            <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs">
+              <li>Valores, quantidades ou base de cálculo</li>
+              <li>CNPJ/CPF do emitente ou destinatário</li>
+              <li>Data de emissão, natureza da operação, CFOP</li>
+            </ul>
+            <p className="mt-2 text-xs">
+              Se a correção envolver itens não permitidos, cancele e emita uma nota de substituição.
+            </p>
+          </div>
+
+          <label className="block text-sm font-semibold text-marinha-700">
+            Texto da correção
+          </label>
+          <textarea
+            ref={textareaRef}
+            value={correcao}
+            onChange={(e) => setCorrecao(e.target.value)}
+            maxLength={1000}
+            rows={4}
+            placeholder="Descreva a correção (mínimo 15 caracteres)"
+            className="mt-2 w-full rounded-input border border-marinha-900/20 bg-surface-input px-3 py-2 text-sm text-marinha-900 placeholder:text-marinha-400 focus:outline-none focus:ring-2 focus:ring-municipal-500"
+          />
+          <p className="mt-1 flex justify-between text-xs text-marinha-400">
+            <span className={correcao.trim().length < 15 ? "text-alerta-700" : ""}>
+              {correcao.trim().length < 15
+                ? `Mínimo 15 caracteres (faltam ${15 - correcao.trim().length})`
+                : "Texto válido"}
+            </span>
+            <span>{correcao.length}/1000</span>
+          </p>
+          {error && <p className="mt-2 text-sm text-alerta-700">{error}</p>}
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-marinha-900/10 px-6 py-4">
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Voltar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => void handleConfirm()}
+            disabled={loading || correcao.trim().length < 15}
+          >
+            {loading ? "Enviando…" : "Enviar correção"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
+const TAKE = 50;
+
+type ActiveModal =
+  | { kind: "cancel"; doc: FiscalDoc }
+  | { kind: "cce"; doc: FiscalDoc }
+  | { kind: "emit"; salesOrderId?: string }
+  | null;
 
 export default function FiscalPage() {
   const businessId = useSelectedBusinessId();
@@ -80,37 +277,47 @@ export default function FiscalPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const authorizedCount = docs.filter((doc) => doc.status === "authorized").length;
-  const pendingCount = docs.filter((doc) => doc.status === "pending" || doc.status === "processing").length;
-  const rejectedCount = docs.filter((doc) => doc.status === "rejected" || doc.status === "error").length;
+  const authorizedCount = docs.filter((d) => d.status === "authorized").length;
+  const pendingCount = docs.filter((d) => d.status === "pending" || d.status === "processing").length;
+  const rejectedCount = docs.filter((d) => d.status === "rejected" || d.status === "error").length;
 
-  const load = useCallback(async (skip = 0) => {
-    if (!businessId) {
-      setDocs([]);
-      setTotal(0);
+  const load = useCallback(
+    async (skip = 0) => {
+      if (!businessId) {
+        setDocs([]);
+        setTotal(0);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
       setError(null);
+      const res = await erpFetch<{ items: FiscalDoc[]; total: number }>(
+        `/api/v1/erp/fiscal?take=${TAKE}&skip=${skip}`,
+      );
       setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    const res = await erpFetch<{ items: FiscalDoc[]; total: number }>(
-      `/api/v1/erp/fiscal?take=${TAKE}&skip=${skip}`,
-    );
-    setLoading(false);
-    if (!res.ok || !res.data) {
-      setError(res.error ?? "Não foi possível carregar os documentos fiscais.");
-      return;
-    }
-    setDocs(res.data.items);
-    setTotal(res.data.total);
-  }, [businessId]);
+      if (!res.ok || !res.data) {
+        setError(res.error ?? "Não foi possível carregar os documentos fiscais.");
+        return;
+      }
+      setDocs(res.data.items);
+      setTotal(res.data.total);
+    },
+    [businessId],
+  );
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  function showSuccess(msg: string) {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(null), 4000);
+  }
 
   async function handleRefresh(id: string) {
     setRefreshingId(id);
@@ -121,27 +328,6 @@ export default function FiscalPage() {
     }
   }
 
-  async function handleCancel(doc: FiscalDoc) {
-    const reason = prompt("Informe o motivo do cancelamento fiscal:");
-    if (!reason?.trim()) {
-      return;
-    }
-    if (!confirm("Cancelar esta nota fiscal? Esta acao depende da resposta do PlugNotas.")) {
-      return;
-    }
-    setCancellingId(doc.id);
-    const res = await erpFetch<FiscalDoc>(`/api/v1/erp/fiscal/${doc.id}`, {
-      method: "DELETE",
-      body: JSON.stringify({ reason: reason.trim() }),
-    });
-    setCancellingId(null);
-    if (res.ok && res.data) {
-      setDocs((prev) => prev.map((d) => (d.id === doc.id ? res.data! : d)));
-    } else {
-      setError(res.error ?? "Nao foi possivel cancelar a nota fiscal.");
-    }
-  }
-
   return (
     <>
       <PageIntro
@@ -149,12 +335,13 @@ export default function FiscalPage() {
         description="Centralize a emissão, o acompanhamento e os documentos fiscais da empresa em um único painel."
       >
         <div className="mt-3">
-          <Button variant="primary" onClick={() => setModalOpen(true)}>
+          <Button variant="primary" onClick={() => setActiveModal({ kind: "emit" })}>
             + Emitir nota fiscal
           </Button>
         </div>
       </PageIntro>
 
+      {/* Cards de resumo */}
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <Card variant="featured">
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Documentos</p>
@@ -178,6 +365,14 @@ export default function FiscalPage() {
         </Card>
       </div>
 
+      {/* Banner de sucesso */}
+      {successMsg && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+          {successMsg}
+        </div>
+      )}
+
+      {/* Card de emissão */}
       <Card className="mb-6 border border-marinha-900/8 bg-surface-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -188,13 +383,14 @@ export default function FiscalPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Badge tone="accent">Fiscal</Badge>
-            <Button variant="primary" onClick={() => setModalOpen(true)}>
+            <Button variant="primary" onClick={() => setActiveModal({ kind: "emit" })}>
               Emitir nota fiscal
             </Button>
           </div>
         </div>
       </Card>
 
+      {/* Estados de carregamento / erro / vazio */}
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -215,22 +411,26 @@ export default function FiscalPage() {
       {!loading && !error && docs.length === 0 && (
         <Card>
           <p className="text-sm text-marinha-500">
-            Nenhuma nota emitida ainda. Assim que houver uma venda pronta para faturamento, use o botão
-            <strong> Emitir nota fiscal</strong>.
+            Nenhuma nota emitida ainda. Assim que houver uma venda pronta para faturamento, use o botão{" "}
+            <strong>Emitir nota fiscal</strong>.
           </p>
         </Card>
       )}
 
+      {/* Tabela de documentos */}
       {!loading && docs.length > 0 && (
         <Card className="overflow-x-auto p-0">
           <div className="flex items-center justify-between gap-3 border-b border-marinha-900/8 px-4 py-4">
             <div>
               <h2 className="font-serif text-lg text-marinha-900">Histórico de notas</h2>
-              <p className="mt-1 text-sm text-marinha-500">Consulte status, número, emissão e arquivos de cada documento.</p>
+              <p className="mt-1 text-sm text-marinha-500">
+                Consulte status, número, emissão e arquivos de cada documento.
+              </p>
             </div>
             <Badge tone="neutral">Documentos</Badge>
           </div>
-          <table className="w-full min-w-[700px] text-sm">
+
+          <table className="w-full min-w-[800px] text-sm">
             <thead>
               <tr className="border-b border-marinha-900/10 text-left text-xs font-semibold uppercase tracking-wide text-marinha-500">
                 <th className="px-4 py-3">Tipo</th>
@@ -256,9 +456,7 @@ export default function FiscalPage() {
                     {doc.numero ? `${doc.numero}/${doc.serie ?? ""}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-xs text-marinha-500">
-                    {doc.emittedAt
-                      ? new Date(doc.emittedAt).toLocaleString("pt-BR")
-                      : new Date(doc.createdAt).toLocaleString("pt-BR")}
+                    {new Date(doc.emittedAt ?? doc.createdAt).toLocaleString("pt-BR")}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
@@ -287,44 +485,25 @@ export default function FiscalPage() {
                       )}
                     </div>
                   </td>
+
+                  {/* Coluna de ações */}
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      {doc.status !== "authorized" && doc.status !== "cancelled" && (
-                        <button
-                          onClick={() => void handleRefresh(doc.id)}
-                          disabled={refreshingId === doc.id}
-                          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10 disabled:opacity-50"
-                        >
-                          {refreshingId === doc.id ? "…" : "Atualizar"}
-                        </button>
-                      )}
-                      {doc.status === "authorized" && (
-                        <>
-                          <button
-                            onClick={() => void handleCancel(doc)}
-                            disabled={cancellingId === doc.id}
-                            className="focus-ring rounded px-2 py-1 text-xs font-semibold text-alerta-700 hover:bg-alerta-500/10 disabled:opacity-50"
-                          >
-                            {cancellingId === doc.id ? "…" : "Cancelar nota"}
-                          </button>
-                          {doc.purpose === "sale" &&
-                          doc.salesOrder?.id &&
-                          (doc.type === "nfe" || doc.type === "nfce") ? (
-                            <Link
-                              href={`/erp/pedidos-venda?focus=${doc.salesOrder.id}`}
-                              className="focus-ring rounded px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/5"
-                            >
-                              Abrir devolução
-                            </Link>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
+                    <ActionMenu
+                      doc={doc}
+                      refreshingId={refreshingId}
+                      onRefresh={() => void handleRefresh(doc.id)}
+                      onCancel={() => setActiveModal({ kind: "cancel", doc })}
+                      onCce={() => setActiveModal({ kind: "cce", doc })}
+                      onSubstitute={() =>
+                        setActiveModal({ kind: "emit", salesOrderId: doc.salesOrder?.id })
+                      }
+                    />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
           {total > TAKE && (
             <p className="px-4 py-3 text-xs text-marinha-500">
               Exibindo {docs.length} de {total} documentos.
@@ -333,13 +512,130 @@ export default function FiscalPage() {
         </Card>
       )}
 
-      <ErpFiscalEmitModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={() => {
-          void load();
-        }}
-      />
+      {/* Modais */}
+      {activeModal?.kind === "cancel" && (
+        <CancelModal
+          doc={activeModal.doc}
+          onClose={() => setActiveModal(null)}
+          onSuccess={(updated) => {
+            setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+            setActiveModal(null);
+            showSuccess("Nota fiscal cancelada com sucesso.");
+          }}
+        />
+      )}
+
+      {activeModal?.kind === "cce" && (
+        <CceModal
+          doc={activeModal.doc}
+          onClose={() => setActiveModal(null)}
+          onSuccess={() => {
+            setActiveModal(null);
+            showSuccess("Carta de Correção enviada com sucesso.");
+          }}
+        />
+      )}
+
+      {activeModal?.kind === "emit" && (
+        <ErpFiscalEmitModal
+          open
+          onClose={() => setActiveModal(null)}
+          onSuccess={() => {
+            setActiveModal(null);
+            void load();
+          }}
+          preSelectedOrderId={activeModal.salesOrderId}
+        />
+      )}
     </>
+  );
+}
+
+// ─── Menu de ações por linha ──────────────────────────────────────────────────
+
+function ActionMenu({
+  doc,
+  refreshingId,
+  onRefresh,
+  onCancel,
+  onCce,
+  onSubstitute,
+}: {
+  doc: FiscalDoc;
+  refreshingId: string | null;
+  onRefresh: () => void;
+  onCancel: () => void;
+  onCce: () => void;
+  onSubstitute: () => void;
+}) {
+  const canCancel = doc.status === "authorized" && doc.purpose === "sale";
+  // CC-e: apenas NF-e autorizada. NFC-e e NFS-e não têm CC-e.
+  const canCce = doc.status === "authorized" && doc.type === "nfe";
+  // Devolução: NF-e ou NFC-e autorizadas de venda
+  const canReturn =
+    doc.status === "authorized" &&
+    doc.purpose === "sale" &&
+    (doc.type === "nfe" || doc.type === "nfce") &&
+    !!doc.salesOrder?.id;
+  // Substituir: doc cancelado/rejeitado com pedido associado → re-emite para o mesmo pedido
+  const canSubstitute =
+    (doc.status === "cancelled" || doc.status === "rejected" || doc.status === "error") &&
+    !!doc.salesOrder?.id;
+  // Atualizar: docs em trânsito
+  const canRefresh = doc.status === "pending" || doc.status === "processing";
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {canRefresh && (
+        <button
+          onClick={onRefresh}
+          disabled={refreshingId === doc.id}
+          title="Consultar status atual no PlugNotas"
+          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10 disabled:opacity-50"
+        >
+          {refreshingId === doc.id ? "…" : "Atualizar"}
+        </button>
+      )}
+
+      {canCce && (
+        <button
+          onClick={onCce}
+          title="Enviar Carta de Correção Eletrônica (CC-e) — apenas NF-e"
+          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/8"
+        >
+          Carta de correção
+        </button>
+      )}
+
+      {canReturn && (
+        <Link
+          href={`/erp/pedidos-venda?focus=${doc.salesOrder!.id}`}
+          title="Emitir nota de devolução para este pedido"
+          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/8"
+        >
+          Devolução
+        </Link>
+      )}
+
+      {canSubstitute && (
+        <button
+          onClick={onSubstitute}
+          title="Re-emitir nota para o mesmo pedido (substituição)"
+          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10"
+        >
+          Substituir
+        </button>
+      )}
+
+      {canCancel && (
+        <button
+          onClick={onCancel}
+          title="Cancelar nota autorizada"
+          className="focus-ring rounded px-2 py-1 text-xs font-semibold text-alerta-700 hover:bg-alerta-500/10"
+        >
+          Cancelar
+        </button>
+      )}
+    </div>
   );
 }

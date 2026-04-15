@@ -69,7 +69,7 @@ const STATUS_LABEL: Record<ServiceOrderStatus, string> = {
   draft: "Triagem",
   scheduled: "Agendada",
   in_progress: "Em campo",
-  completed: "Concluida",
+  completed: "Concluída",
   cancelled: "Cancelada",
 };
 
@@ -83,7 +83,7 @@ const STATUS_COLOR: Record<ServiceOrderStatus, string> = {
 
 const PRIORITY_LABEL: Record<ServiceOrder["priority"], string> = {
   low: "Baixa",
-  medium: "Media",
+  medium: "Média",
   high: "Alta",
   urgent: "Urgente",
 };
@@ -129,7 +129,7 @@ function healthLabel(order: ServiceOrder) {
     return { text: "Prazo vencido", tone: "bg-red-100 text-red-700" };
   }
   if (order.status === "in_progress") return { text: "Equipe em campo", tone: "bg-amber-100 text-amber-700" };
-  if (!order.assignedUser) return { text: "Sem dono definido", tone: "bg-amber-100 text-amber-700" };
+  if (!order.assignedUser) return { text: "Sem responsável", tone: "bg-amber-100 text-amber-700" };
   return { text: "Dentro do prazo", tone: "bg-marinha-100 text-marinha-700" };
 }
 
@@ -159,7 +159,7 @@ export default function ErpServiceOrderDetailPage({
     if (!businessId) {
       setOrder(null);
       setIsLoading(false);
-      setError("Selecione um negocio para visualizar a OS.");
+      setError("Selecione um estabelecimento para visualizar a ordem de serviço.");
       return;
     }
 
@@ -200,7 +200,7 @@ export default function ErpServiceOrderDetailPage({
       return;
     }
 
-    setError(res.error ?? "Nao foi possivel atualizar a OS.");
+    setError(res.error ?? "Não foi possível atualizar a ordem de serviço.");
   }
 
   const timeline = useMemo(() => {
@@ -212,7 +212,7 @@ export default function ErpServiceOrderDetailPage({
         label: "OS aberta",
         at: order.createdAt,
         by: order.createdByUser?.fullName ?? "-",
-        detail: "Cadastro da ordem de servico.",
+        detail: "Ordem de serviço aberta.",
       },
       order.scheduledFor
         ? {
@@ -235,7 +235,7 @@ export default function ErpServiceOrderDetailPage({
       order.completedAt
         ? {
             key: "completed",
-            label: "Atendimento concluido",
+            label: "Atendimento concluído",
             at: order.completedAt,
             by: order.completedByUser?.fullName ?? "-",
             detail: "Ordem finalizada.",
@@ -247,7 +247,7 @@ export default function ErpServiceOrderDetailPage({
             label: "OS cancelada",
             at: order.cancelledAt,
             by: order.cancelledByUser?.fullName ?? "-",
-            detail: order.cancellationReason ?? "Ordem encerrada sem conclusao.",
+            detail: order.cancellationReason ?? "Ordem encerrada sem conclusão.",
           }
         : null,
     ].filter(Boolean);
@@ -258,7 +258,7 @@ export default function ErpServiceOrderDetailPage({
   if (isLoading) {
     return (
       <>
-        <PageIntro title="Detalhe da OS" description="Carregando ordem de serviço." badge="Servicos" />
+        <PageIntro title="Detalhe da OS" description="Carregando ordem de serviço." badge="Serviços" />
         <Card>
           <div className="space-y-4">
             <div className="h-7 w-64 animate-pulse rounded bg-marinha-900/10" />
@@ -273,10 +273,10 @@ export default function ErpServiceOrderDetailPage({
   if (!order) {
     return (
       <>
-        <PageIntro title="Detalhe da OS" description="Não foi possível carregar a ordem de serviço." badge="Servicos" />
+        <PageIntro title="Detalhe da OS" description="Não foi possível carregar a ordem de serviço." badge="Serviços" />
         <Card>
           <div className="space-y-4">
-            <p className="text-sm text-red-600">{error ?? "OS nao encontrada."}</p>
+            <p className="text-sm text-red-600">{error ?? "Ordem de serviço não encontrada."}</p>
             <div className="flex flex-wrap gap-3">
               <Link href="/erp/ordens-servico">
                 <Button variant="ghost">Voltar para a lista</Button>
@@ -294,8 +294,8 @@ export default function ErpServiceOrderDetailPage({
     <>
       <PageIntro
         title={order.title}
-        description="Detalhes da ordem de serviÃ§o."
-        badge="Ordem de serviÃ§o"
+        description="Detalhes da ordem de serviço."
+        badge="Ordem de serviço"
       >
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link href="/erp/ordens-servico">
@@ -334,7 +334,7 @@ export default function ErpServiceOrderDetailPage({
                 <p className="mt-1 text-sm text-marinha-500">{order.contactPhone ?? "Sem telefone informado"}</p>
               </div>
               <div className="rounded-3xl bg-white/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Local da execucao</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Local do atendimento</p>
                 <p className="mt-2 text-lg font-semibold text-marinha-900">{order.serviceLocation ?? "-"}</p>
                 <p className="mt-1 text-sm text-marinha-500">{fullAddress(order.serviceAddress)}</p>
               </div>
@@ -361,8 +361,8 @@ export default function ErpServiceOrderDetailPage({
 
           <Card>
             <div className="mb-4">
-              <SectionBadge index="2" label="Timeline" />
-              <h2 className="font-serif text-xl font-bold text-marinha-900">Timeline da OS</h2>
+              <SectionBadge index="2" label="Histórico" />
+              <h2 className="font-serif text-xl font-bold text-marinha-900">Histórico da ordem</h2>
             </div>
 
             <div className="space-y-4">
@@ -389,21 +389,21 @@ export default function ErpServiceOrderDetailPage({
 
           <Card>
             <div className="mb-4">
-              <SectionBadge index="3" label="Tecnico" />
-              <h2 className="font-serif text-xl font-bold text-marinha-900">Informações técnicas</h2>
+              <SectionBadge index="3" label="Execução" />
+              <h2 className="font-serif text-xl font-bold text-marinha-900">Detalhes do atendimento</h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Diagnostico</p>
-                <p className="mt-2 text-sm text-marinha-700">{order.diagnosis || "Nao informado."}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Diagnóstico</p>
+                <p className="mt-2 text-sm text-marinha-700">{order.diagnosis || "Não informado."}</p>
               </div>
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Solucao aplicada</p>
-                <p className="mt-2 text-sm text-marinha-700">{order.resolution || "Nao informada."}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Solução aplicada</p>
+                <p className="mt-2 text-sm text-marinha-700">{order.resolution || "Não informada."}</p>
               </div>
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5 md:col-span-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Checklist operacional</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Checklist</p>
                 {order.checklist.length ? (
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     {order.checklist.map((item, index) => (
@@ -417,8 +417,8 @@ export default function ErpServiceOrderDetailPage({
                 )}
               </div>
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5 md:col-span-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Observacoes operacionais</p>
-                <p className="mt-2 text-sm text-marinha-700">{order.note || "Sem observacoes adicionais."}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Observações</p>
+                <p className="mt-2 text-sm text-marinha-700">{order.note || "Sem observações adicionais."}</p>
               </div>
             </div>
           </Card>
@@ -441,7 +441,7 @@ export default function ErpServiceOrderDetailPage({
                     <p className="mt-1 font-semibold">{item.qty}</p>
                   </div>
                   <div className="text-sm text-marinha-700">
-                    <p className="text-xs uppercase tracking-wide text-marinha-500">Unitario</p>
+                    <p className="text-xs uppercase tracking-wide text-marinha-500">Valor unitário</p>
                     <p className="mt-1 font-semibold">{fmtMoney(item.unitPrice)}</p>
                   </div>
                   <div className="text-sm text-marinha-700">
@@ -474,12 +474,12 @@ export default function ErpServiceOrderDetailPage({
               </div>
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
                 <p className="text-xs uppercase tracking-wide text-marinha-500">Local</p>
-                <p className="mt-2 text-sm font-semibold text-marinha-900">{order.serviceLocation || "Nao informado"}</p>
+                <p className="mt-2 text-sm font-semibold text-marinha-900">{order.serviceLocation || "Não informado"}</p>
                 <p className="mt-1 text-sm text-marinha-500">{fullAddress(order.serviceAddress)}</p>
               </div>
               <div className="rounded-3xl border border-marinha-900/10 bg-slate-50/70 p-5">
                 <p className="text-xs uppercase tracking-wide text-marinha-500">Descrição da OS</p>
-                <p className="mt-2 text-sm text-marinha-700">{order.description || "Sem descricao informada."}</p>
+                <p className="mt-2 text-sm text-marinha-700">{order.description || "Sem descrição informada."}</p>
               </div>
               {error ? (
                 <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">

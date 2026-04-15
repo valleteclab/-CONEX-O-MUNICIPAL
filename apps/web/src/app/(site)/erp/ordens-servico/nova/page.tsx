@@ -52,7 +52,7 @@ type ServiceOrderLine = { productId: string; qty: string; unitPrice: string };
 
 const PRIORITY_LABEL: Record<ServiceOrderPriority, string> = {
   low: "Baixa",
-  medium: "Media",
+  medium: "Média",
   high: "Alta",
   urgent: "Urgente",
 };
@@ -264,12 +264,12 @@ export default function ErpNovaOrdemServicoPage() {
     }
 
     if (!serviceLocation.trim() && !address.street?.trim()) {
-      setFormError("Informe pelo menos o local ou endereco de atendimento.");
+      setFormError("Informe pelo menos o local ou endereço de atendimento.");
       return;
     }
 
     if (validLines.length === 0) {
-      setFormError("Adicione pelo menos um item valido.");
+      setFormError("Adicione pelo menos um item válido.");
       return;
     }
 
@@ -327,9 +327,9 @@ export default function ErpNovaOrdemServicoPage() {
   return (
     <>
       <PageIntro
-        title="Nova ordem de serviÃ§o"
-        description="Cadastro da ordem de serviÃ§o."
-        badge="ServiÃ§os"
+        title="Nova ordem de serviço"
+        description="Preencha os dados para abrir uma nova ordem de serviço."
+        badge="Serviços"
       >
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/erp/ordens-servico">
@@ -346,14 +346,14 @@ export default function ErpNovaOrdemServicoPage() {
                 <h2 className="font-serif text-2xl font-bold text-marinha-900">Cadastro</h2>
                 <p className="mt-1 text-sm text-marinha-500">Preencha os dados da ordem.</p>
               </div>
-              <Badge tone="accent">{isLoadingSupport ? "Carregando" : "DisponÃ­vel"}</Badge>
+              <Badge tone="accent">{isLoadingSupport ? "Carregando..." : "Disponível"}</Badge>
             </div>
 
             <div className="space-y-6">
               <section className="rounded-[28px] border border-marinha-900/10 bg-gradient-to-br from-slate-50 to-white p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <SectionBadge index="1" label="Dados principais" />
-                  <span className="rounded-full bg-marinha-100 px-3 py-1 text-xs font-semibold text-marinha-700">Obrigatorio</span>
+                  <span className="rounded-full bg-marinha-100 px-3 py-1 text-xs font-semibold text-marinha-700">Obrigatório</span>
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -362,7 +362,7 @@ export default function ErpNovaOrdemServicoPage() {
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Ex.: Manutencao corretiva no ar-condicionado"
+                      placeholder="Ex.: Manutenção corretiva no ar-condicionado"
                       className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                     />
                   </div>
@@ -373,7 +373,7 @@ export default function ErpNovaOrdemServicoPage() {
                       onChange={(e) => handlePartyChange(e.target.value)}
                       className="focus-ring min-h-[48px] w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                     >
-                      <option value="">-- Sem cliente --</option>
+                      <option value="">Selecionar cliente</option>
                       {parties.map((row) => (
                         <option key={row.id} value={row.id}>
                           {row.name}
@@ -386,7 +386,7 @@ export default function ErpNovaOrdemServicoPage() {
                     <input
                       value={serviceCategory}
                       onChange={(e) => setServiceCategory(e.target.value)}
-                      placeholder="Ex.: Instalacao, manutencao, vistoria"
+                      placeholder="Ex.: Instalação, manutenção, vistoria"
                       className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                     />
                   </div>
@@ -411,7 +411,7 @@ export default function ErpNovaOrdemServicoPage() {
                       onChange={(e) => handleAssignedUserChange(e.target.value)}
                       className="focus-ring min-h-[48px] w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                     >
-                      <option value="">-- Selecionar da equipe --</option>
+                      <option value="">Selecionar responsável</option>
                       {members.map((member) => (
                         <option key={member.userId} value={member.userId}>
                           {member.fullName} - {member.role}
@@ -478,7 +478,7 @@ export default function ErpNovaOrdemServicoPage() {
                     <input
                       value={serviceLocation}
                       onChange={(e) => setServiceLocation(e.target.value)}
-                      placeholder="Ex.: Bloco B, recepcao principal, sala 12"
+                      placeholder="Ex.: Bloco B, recepção principal, sala 12"
                       className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                     />
                   </div>
@@ -491,7 +491,7 @@ export default function ErpNovaOrdemServicoPage() {
                     <input value={address.street || ""} onChange={(e) => updateAddressField("street", e.target.value)} className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Numero</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Número</label>
                     <input value={address.number || ""} onChange={(e) => updateAddressField("number", e.target.value)} className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm" />
                   </div>
                   <div>
@@ -507,11 +507,11 @@ export default function ErpNovaOrdemServicoPage() {
                     <input value={address.state || ""} onChange={(e) => updateAddressField("state", e.target.value)} className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Referencia</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Referência</label>
                     <input
                       value={address.reference || ""}
                       onChange={(e) => updateAddressField("reference", e.target.value)}
-                      placeholder="Portaria, ponto de referencia, instrucoes de chegada"
+                      placeholder="Portaria, ponto de referência, instruções de chegada"
                       className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-4 py-3 text-sm"
                     />
                   </div>
@@ -529,7 +529,7 @@ export default function ErpNovaOrdemServicoPage() {
                 <div className="hidden grid-cols-[minmax(0,1.6fr)_120px_150px_150px_44px] gap-3 px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-marinha-500 md:grid">
                   <span>Produto ou serviço</span>
                   <span>Qtd</span>
-                  <span>Valor unitario</span>
+                  <span>Valor unitário</span>
                   <span>Subtotal</span>
                   <span />
                 </div>
@@ -557,7 +557,7 @@ export default function ErpNovaOrdemServicoPage() {
                         <input type="number" min="0.001" step="0.001" value={line.qty} onChange={(e) => updateLine(index, "qty", e.target.value)} className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-3 py-3 text-sm" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-marinha-500 md:hidden">Valor unitario</label>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-marinha-500 md:hidden">Valor unitário</label>
                         <input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, "unitPrice", e.target.value)} className="focus-ring w-full rounded-btn border-2 border-marinha-900/20 bg-white px-3 py-3 text-sm" />
                       </div>
                       <div>
@@ -578,25 +578,25 @@ export default function ErpNovaOrdemServicoPage() {
 
               <section className="rounded-[28px] border border-marinha-900/10 bg-white p-5">
                 <div className="mb-4">
-                  <SectionBadge index="4" label="Informações técnicas" />
+                  <SectionBadge index="4" label="Detalhes do atendimento" />
                 </div>
 
                 <div className="mt-4 space-y-4">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Diagnostico</label>
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Diagnóstico</label>
                     <textarea rows={3} value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="Problema identificado" className="focus-ring w-full rounded-3xl border-2 border-marinha-900/20 bg-slate-50/40 px-4 py-4 text-sm" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Solucao aplicada</label>
-                    <textarea rows={3} value={resolution} onChange={(e) => setResolution(e.target.value)} placeholder="Servico executado" className="focus-ring w-full rounded-3xl border-2 border-marinha-900/20 bg-slate-50/40 px-4 py-4 text-sm" />
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Solução aplicada</label>
+                    <textarea rows={3} value={resolution} onChange={(e) => setResolution(e.target.value)} placeholder="Serviço executado" className="focus-ring w-full rounded-3xl border-2 border-marinha-900/20 bg-slate-50/40 px-4 py-4 text-sm" />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-marinha-700">Checklist</label>
                     <textarea rows={4} value={checklistText} onChange={(e) => setChecklistText(e.target.value)} placeholder={"Uma linha por item\nValidar acesso ao local\nTestar equipamento ao final"} className="focus-ring w-full rounded-3xl border-2 border-marinha-900/20 bg-slate-50/40 px-4 py-4 text-sm" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-marinha-700">Observacoes</label>
-                    <textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Informacoes adicionais do atendimento." className="focus-ring w-full rounded-3xl border-2 border-marinha-900/20 bg-slate-50/40 px-4 py-4 text-sm" />
+                    <label className="mb-1 block text-sm font-medium text-marinha-700">Observações</label>
+                    <textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Informações adicionais do atendimento." className="focus-ring w-full rounded-3xl border-2 border-marinha-900/20 bg-slate-50/40 px-4 py-4 text-sm" />
                   </div>
                 </div>
               </section>
@@ -614,7 +614,7 @@ export default function ErpNovaOrdemServicoPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <div className="rounded-2xl border border-white/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Itens validos</p>
+                  <p className="text-xs uppercase tracking-wide text-white/60">Itens válidos</p>
                   <p className="mt-1 text-xl font-semibold">{validLinesCount}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 p-4">
@@ -623,7 +623,7 @@ export default function ErpNovaOrdemServicoPage() {
                 </div>
                 <div className="rounded-2xl border border-white/10 p-4">
                   <p className="text-xs uppercase tracking-wide text-white/60">Responsável</p>
-                  <p className="mt-1 text-sm font-medium text-white/85">{assignedTo.trim() || "Nao definido"}</p>
+                  <p className="mt-1 text-sm font-medium text-white/85">{assignedTo.trim() || "Não definido"}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 p-4 sm:col-span-2 xl:col-span-1">
                   <p className="text-xs uppercase tracking-wide text-white/60">Prazo</p>
@@ -668,7 +668,7 @@ export default function ErpNovaOrdemServicoPage() {
                 {isSubmitting ? "Salvando..." : "Criar OS"}
               </Button>
               <Button variant="ghost" onClick={resetForm} disabled={isSubmitting}>
-                Limpar formulario
+                Limpar formulário
               </Button>
               <Link href="/erp/ordens-servico">
                 <Button variant="ghost">Cancelar</Button>

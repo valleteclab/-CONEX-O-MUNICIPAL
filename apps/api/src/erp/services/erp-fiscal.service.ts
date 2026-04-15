@@ -26,6 +26,7 @@ import {
   EmitFiscalDto,
   FiscalDocumentType,
   FiscalPaymentMethod,
+  SendCceDto,
 } from '../dto/fiscal.dto';
 import { dec } from '../utils/decimal';
 import {
@@ -365,10 +366,11 @@ export class ErpFiscalService {
     if (
       existing &&
       existing.status !== 'error' &&
-      existing.status !== 'rejected'
+      existing.status !== 'rejected' &&
+      existing.status !== 'cancelled'
     ) {
       throw new BadRequestException(
-        `Ja existe um documento ${dto.type.toUpperCase()} para este pedido (status: ${existing.status}).`,
+        `Já existe um documento ${dto.type.toUpperCase()} para este pedido (status: ${existing.status}).`,
       );
     }
 
@@ -720,6 +722,46 @@ export class ErpFiscalService {
     const savedDoc = await this.docs.save(doc);
     await this.syncOrderFiscalStatus(savedDoc);
     return savedDoc;
+  }
+
+  async sendCce(
+    business: ErpBusiness,
+    docId: string,
+    dto: SendCceDto,
+  ): Promise<{ response: unknown }> {
+    const doc = await this.findOne(business, docId);
+
+    if (doc.type !== 'nfe') {
+      throw new BadRequestException(
+        'Carta de Correção Eletrônica é exclusiva para NF-e.',
+      );
+    }
+    if (doc.status !== 'authorized') {
+      throw new BadRequestException(
+        'CC-e só pode ser enviada para NF-e com status autorizado.',
+      );
+    }
+    if (!doc.plugnotasId) {
+      throw new BadRequestException('Documento sem ID PlugNotas.');
+    }
+
+    const correcao = dto.correcao?.trim();
+    if (!correcao || correcao.length < 15) {
+      throw new BadRequestException(
+        'O texto da correção deve ter no mínimo 15 caracteres (exigência SEFAZ).',
+      );
+    }
+
+    const response = await this.plugnotas.sendCce(doc.plugnotasId, correcao);
+
+    doc.providerEventPayload = {
+      ...(doc.providerEventPayload ?? {}),
+      cceResponse: response ?? null,
+      cceAt: new Date().toISOString(),
+    };
+    await this.docs.save(doc);
+
+    return { response };
   }
 
   async handleWebhook(payload: Record<string, unknown>): Promise<void> {
