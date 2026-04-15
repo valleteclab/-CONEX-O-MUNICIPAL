@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, BadRequestException, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UpdateErpProductClassifierSettingDto } from '../platform/dto/update-erp-product-classifier-setting.dto';
 import { UpdateSupportUserDto } from './dto/update-support-user.dto';
@@ -34,6 +34,21 @@ export class SupportController {
   @ApiOperation({ summary: 'Executar teste de conectividade/saude da integracao' })
   testIntegration(@Param('key') key: string) {
     return this.support.testIntegration(key);
+  }
+
+  @Get('fiscal-provider')
+  @ApiOperation({ summary: 'Ler provedor fiscal ativo e status de configuracao' })
+  getFiscalProvider() {
+    return this.support.getFiscalProviderConfig();
+  }
+
+  @Patch('fiscal-provider')
+  @ApiOperation({ summary: 'Alterar provedor fiscal ativo do sistema' })
+  setFiscalProvider(@Body() body: { provider: string }) {
+    if (body.provider !== 'plugnotas' && body.provider !== 'spedy') {
+      throw new BadRequestException('Provedor deve ser "plugnotas" ou "spedy".');
+    }
+    return this.support.setFiscalProvider(body.provider as 'plugnotas' | 'spedy');
   }
 
   @Get('ai-settings')

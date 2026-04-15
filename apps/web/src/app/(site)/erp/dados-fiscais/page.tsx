@@ -87,8 +87,11 @@ export default function ErpDadosFiscaisPage() {
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [salesOrders, setSalesOrders] = useState<SalesOrderOption[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [activeProvider, setActiveProvider] = useState<"plugnotas" | "spedy">("plugnotas");
   const [plugnotasRegistered, setPlugnotasRegistered] = useState(false);
+  const [spedyCompanyId, setSpedyCompanyId] = useState("");
   const [registeringPn, setRegisteringPn] = useState(false);
+  const [registeringSpedy, setRegisteringSpedy] = useState(false);
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
   const [certificateFeedback, setCertificateFeedback] = useState<{
     type: "success" | "error";
@@ -132,6 +135,14 @@ export default function ErpDadosFiscaisPage() {
     setNfceCscId(String(nfce.cscId ?? ""));
     setNfceCscCode(String(nfce.cscCode ?? ""));
     setPlugnotasRegistered(Boolean(b.fiscalConfig?.plugnotasRegistered));
+    const spedy = (b.fiscalConfig?.spedy ?? {}) as Record<string, unknown>;
+    setSpedyCompanyId(String(spedy.companyId ?? ""));
+  }, [businessId]);
+
+  const loadProvider = useCallback(async () => {
+    if (!businessId) return;
+    const res = await erpFetch<{ provider: "plugnotas" | "spedy" }>("/api/v1/erp/fiscal/provider");
+    if (res.ok && res.data) setActiveProvider(res.data.provider);
   }, [businessId]);
 
   const loadReadiness = useCallback(async (orderId?: string) => {
@@ -162,7 +173,8 @@ export default function ErpDadosFiscaisPage() {
 
   useEffect(() => {
     void loadBusiness();
-  }, [loadBusiness]);
+    void loadProvider();
+  }, [loadBusiness, loadProvider]);
 
   useEffect(() => {
     if (businessId) {
@@ -222,6 +234,24 @@ export default function ErpDadosFiscaisPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     await saveFiscalData();
+  }
+
+  async function registerSpedy() {
+    if (!businessId) return;
+    const saved = await saveFiscalData({ silent: true });
+    if (!saved) return;
+    setRegisteringSpedy(true);
+    setError(null);
+    setSavedMsg(null);
+    const res = await erpFetch<{ ok: boolean; message: string }>("/api/v1/erp/fiscal/register-spedy", { method: "POST" });
+    setRegisteringSpedy(false);
+    if (!res.ok || !res.data) {
+      setError(res.error ?? "Falha ao registrar empresa na Spedy.");
+      return;
+    }
+    setSavedMsg(res.data.message);
+    await loadBusiness();
+    await loadReadiness();
   }
 
   async function registerPlugnotas(force: boolean) {
@@ -346,7 +376,9 @@ export default function ErpDadosFiscaisPage() {
         <Card className="border border-marinha-900/8">
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Integração fiscal</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">
-            {plugnotasRegistered ? "Preparada" : "Aguardando configuração"}
+            {activeProvider === "spedy"
+              ? (spedyCompanyId ? "Spedy — Preparada" : "Spedy — Aguardando registro")
+              : (plugnotasRegistered ? "Preparada" : "Aguardando configuração")}
           </p>
           <p className="mt-1 text-sm text-marinha-500">Habilitação da emissão após revisão do cadastro.</p>
         </Card>
@@ -561,9 +593,13 @@ export default function ErpDadosFiscaisPage() {
             </div>
 
             <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
-              <h3 className="text-sm font-semibold text-marinha-800">PlugNotas e NFC-e</h3>
+              <h3 className="text-sm font-semibold text-marinha-800">
+                {activeProvider === "spedy" ? "Certificado A1 — Spedy" : "PlugNotas e NFC-e"}
+              </h3>
               <p className="mt-1 text-xs text-marinha-500">
-                Envie o certificado A1 do cliente para o PlugNotas e informe os dados CSC da NFC-e para preparar a emissão em produção.
+                {activeProvider === "spedy"
+                  ? "Envie o certificado A1 da empresa para a Spedy. Certifique-se de que a empresa já está registrada antes de enviar."
+                  : "Envie o certificado A1 do cliente para o PlugNotas e informe os dados CSC da NFC-e para preparar a emissão em produção."}
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm font-medium text-marinha-700">
@@ -598,10 +634,14 @@ export default function ErpDadosFiscaisPage() {
                 <div className="rounded-btn border border-marinha-900/10 bg-white px-3 py-3 text-sm text-marinha-700">
                   <p className="font-semibold text-marinha-900">Certificado vinculado</p>
                   <p className="mt-1 font-mono text-xs">
-                    {plugnotasCertificateId || "Nenhum certificado enviado ainda"}
+                    {activeProvider === "spedy"
+                      ? (spedyCompanyId ? `Empresa Spedy: ${spedyCompanyId}` : "Registre a empresa antes de enviar o certificado")
+                      : (plugnotasCertificateId || "Nenhum certificado enviado ainda")}
                   </p>
                   <p className="mt-2 text-xs text-marinha-500">
-                    O upload é enviado ao PlugNotas e o ID retornado fica salvo no cadastro fiscal do negócio.
+                    {activeProvider === "spedy"
+                      ? "O certificado é enviado à Spedy vinculado à empresa registrada."
+                      : "O upload é enviado ao PlugNotas e o ID retornado fica salvo no cadastro fiscal do negócio."}
                   </p>
                 </div>
               </div>
@@ -612,7 +652,7 @@ export default function ErpDadosFiscaisPage() {
                   disabled={uploadingCertificate}
                   onClick={() => void handleCertificateUpload()}
                 >
-                  {uploadingCertificate ? "Enviando certificado..." : "Enviar certificado para o PlugNotas"}
+                  {uploadingCertificate ? "Enviando certificado…" : activeProvider === "spedy" ? "Enviar certificado para a Spedy" : "Enviar certificado para o PlugNotas"}
                 </Button>
                 {certificateFeedback && (
                   <div
@@ -626,26 +666,28 @@ export default function ErpDadosFiscaisPage() {
                   </div>
                 )}
               </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-marinha-700">
-                  CSC ID (NFC-e)
-                  <input
-                    value={nfceCscId}
-                    onChange={(e) => setNfceCscId(e.target.value)}
-                    className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
-                    placeholder="1"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-marinha-700">
-                  Código CSC (NFC-e)
-                  <input
-                    value={nfceCscCode}
-                    onChange={(e) => setNfceCscCode(e.target.value)}
-                    className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm font-mono"
-                    placeholder="Código fornecido pela SEFAZ"
-                  />
-                </label>
-              </div>
+              {activeProvider !== "spedy" && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm font-medium text-marinha-700">
+                    CSC ID (NFC-e)
+                    <input
+                      value={nfceCscId}
+                      onChange={(e) => setNfceCscId(e.target.value)}
+                      className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm"
+                      placeholder="1"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-marinha-700">
+                    Código CSC (NFC-e)
+                    <input
+                      value={nfceCscCode}
+                      onChange={(e) => setNfceCscCode(e.target.value)}
+                      className="mt-1 w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm font-mono"
+                      placeholder="Código fornecido pela SEFAZ"
+                    />
+                  </label>
+                </div>
+              )}
             </div>
 
             <Button type="submit" disabled={saving} className="mt-2">
@@ -654,43 +696,66 @@ export default function ErpDadosFiscaisPage() {
           </form>
 
           <div className="mt-6 border-t border-marinha-900/10 pt-6">
-            <h3 className="text-sm font-semibold text-marinha-900">Integração fiscal</h3>
-            <p className="mt-1 text-sm text-marinha-500">
-              Depois de salvar os dados da empresa, você pode concluir a habilitação da emissão fiscal.
-            </p>
-            <p className="mt-2 text-xs text-marinha-600">
-              Status atual:{" "}
-              <strong>
-                {plugnotasRegistered ? "integração já preparada" : "integração ainda pendente"}
-              </strong>
-              .
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={registeringPn}
-                onClick={() => void registerPlugnotas(false)}
-              >
-                {registeringPn ? "Preparando…" : "Preparar emissão fiscal"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={registeringPn}
-                onClick={() => {
-                  if (
-                    confirm(
-                      "Atualizar os dados da empresa na integração fiscal? Use esta opção quando alterar cadastro ou corrigir informações.",
-                    )
-                  ) {
-                    void registerPlugnotas(true);
-                  }
-                }}
-              >
-                Atualizar integração
-              </Button>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-marinha-900">Integração fiscal</h3>
+              <span className="rounded-full bg-marinha-900/8 px-3 py-1 text-xs font-semibold text-marinha-700">
+                Provedor: {activeProvider === "spedy" ? "Spedy" : "PlugNotas"}
+              </span>
             </div>
+            <p className="mt-1 text-sm text-marinha-500">
+              Depois de salvar os dados da empresa, conclua a habilitação da emissão fiscal.
+            </p>
+
+            {activeProvider === "spedy" ? (
+              <>
+                <p className="mt-2 text-xs text-marinha-600">
+                  Status Spedy:{" "}
+                  <strong>{spedyCompanyId ? `empresa registrada (ID: ${spedyCompanyId})` : "empresa ainda não registrada"}</strong>.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={registeringSpedy}
+                    onClick={() => void registerSpedy()}
+                  >
+                    {registeringSpedy ? "Registrando…" : spedyCompanyId ? "Atualizar empresa na Spedy" : "Registrar empresa na Spedy"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-xs text-marinha-600">
+                  Status atual:{" "}
+                  <strong>
+                    {plugnotasRegistered ? "integração já preparada" : "integração ainda pendente"}
+                  </strong>
+                  .
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={registeringPn}
+                    onClick={() => void registerPlugnotas(false)}
+                  >
+                    {registeringPn ? "Preparando…" : "Preparar emissão fiscal"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={registeringPn}
+                    onClick={() => {
+                      if (confirm("Atualizar os dados da empresa na integração fiscal? Use esta opção quando alterar cadastro ou corrigir informações.")) {
+                        void registerPlugnotas(true);
+                      }
+                    }}
+                  >
+                    Atualizar integração
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </Card>
 
@@ -702,7 +767,7 @@ export default function ErpDadosFiscaisPage() {
 
           {/* Tipo de nota */}
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["nfse", "nfe", "nfce"] as const).map((t) => (
+            {(["nfse", "nfe", "nfce"] as const).filter((t) => t !== "nfce" || activeProvider !== "spedy").map((t) => (
               <button
                 key={t}
                 type="button"

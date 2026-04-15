@@ -33,6 +33,9 @@ import {
   PlugNotasDocumentResponse,
   PlugNotasService,
 } from './plugnotas.service';
+import { FiscalProviderDocumentResponse } from './fiscal-provider.interface';
+import { SpedyService } from './spedy.service';
+import { PlatformSettingsService } from '../../platform/platform-settings.service';
 
 type ReturnSnapshotItem = {
   productId: string;
@@ -123,7 +126,9 @@ export class ErpFiscalService {
     @InjectRepository(ErpAccountReceivable)
     private readonly receivables: Repository<ErpAccountReceivable>,
     private readonly plugnotas: PlugNotasService,
+    private readonly spedy: SpedyService,
     private readonly config: ConfigService,
+    private readonly platformSettings: PlatformSettingsService,
   ) {}
 
   async list(
@@ -165,6 +170,24 @@ export class ErpFiscalService {
       },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async getActiveFiscalProvider(): Promise<{ provider: 'plugnotas' | 'spedy' }> {
+    const provider = await this.getActiveFiscalProviderName();
+    return { provider };
+  }
+
+  async registerEmitenteSpedy(business: ErpBusiness): Promise<{ ok: true; message: string }> {
+    await this.spedy.registerEmpresa(business);
+    const fiscalConfig = this.getFiscalConfig(business);
+    const spedyConfig = this.asRecord(fiscalConfig['spedy']);
+    const companyId = String(spedyConfig['companyId'] ?? '').trim();
+    return {
+      ok: true,
+      message: companyId
+        ? `Empresa registrada na Spedy com ID ${companyId}.`
+        : 'Empresa registrada na Spedy. Recarregue para ver os dados.',
+    };
   }
 
   async registerEmitentePlugnotas(
@@ -245,6 +268,23 @@ export class ErpFiscalService {
       );
     }
 
+    const providerName = await this.getActiveFiscalProviderName();
+
+    if (providerName === 'spedy') {
+      const spedyResult = await this.spedy.uploadCertificate(business, {
+        ...params,
+        filename,
+        password: params.password.trim(),
+        email: params.email?.trim() || business.responsibleEmail || undefined,
+      });
+      return {
+        ok: true,
+        certificateId: spedyResult.certificateId ?? '',
+        emitenteSynced: false,
+        message: spedyResult.message ?? 'Certificado enviado para a Spedy com sucesso.',
+      };
+    }
+
     const upload = await this.plugnotas.uploadCertificate({
       ...params,
       filename,
@@ -299,7 +339,8 @@ export class ErpFiscalService {
     orderId?: string,
   ): Promise<FiscalReadinessPayload> {
     const sandbox = this.config.get<boolean>('fiscal.sandbox', true);
-    const checks = this.buildBusinessChecks(business, type);
+    const activeProvider = await this.getActiveFiscalProviderName();
+    const checks = this.buildBusinessChecks(business, type, activeProvider);
 
     if (orderId) {
       const order = await this.orders.findOne({
@@ -408,7 +449,8 @@ export class ErpFiscalService {
       );
     }
 
-    this.assertEmitPrerequisites(business, order, dto);
+    const providerName = await this.getActiveFiscalProviderName();
+    this.assertEmitPrerequisites(business, order, dto, providerName);
     await this.ensureEmpresaRegistered(business);
 
     order.fiscalStatus = 'pending';
@@ -416,29 +458,41 @@ export class ErpFiscalService {
     await this.orders.save(order);
 
     const integrationId = `${order.id}-${dto.type}`;
-    let remote: PlugNotasDocumentResponse;
+    let remote: PlugNotasDocumentResponse | null = null;
+    let spedyRemote: FiscalProviderDocumentResponse | null = null;
 
     try {
-      let responses: PlugNotasDocumentResponse[];
-      if (dto.type === 'nfse') {
-        responses = await this.plugnotas.emitNfse(
-          this.buildNfsePayload(business, order, integrationId),
-        );
-      } else if (dto.type === 'nfce') {
-        responses = await this.plugnotas.emitNfce(
-          this.buildNfcePayload(
-            business,
-            order,
-            integrationId,
-            dto.paymentMethod ?? 'cash',
-          ),
-        );
+      if (providerName === 'spedy') {
+        if (dto.type === 'nfce') {
+          throw new BadRequestException('Spedy não suporta NFC-e. Escolha NF-e ou NFS-e.');
+        }
+        if (dto.type === 'nfse') {
+          spedyRemote = await this.spedy.emitNfse(business, order, integrationId);
+        } else {
+          spedyRemote = await this.spedy.emitNfe(business, order, integrationId);
+        }
       } else {
-        responses = await this.plugnotas.emitNfe(
-          this.buildNfePayload(business, order, integrationId),
-        );
+        let responses: PlugNotasDocumentResponse[];
+        if (dto.type === 'nfse') {
+          responses = await this.plugnotas.emitNfse(
+            this.buildNfsePayload(business, order, integrationId),
+          );
+        } else if (dto.type === 'nfce') {
+          responses = await this.plugnotas.emitNfce(
+            this.buildNfcePayload(
+              business,
+              order,
+              integrationId,
+              dto.paymentMethod ?? 'cash',
+            ),
+          );
+        } else {
+          responses = await this.plugnotas.emitNfe(
+            this.buildNfePayload(business, order, integrationId),
+          );
+        }
+        remote = responses[0];
       }
-      remote = responses[0];
     } catch (error) {
       const errDoc = existing ?? this.docs.create();
       errDoc.tenantId = business.tenantId;
@@ -446,6 +500,7 @@ export class ErpFiscalService {
       errDoc.salesOrderId = order.id;
       errDoc.type = dto.type;
       errDoc.purpose = 'sale';
+      errDoc.provider = providerName;
       errDoc.idIntegracao = integrationId;
       errDoc.status = 'error';
       errDoc.errorMessage = (error as Error).message;
@@ -462,15 +517,21 @@ export class ErpFiscalService {
     doc.salesOrderId = order.id;
     doc.type = dto.type;
     doc.purpose = 'sale';
-    doc.plugnotasId = remote.id ?? null;
-    doc.idIntegracao = remote.idIntegracao ?? integrationId;
-    doc.status = normalizeStatus(remote.status ?? 'processing');
-    doc.numero = remote.numero ?? null;
-    doc.serie = remote.serie ?? null;
-    doc.chave = remote.chave ?? null;
-    doc.xmlUrl = remote.xml ?? null;
-    doc.pdfUrl = remote.pdf ?? null;
-    doc.rawResponse = remote as unknown as object;
+    if (spedyRemote) {
+      this.applySpedyResponseToDoc(doc, spedyRemote, integrationId);
+    } else {
+      const pn = remote!;
+      doc.provider = 'plugnotas';
+      doc.plugnotasId = pn.id ?? null;
+      doc.idIntegracao = pn.idIntegracao ?? integrationId;
+      doc.status = normalizeStatus(pn.status ?? 'processing');
+      doc.numero = pn.numero ?? null;
+      doc.serie = pn.serie ?? null;
+      doc.chave = pn.chave ?? null;
+      doc.xmlUrl = pn.xml ?? null;
+      doc.pdfUrl = pn.pdf ?? null;
+      doc.rawResponse = pn as unknown as object;
+    }
     doc.emittedAt = new Date();
     doc.errorMessage = null;
     const savedDoc = await this.docs.save(doc);
@@ -584,9 +645,20 @@ export class ErpFiscalService {
     const integrationId = `${order.id}-${originalDoc.type}-return-${Date.now()}`;
     await this.ensureEmpresaRegistered(business);
 
-    let remote: PlugNotasDocumentResponse;
+    const returnProviderName = this.getProviderForDoc(originalDoc);
+    let remote: PlugNotasDocumentResponse | null = null;
+    let spedyRemote: FiscalProviderDocumentResponse | null = null;
+
     try {
-      if (originalDoc.type === 'nfce') {
+      if (returnProviderName === 'spedy') {
+        spedyRemote = await this.spedy.emitNfeReturn!(
+          business,
+          order,
+          originalDoc,
+          snapshotItems,
+          integrationId,
+        );
+      } else if (originalDoc.type === 'nfce') {
         remote = (
           await this.plugnotas.emitNfce(
             this.buildNfceReturnPayload(
@@ -618,6 +690,7 @@ export class ErpFiscalService {
         salesOrderId: order.id,
         type: originalDoc.type,
         purpose: 'return',
+        provider: returnProviderName,
         relatedDocumentId: originalDoc.id,
         relatedAccessKey: originalDoc.chave,
         idIntegracao: integrationId,
@@ -633,6 +706,32 @@ export class ErpFiscalService {
       throw error;
     }
 
+    const returnDocBase: Partial<ErpFiscalDocument> = spedyRemote
+      ? {
+          provider: 'spedy',
+          plugnotasId: spedyRemote.providerId ?? null,
+          idIntegracao: integrationId,
+          status: (spedyRemote.status ?? 'processing') as ErpFiscalDocument['status'],
+          numero: spedyRemote.numero ?? null,
+          serie: spedyRemote.serie ?? null,
+          chave: spedyRemote.chave ?? null,
+          xmlUrl: spedyRemote.xmlUrl ?? null,
+          pdfUrl: spedyRemote.pdfUrl ?? null,
+          rawResponse: (spedyRemote.raw as object) ?? null,
+        }
+      : {
+          provider: 'plugnotas',
+          plugnotasId: remote!.id ?? null,
+          idIntegracao: remote!.idIntegracao ?? integrationId,
+          status: normalizeStatus(remote!.status ?? 'processing'),
+          numero: remote!.numero ?? null,
+          serie: remote!.serie ?? null,
+          chave: remote!.chave ?? null,
+          xmlUrl: remote!.xml ?? null,
+          pdfUrl: remote!.pdf ?? null,
+          rawResponse: remote as unknown as object,
+        };
+
     const returnDoc = this.docs.create({
       tenantId: business.tenantId,
       businessId: business.id,
@@ -641,15 +740,7 @@ export class ErpFiscalService {
       purpose: 'return',
       relatedDocumentId: originalDoc.id,
       relatedAccessKey: originalDoc.chave,
-      plugnotasId: remote.id ?? null,
-      idIntegracao: remote.idIntegracao ?? integrationId,
-      status: normalizeStatus(remote.status ?? 'processing'),
-      numero: remote.numero ?? null,
-      serie: remote.serie ?? null,
-      chave: remote.chave ?? null,
-      xmlUrl: remote.xml ?? null,
-      pdfUrl: remote.pdf ?? null,
-      rawResponse: remote as unknown as object,
+      ...returnDocBase,
       operationSnapshot: {
         items: snapshotItems,
         totalAmount: dec(totalAmount),
@@ -670,18 +761,34 @@ export class ErpFiscalService {
     const doc = await this.findOne(business, docId);
     if (!doc.plugnotasId) {
       throw new BadRequestException(
-        'Documento sem ID PlugNotas; nao e possivel consultar o status.',
+        'Documento sem ID do provedor; nao e possivel consultar o status.',
       );
     }
 
-    const remote = await this.plugnotas.getStatus(doc.type, doc.plugnotasId);
-    doc.status = normalizeStatus(remote.status ?? doc.status);
-    doc.numero = remote.numero ?? doc.numero;
-    doc.serie = remote.serie ?? doc.serie;
-    doc.chave = remote.chave ?? doc.chave;
-    doc.xmlUrl = remote.xml ?? doc.xmlUrl;
-    doc.pdfUrl = remote.pdf ?? doc.pdfUrl;
-    doc.rawResponse = remote as unknown as object;
+    if (this.getProviderForDoc(doc) === 'spedy') {
+      const remote = await this.spedy.getStatus({
+        type: doc.type,
+        providerId: doc.plugnotasId,
+        business,
+      });
+      doc.status = (remote.status ?? 'processing') as ErpFiscalDocument['status'];
+      doc.numero = remote.numero ?? doc.numero;
+      doc.serie = remote.serie ?? doc.serie;
+      doc.chave = remote.chave ?? doc.chave;
+      doc.xmlUrl = remote.xmlUrl ?? doc.xmlUrl;
+      doc.pdfUrl = remote.pdfUrl ?? doc.pdfUrl;
+      doc.rawResponse = (remote.raw as object) ?? doc.rawResponse;
+    } else {
+      const remote = await this.plugnotas.getStatus(doc.type, doc.plugnotasId);
+      doc.status = normalizeStatus(remote.status ?? doc.status);
+      doc.numero = remote.numero ?? doc.numero;
+      doc.serie = remote.serie ?? doc.serie;
+      doc.chave = remote.chave ?? doc.chave;
+      doc.xmlUrl = remote.xml ?? doc.xmlUrl;
+      doc.pdfUrl = remote.pdf ?? doc.pdfUrl;
+      doc.rawResponse = remote as unknown as object;
+    }
+
     if (doc.status === 'cancelled' && !doc.cancelAuthorizedAt) {
       doc.cancelAuthorizedAt = new Date();
     }
@@ -703,7 +810,7 @@ export class ErpFiscalService {
       );
     }
     if (!doc.plugnotasId) {
-      throw new BadRequestException('Documento sem ID PlugNotas.');
+      throw new BadRequestException('Documento sem ID do provedor.');
     }
     const reason = dto.reason?.trim();
     if (!reason) {
@@ -716,9 +823,16 @@ export class ErpFiscalService {
 
     let providerPayload: unknown;
     try {
-      providerPayload = await this.plugnotas.cancel(doc.type, doc.plugnotasId, {
-        justificativa: reason,
-      });
+      if (this.getProviderForDoc(doc) === 'spedy') {
+        providerPayload = await this.spedy.cancel(
+          { type: doc.type, providerId: doc.plugnotasId, business },
+          reason,
+        );
+      } else {
+        providerPayload = await this.plugnotas.cancel(doc.type, doc.plugnotasId, {
+          justificativa: reason,
+        });
+      }
     } catch (error) {
       doc.providerEventPayload = {
         ...(doc.providerEventPayload ?? {}),
@@ -759,7 +873,7 @@ export class ErpFiscalService {
       );
     }
     if (!doc.plugnotasId) {
-      throw new BadRequestException('Documento sem ID PlugNotas.');
+      throw new BadRequestException('Documento sem ID do provedor.');
     }
 
     const correcao = dto.correcao?.trim();
@@ -769,7 +883,10 @@ export class ErpFiscalService {
       );
     }
 
-    const response = await this.plugnotas.sendCce(doc.plugnotasId, correcao);
+    const response =
+      this.getProviderForDoc(doc) === 'spedy'
+        ? await this.spedy.sendCce({ providerId: doc.plugnotasId, business }, correcao)
+        : await this.plugnotas.sendCce(doc.plugnotasId, correcao);
 
     doc.providerEventPayload = {
       ...(doc.providerEventPayload ?? {}),
@@ -993,8 +1110,9 @@ export class ErpFiscalService {
     business: ErpBusiness,
     order: ErpSalesOrder,
     dto: EmitFiscalDto,
+    providerName: 'plugnotas' | 'spedy' = 'plugnotas',
   ): void {
-    const errors = this.buildBusinessChecks(business, dto.type)
+    const errors = this.buildBusinessChecks(business, dto.type, providerName)
       .filter((check) => !check.ok)
       .map((check) => check.message);
 
@@ -1039,6 +1157,7 @@ export class ErpFiscalService {
   private buildBusinessChecks(
     business: ErpBusiness,
     type: FiscalDocumentType,
+    providerName: 'plugnotas' | 'spedy' = 'plugnotas',
   ): FiscalReadinessCheck[] {
     const checks: FiscalReadinessCheck[] = [];
     const document = parseFiscalDocument(business.document);
@@ -1105,17 +1224,34 @@ export class ErpFiscalService {
         ? 'Codigo IBGE do municipio informado.'
         : 'Informe o codigo IBGE de 7 digitos do municipio do emitente.',
     });
-    checks.push({
-      id: 'plugnotas_certificado',
-      section: 'emitente',
-      ok: typeof fiscalConfig['plugnotasCertificateId'] === 'string' &&
-        String(fiscalConfig['plugnotasCertificateId']).trim().length > 0,
-      message:
-        typeof fiscalConfig['plugnotasCertificateId'] === 'string' &&
-        String(fiscalConfig['plugnotasCertificateId']).trim().length > 0
-          ? 'Certificado A1 vinculado ao PlugNotas.'
-          : 'Envie o certificado A1 do emitente para o PlugNotas.',
-    });
+    if (providerName === 'spedy') {
+      const spedyConfig = this.asRecord(fiscalConfig['spedy']);
+      const spedyRegistered =
+        typeof spedyConfig['companyId'] === 'string' &&
+        String(spedyConfig['companyId']).trim().length > 0 &&
+        typeof spedyConfig['apiKey'] === 'string' &&
+        String(spedyConfig['apiKey']).trim().length > 0;
+      checks.push({
+        id: 'spedy_empresa',
+        section: 'emitente',
+        ok: spedyRegistered,
+        message: spedyRegistered
+          ? 'Empresa registrada na Spedy.'
+          : 'Registre a empresa na Spedy em Dados Fiscais antes de emitir.',
+      });
+    } else {
+      checks.push({
+        id: 'plugnotas_certificado',
+        section: 'emitente',
+        ok: typeof fiscalConfig['plugnotasCertificateId'] === 'string' &&
+          String(fiscalConfig['plugnotasCertificateId']).trim().length > 0,
+        message:
+          typeof fiscalConfig['plugnotasCertificateId'] === 'string' &&
+          String(fiscalConfig['plugnotasCertificateId']).trim().length > 0
+            ? 'Certificado A1 vinculado ao PlugNotas.'
+            : 'Envie o certificado A1 do emitente para o PlugNotas.',
+      });
+    }
 
     if (type === 'nfse') {
       const inscricaoMunicipal = (business.inscricaoMunicipal ?? '').trim();
@@ -1743,7 +1879,25 @@ export class ErpFiscalService {
   }
 
   private async ensureEmpresaRegistered(business: ErpBusiness): Promise<void> {
+    const providerName = await this.getActiveFiscalProviderName();
     const fiscalConfig = this.getFiscalConfig(business);
+
+    if (providerName === 'spedy') {
+      const spedyConfig = this.asRecord(fiscalConfig['spedy']);
+      if (spedyConfig['companyId'] && spedyConfig['apiKey']) {
+        return; // já registrado
+      }
+      try {
+        await this.spedy.registerEmpresa(business);
+      } catch (error) {
+        this.logger.warn(
+          `Nao foi possivel registrar emitente ${business.id} na Spedy: ${(error as Error).message}`,
+        );
+      }
+      return;
+    }
+
+    // PlugNotas
     if (fiscalConfig['plugnotasRegistered']) {
       return;
     }
@@ -1780,6 +1934,43 @@ export class ErpFiscalService {
     };
     await this.businesses.update(business.id, { fiscalConfig: nextFiscalConfig });
     business.fiscalConfig = nextFiscalConfig;
+  }
+
+  /** Retorna o nome do provedor fiscal ativo no sistema.
+   *  Prioridade: PlatformSettings (banco) → variável de ambiente → 'plugnotas'.
+   */
+  private async getActiveFiscalProviderName(): Promise<'plugnotas' | 'spedy'> {
+    try {
+      return await this.platformSettings.getFiscalProvider();
+    } catch {
+      return this.config.get<'plugnotas' | 'spedy'>('fiscal.fiscalProvider', 'plugnotas');
+    }
+  }
+
+  /** Retorna o provedor correto para um documento já emitido (baseado em doc.provider). */
+  private getProviderForDoc(doc: ErpFiscalDocument): 'plugnotas' | 'spedy' {
+    return (doc.provider ?? 'plugnotas') as 'plugnotas' | 'spedy';
+  }
+
+  /**
+   * Normaliza a resposta do Spedy (FiscalProviderDocumentResponse) para os campos do ErpFiscalDocument.
+   * Para PlugNotas, use diretamente os campos do PlugNotasDocumentResponse.
+   */
+  private applySpedyResponseToDoc(
+    doc: ErpFiscalDocument,
+    remote: FiscalProviderDocumentResponse,
+    integrationId: string,
+  ): void {
+    doc.provider = 'spedy';
+    doc.plugnotasId = remote.providerId ?? null;
+    doc.idIntegracao = remote.providerId ? integrationId : integrationId;
+    doc.status = (remote.status ?? 'processing') as ErpFiscalDocument['status'];
+    doc.numero = remote.numero ?? null;
+    doc.serie = remote.serie ?? null;
+    doc.chave = remote.chave ?? null;
+    doc.xmlUrl = remote.xmlUrl ?? null;
+    doc.pdfUrl = remote.pdfUrl ?? null;
+    doc.rawResponse = (remote.raw as object) ?? null;
   }
 
   private getFiscalConfig(

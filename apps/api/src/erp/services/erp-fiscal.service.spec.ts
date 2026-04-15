@@ -76,6 +76,9 @@ describe('ErpFiscalService', () => {
       }),
     };
 
+    const spedy = { emitNfe: jest.fn(), emitNfse: jest.fn(), getStatus: jest.fn(), cancel: jest.fn(), sendCce: jest.fn(), registerEmpresa: jest.fn(), uploadCertificate: jest.fn(), emitNfeReturn: jest.fn() };
+    const platformSettings = { getFiscalProvider: jest.fn().mockResolvedValue('plugnotas') };
+
     service = new ErpFiscalService(
       dataSource as unknown as DataSource,
       docs as unknown as Repository<ErpFiscalDocument>,
@@ -86,7 +89,9 @@ describe('ErpFiscalService', () => {
       movements as unknown as Repository<ErpStockMovement>,
       receivables as unknown as Repository<ErpAccountReceivable>,
       plugnotas as unknown as PlugNotasService,
+      spedy as unknown as any,
       config as unknown as ConfigService,
+      platformSettings as unknown as any,
     );
   });
 

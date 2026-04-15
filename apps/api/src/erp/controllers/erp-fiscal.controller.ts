@@ -66,6 +66,15 @@ export class ErpFiscalController {
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)
   @ApiBearerAuth()
   @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Get('provider')
+  @ApiOperation({ summary: 'Retorna o nome do provedor fiscal ativo no sistema' })
+  getActiveProvider() {
+    return this.svc.getActiveFiscalProvider();
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
   @Get('readiness')
   @ApiOperation({
     summary:
@@ -152,6 +161,17 @@ export class ErpFiscalController {
   ) {
     const force = forceStr === 'true' || forceStr === '1';
     return this.svc.registerEmitentePlugnotas(business, { force });
+  }
+
+  @UseGuards(JwtAuthGuard, ErpBusinessGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Business-Id', required: true })
+  @Post('register-spedy')
+  @ApiOperation({
+    summary: 'Registrar emitente na Spedy (POST /v1/companies)',
+  })
+  registerSpedy(@SelectedBusiness() business: ErpBusiness) {
+    return this.svc.registerEmitenteSpedy(business);
   }
 
   @UseGuards(JwtAuthGuard, ErpBusinessGuard)

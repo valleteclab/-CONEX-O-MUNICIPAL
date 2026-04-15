@@ -12,6 +12,7 @@ export type ErpProductClassifierSetting = {
 };
 
 const KEY = 'erp.productClassifier';
+const FISCAL_PROVIDER_KEY = 'fiscal.provider';
 
 @Injectable()
 export class PlatformSettingsService {
@@ -41,6 +42,26 @@ export class PlatformSettingsService {
       maxItemsPerJob:
         typeof v.maxItemsPerJob === 'number' ? v.maxItemsPerJob : d.maxItemsPerJob,
     };
+  }
+
+  async getFiscalProvider(): Promise<'plugnotas' | 'spedy'> {
+    const row = await this.settings.findOne({ where: { key: FISCAL_PROVIDER_KEY } });
+    if (!row) return 'plugnotas';
+    const v = row.value as { provider?: string };
+    return v.provider === 'spedy' ? 'spedy' : 'plugnotas';
+  }
+
+  async setFiscalProvider(provider: 'plugnotas' | 'spedy'): Promise<'plugnotas' | 'spedy'> {
+    const row = await this.settings.findOne({ where: { key: FISCAL_PROVIDER_KEY } });
+    if (!row) {
+      await this.settings.save(
+        this.settings.create({ key: FISCAL_PROVIDER_KEY, value: { provider } }),
+      );
+    } else {
+      row.value = { provider };
+      await this.settings.save(row);
+    }
+    return provider;
   }
 
   async patchErpProductClassifier(

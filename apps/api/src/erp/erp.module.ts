@@ -57,6 +57,7 @@ import { ErpServiceOrderService } from './services/erp-service-order.service';
 import { ErpFinanceService } from './services/erp-finance.service';
 import { ErpFiscalService } from './services/erp-fiscal.service';
 import { PlugNotasService } from './services/plugnotas.service';
+import { SpedyService } from './services/spedy.service';
 import { OpenRouterService } from './services/openrouter.service';
 import { ErpProductClassificationWorker } from './services/erp-product-classification.worker';
 import { PlatformSettingsModule } from '../platform/platform-settings.module';
@@ -128,6 +129,7 @@ import { PlatformSettingsModule } from '../platform/platform-settings.module';
     ErpServiceOrderService,
     ErpFinanceService,
     PlugNotasService,
+    SpedyService,
     ErpFiscalService,
   ],
   exports: [ErpBusinessService, ErpFiscalService, OpenRouterService],

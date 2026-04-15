@@ -215,6 +215,30 @@ export class SupportService {
     );
   }
 
+  async getFiscalProviderConfig(): Promise<{
+    provider: 'plugnotas' | 'spedy';
+    plugnotasConfigured: boolean;
+    spedyConfigured: boolean;
+  }> {
+    const provider = await this.platformSettings.getFiscalProvider();
+    return {
+      provider,
+      plugnotasConfigured: Boolean(
+        this.config.get<string>('fiscal.plugnotasApiKey', '').trim() &&
+          this.config.get<string>('fiscal.plugnotasBaseUrl', '').trim(),
+      ),
+      spedyConfigured: Boolean(
+        this.config.get<string>('fiscal.spedyOwnerApiKey', '').trim() &&
+          this.config.get<string>('fiscal.spedyBaseUrl', '').trim(),
+      ),
+    };
+  }
+
+  async setFiscalProvider(provider: 'plugnotas' | 'spedy'): Promise<{ provider: 'plugnotas' | 'spedy' }> {
+    const saved = await this.platformSettings.setFiscalProvider(provider);
+    return { provider: saved };
+  }
+
   getAiSettings() {
     return this.platformSettings.getErpProductClassifier();
   }

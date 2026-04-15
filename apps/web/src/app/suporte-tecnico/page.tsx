@@ -16,6 +16,12 @@ type SupportIntegration = {
   actions: { key: string; label: string }[];
 };
 
+type FiscalProviderConfig = {
+  provider: "plugnotas" | "spedy";
+  plugnotasConfigured: boolean;
+  spedyConfigured: boolean;
+};
+
 type DashboardPayload = {
   ai: {
     provider: string;
@@ -52,18 +58,47 @@ function toneForStatus(status: SupportIntegration["status"]): "accent" | "warnin
 export default function SupportDashboardPage() {
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fiscalProvider, setFiscalProvider] = useState<FiscalProviderConfig | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<"plugnotas" | "spedy">("plugnotas");
+  const [savingProvider, setSavingProvider] = useState(false);
+  const [providerSaveMsg, setProviderSaveMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      const res = await supportFetch<DashboardPayload>("/api/v1/support/dashboard");
-      if (!res.ok || !res.data) {
-        setError(res.error ?? "Não foi possível carregar o dashboard técnico.");
+      const [dashRes, fpRes] = await Promise.all([
+        supportFetch<DashboardPayload>("/api/v1/support/dashboard"),
+        supportFetch<FiscalProviderConfig>("/api/v1/support/fiscal-provider"),
+      ]);
+      if (!dashRes.ok || !dashRes.data) {
+        setError(dashRes.error ?? "Não foi possível carregar o dashboard técnico.");
         return;
       }
-      setData(res.data);
+      setData(dashRes.data);
+      if (fpRes.ok && fpRes.data) {
+        setFiscalProvider(fpRes.data);
+        setSelectedProvider(fpRes.data.provider);
+      }
     }
     void load();
   }, []);
+
+  async function handleSaveProvider() {
+    setSavingProvider(true);
+    setProviderSaveMsg(null);
+    const res = await supportFetch<{ provider: string }>("/api/v1/support/fiscal-provider", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: selectedProvider }),
+    });
+    setSavingProvider(false);
+    if (res.ok && res.data) {
+      setFiscalProvider((prev) => prev ? { ...prev, provider: res.data!.provider as "plugnotas" | "spedy" } : prev);
+      setProviderSaveMsg("Provedor fiscal atualizado com sucesso.");
+    } else {
+      setProviderSaveMsg(res.error ?? "Erro ao salvar o provedor.");
+    }
+    setTimeout(() => setProviderSaveMsg(null), 4000);
+  }
 
   if (error) {
     return <Card><p className="text-sm text-red-700">{error}</p></Card>;
@@ -128,6 +163,71 @@ export default function SupportDashboardPage() {
           </div>
         </Card>
       </div>
+
+      {fiscalProvider && (
+        <Card className="rounded-[24px] border border-marinha-900/8 bg-white/92 p-6 text-marinha-900">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
+                Provedor Fiscal
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold">Emissão de NF-e e NFS-e</h2>
+              <p className="mt-1 text-sm text-marinha-600">
+                Escolha qual provedor está ativo para emissão fiscal em todo o sistema.
+              </p>
+            </div>
+            <Badge tone={fiscalProvider.provider === "spedy" ? "accent" : "success"}>
+              Ativo: {fiscalProvider.provider === "spedy" ? "Spedy" : "PlugNotas"}
+            </Badge>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {(["plugnotas", "spedy"] as const).map((p) => {
+              const isSelected = selectedProvider === p;
+              const isConfigured = p === "plugnotas" ? fiscalProvider.plugnotasConfigured : fiscalProvider.spedyConfigured;
+              const label = p === "plugnotas" ? "PlugNotas" : "Spedy";
+              const description = p === "plugnotas"
+                ? "NF-e, NFS-e e NFC-e — provedor padrão"
+                : "NF-e e NFS-e — Ambiente Nacional";
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setSelectedProvider(p)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    isSelected
+                      ? "border-municipal-600/60 bg-municipal-600/8 ring-1 ring-municipal-600/30"
+                      : "border-marinha-900/8 bg-surface hover:border-marinha-900/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-marinha-900">{label}</p>
+                    <span className={`h-4 w-4 rounded-full border-2 ${isSelected ? "border-municipal-600 bg-municipal-600" : "border-marinha-400 bg-transparent"}`} />
+                  </div>
+                  <p className="mt-1 text-xs text-marinha-600">{description}</p>
+                  <p className={`mt-2 text-xs font-semibold ${isConfigured ? "text-green-700" : "text-amber-700"}`}>
+                    {isConfigured ? "Credenciais configuradas" : "Credenciais não configuradas"}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex items-center gap-4">
+            <button
+              type="button"
+              onClick={handleSaveProvider}
+              disabled={savingProvider || selectedProvider === fiscalProvider.provider}
+              className="rounded-2xl bg-marinha-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-marinha-800 disabled:opacity-40"
+            >
+              {savingProvider ? "Salvando…" : "Salvar escolha"}
+            </button>
+            {providerSaveMsg && (
+              <p className={`text-sm font-medium ${providerSaveMsg.includes("sucesso") ? "text-green-700" : "text-red-700"}`}>
+                {providerSaveMsg}
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr,340px]">
         <div className="space-y-4">

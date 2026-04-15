@@ -59,6 +59,10 @@ export class ErpFiscalDocument {
   @Column({ name: 'related_access_key', type: 'varchar', length: 48, nullable: true })
   relatedAccessKey: string | null;
 
+  /** Provedor fiscal que gerou este documento (plugnotas | spedy) */
+  @Column({ type: 'varchar', length: 20, default: 'plugnotas' })
+  provider: 'plugnotas' | 'spedy';
+
   /** ID interno do PlugNotas (ObjectId MongoDB) */
   @Column({ name: 'plugnotas_id', type: 'varchar', length: 64, nullable: true })
   plugnotasId: string | null;

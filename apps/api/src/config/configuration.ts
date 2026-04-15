@@ -32,6 +32,12 @@ export default () => ({
       process.env.PLUGNOTAS_BASE_URL ?? 'https://api.sandbox.plugnotas.com.br',
     sandbox: process.env.PLUGNOTAS_SANDBOX !== 'false',
     webhookSecret: process.env.PLUGNOTAS_WEBHOOK_SECRET ?? '',
+    spedyOwnerApiKey: process.env.SPEDY_OWNER_API_KEY ?? '',
+    spedyBaseUrl:
+      process.env.SPEDY_BASE_URL ?? 'https://sandbox-api.spedy.com.br/v1',
+    fiscalProvider: (process.env.FISCAL_PROVIDER ?? 'plugnotas') as
+      | 'plugnotas'
+      | 'spedy',
   },
   /** Consulta CNPJ — https://api.invertexto.com (cadastro ERP) */
   cnpj: {
