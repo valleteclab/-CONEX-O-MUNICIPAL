@@ -1,12 +1,17 @@
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { ErpAccountReceivable } from '../../entities/erp-account-receivable.entity';
 import { ErpBusiness } from '../../entities/erp-business.entity';
 import { ErpFiscalDocument } from '../../entities/erp-fiscal-document.entity';
 import { ErpSalesOrder } from '../../entities/erp-sales-order.entity';
+import { ErpStockBalance } from '../../entities/erp-stock-balance.entity';
+import { ErpStockLocation } from '../../entities/erp-stock-location.entity';
+import { ErpStockMovement } from '../../entities/erp-stock-movement.entity';
 import { ErpFiscalService } from './erp-fiscal.service';
 import { PlugNotasService } from './plugnotas.service';
 
 describe('ErpFiscalService', () => {
+  let dataSource: Record<string, never>;
   let docs: {
     findOne: jest.Mock;
     create: jest.Mock;
@@ -19,6 +24,10 @@ describe('ErpFiscalService', () => {
   let businesses: {
     update: jest.Mock;
   };
+  let locations: Record<string, never>;
+  let balances: Record<string, never>;
+  let movements: Record<string, never>;
+  let receivables: Record<string, never>;
   let plugnotas: {
     registerEmpresa: jest.Mock;
     uploadCertificate: jest.Mock;
@@ -34,6 +43,7 @@ describe('ErpFiscalService', () => {
   let service: ErpFiscalService;
 
   beforeEach(() => {
+    dataSource = {};
     docs = {
       findOne: jest.fn(),
       create: jest.fn(() => ({})),
@@ -46,6 +56,10 @@ describe('ErpFiscalService', () => {
     businesses = {
       update: jest.fn(async () => undefined),
     };
+    locations = {};
+    balances = {};
+    movements = {};
+    receivables = {};
     plugnotas = {
       registerEmpresa: jest.fn(async () => undefined),
       uploadCertificate: jest.fn(),
@@ -63,9 +77,14 @@ describe('ErpFiscalService', () => {
     };
 
     service = new ErpFiscalService(
+      dataSource as unknown as DataSource,
       docs as unknown as Repository<ErpFiscalDocument>,
       orders as unknown as Repository<ErpSalesOrder>,
       businesses as unknown as Repository<ErpBusiness>,
+      locations as unknown as Repository<ErpStockLocation>,
+      balances as unknown as Repository<ErpStockBalance>,
+      movements as unknown as Repository<ErpStockMovement>,
+      receivables as unknown as Repository<ErpAccountReceivable>,
       plugnotas as unknown as PlugNotasService,
       config as unknown as ConfigService,
     );
@@ -155,6 +174,93 @@ describe('ErpFiscalService', () => {
         ok: true,
         certificateId: 'cert-123',
         emitenteSynced: true,
+      }),
+    );
+  });
+
+  it('registers emitente for NF-e without forcing NFSe or NFCe configs', async () => {
+    const business = {
+      id: 'business-1',
+      tenantId: 'tenant-1',
+      document: '29062609000177',
+      legalName: 'Loja Exemplo Ltda',
+      tradeName: 'Loja Exemplo',
+      responsibleEmail: 'fiscal@loja.com',
+      address: {
+        logradouro: 'Rua Principal',
+        numero: '10',
+        cep: '12345678',
+        uf: 'BA',
+      },
+      cityIbgeCode: '2919207',
+      inscricaoEstadual: '123456789',
+      taxRegime: 'simples_nacional',
+      fiscalConfig: {
+        plugnotasCertificateId: 'cert-123',
+      },
+    } as unknown as ErpBusiness;
+
+    const result = await service.registerEmitentePlugnotas(business);
+
+    expect(plugnotas.registerEmpresa).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inscricaoEstadual: '123456789',
+        nfse: expect.objectContaining({
+          ativo: false,
+        }),
+        nfce: expect.objectContaining({
+          ativo: false,
+        }),
+      }),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: true,
+        alreadyRegistered: false,
+      }),
+    );
+  });
+
+  it('registers emitente with NFC-e sefaz config only when CSC is complete', async () => {
+    const business = {
+      id: 'business-1',
+      tenantId: 'tenant-1',
+      document: '29062609000177',
+      legalName: 'Loja Exemplo Ltda',
+      tradeName: 'Loja Exemplo',
+      responsibleEmail: 'fiscal@loja.com',
+      address: {
+        logradouro: 'Rua Principal',
+        numero: '10',
+        cep: '12345678',
+        uf: 'BA',
+      },
+      cityIbgeCode: '2919207',
+      inscricaoEstadual: '123456789',
+      taxRegime: 'simples_nacional',
+      fiscalConfig: {
+        plugnotasCertificateId: 'cert-123',
+        nfce: {
+          cscId: '1',
+          cscCode: 'ABC123456',
+        },
+      },
+    } as unknown as ErpBusiness;
+
+    await service.registerEmitentePlugnotas(business);
+
+    expect(plugnotas.registerEmpresa).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nfce: expect.objectContaining({
+          ativo: true,
+          config: expect.objectContaining({
+            versaoQrCode: 2,
+            sefaz: {
+              idCodigoSegurancaContribuinte: '1',
+              codigoSegurancaContribuinte: 'ABC123456',
+            },
+          }),
+        }),
       }),
     );
   });

@@ -79,8 +79,30 @@ export class PlugNotasService {
       this.logger.warn(`PlugNotas ${res.status}: ${text}`);
       let msg = `PlugNotas retornou ${res.status}`;
       try {
-        const parsed = JSON.parse(text) as { message?: string; mensagem?: string };
-        msg = parsed.message ?? parsed.mensagem ?? msg;
+        const parsed = JSON.parse(text) as {
+          message?: string;
+          mensagem?: string;
+          error?: {
+            message?: string;
+            data?: {
+              fields?: Record<string, string | string[]>;
+            };
+          };
+        };
+        const fieldMessages = Object.entries(parsed.error?.data?.fields ?? {})
+          .map(([field, value]) => {
+            const textValue = Array.isArray(value) ? value.join(', ') : value;
+            return `${field}: ${textValue}`;
+          })
+          .join('; ');
+        msg =
+          parsed.error?.message ??
+          parsed.message ??
+          parsed.mensagem ??
+          msg;
+        if (fieldMessages) {
+          msg = `${msg} (${fieldMessages})`;
+        }
       } catch {
         // keep default message
       }

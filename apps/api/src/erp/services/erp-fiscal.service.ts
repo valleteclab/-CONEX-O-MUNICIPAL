@@ -1520,6 +1520,12 @@ export class ErpFiscalService {
     const nfseConfig = this.getNestedConfig(business, 'nfse');
     const nfeConfig = this.getNestedConfig(business, 'nfe');
     const nfceConfig = this.getNestedConfig(business, 'nfce');
+    const inscricaoMunicipal = (business.inscricaoMunicipal ?? '').trim();
+    const inscricaoEstadual = (business.inscricaoEstadual ?? '').trim();
+    const nfceCscId = String(nfceConfig.cscId ?? '').trim();
+    const nfceCscCode = String(nfceConfig.cscCode ?? '').trim();
+    const hasNfseConfig = inscricaoMunicipal.length > 0;
+    const hasNfceConfig = nfceCscId.length > 0 && nfceCscCode.length > 0;
     const apiHost = (process.env.API_PUBLIC_URL ?? '').trim();
     const webhookUrl = apiHost
       ? `${apiHost}/api/v1/erp/fiscal/webhook`
@@ -1540,6 +1546,8 @@ export class ErpFiscalService {
         typeof fiscalConfig['plugnotasCertificateId'] === 'string'
           ? fiscalConfig['plugnotasCertificateId']
           : undefined,
+      inscricaoMunicipal: inscricaoMunicipal || undefined,
+      inscricaoEstadual: inscricaoEstadual || undefined,
       simplesNacional:
         business.taxRegime === 'mei' ||
         business.taxRegime === 'simples_nacional' ||
@@ -1558,7 +1566,7 @@ export class ErpFiscalService {
         cep: this.onlyDigits(address.cep) || undefined,
       },
       nfse: {
-        ativo: true,
+        ativo: hasNfseConfig,
         tipoContrato: 0,
         config: {
           producao: !sandbox,
@@ -1567,6 +1575,13 @@ export class ErpFiscalService {
             numero: Number(nfseConfig.rpsNumeroInicial ?? 1),
             lote: Number(nfseConfig.rpsLoteInicial ?? 1),
           },
+          ...(hasNfseConfig
+            ? {
+                prefeitura: {
+                  inscricaoMunicipal,
+                },
+              }
+            : {}),
           email: {
             envio: true,
           },
@@ -1588,7 +1603,7 @@ export class ErpFiscalService {
         },
       },
       nfce: {
-        ativo: true,
+        ativo: hasNfceConfig,
         tipoContrato: 0,
         config: {
           producao: !sandbox,
@@ -1597,15 +1612,12 @@ export class ErpFiscalService {
           email: {
             envio: true,
           },
-          ...(nfceConfig.cscId || nfceConfig.cscCode
+          ...(hasNfceConfig
             ? {
+                versaoQrCode: 2,
                 sefaz: {
-                  idCodigoSegurancaContribuinte: String(
-                    nfceConfig.cscId ?? '',
-                  ),
-                  codigoSegurancaContribuinte: String(
-                    nfceConfig.cscCode ?? '',
-                  ),
+                  idCodigoSegurancaContribuinte: nfceCscId,
+                  codigoSegurancaContribuinte: nfceCscCode,
                 },
               }
             : {}),
@@ -1628,6 +1640,13 @@ export class ErpFiscalService {
     if (
       !document.isValid ||
       !supportsCurrentPlugNotasDocument(document.normalized)
+    ) {
+      return;
+    }
+
+    if (
+      typeof fiscalConfig['plugnotasCertificateId'] !== 'string' ||
+      !String(fiscalConfig['plugnotasCertificateId']).trim()
     ) {
       return;
     }

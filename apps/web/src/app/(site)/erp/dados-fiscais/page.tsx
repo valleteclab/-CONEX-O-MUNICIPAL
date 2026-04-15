@@ -75,6 +75,10 @@ export default function ErpDadosFiscaisPage() {
   const [plugnotasRegistered, setPlugnotasRegistered] = useState(false);
   const [registeringPn, setRegisteringPn] = useState(false);
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
+  const [certificateFeedback, setCertificateFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const loadBusiness = useCallback(async () => {
     if (!businessId) {
@@ -133,11 +137,10 @@ export default function ErpDadosFiscaisPage() {
     if (businessId) void loadReadiness();
   }, [businessId, readinessType, loadReadiness]);
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveFiscalData(options?: { silent?: boolean }) {
     if (!businessId) return;
     setSaving(true);
-    setSavedMsg(null);
+    if (!options?.silent) setSavedMsg(null);
     setError(null);
     const res = await erpFetch<ErpBusinessDetail>(`/api/v1/erp/businesses/${businessId}`, {
       method: "PATCH",
@@ -173,14 +176,24 @@ export default function ErpDadosFiscaisPage() {
     setSaving(false);
     if (!res.ok) {
       setError(res.error ?? "Erro ao salvar.");
-      return;
+      return false;
     }
-    setSavedMsg("Dados salvos. Atualizamos o checklist abaixo.");
-    void loadReadiness();
+    if (!options?.silent) {
+      setSavedMsg("Dados salvos. Atualizamos o checklist abaixo.");
+    }
+    await loadReadiness();
+    return true;
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    await saveFiscalData();
   }
 
   async function registerPlugnotas(force: boolean) {
     if (!businessId) return;
+    const saved = await saveFiscalData({ silent: true });
+    if (!saved) return;
     setRegisteringPn(true);
     setError(null);
     setSavedMsg(null);
@@ -204,17 +217,22 @@ export default function ErpDadosFiscaisPage() {
 
   async function handleCertificateUpload() {
     if (!certificateFile) {
-      setError("Selecione o arquivo do certificado A1.");
+      const message = "Selecione o arquivo do certificado A1.";
+      setError(message);
+      setCertificateFeedback({ type: "error", message });
       return;
     }
     if (!certificatePassword.trim()) {
-      setError("Informe a senha do certificado.");
+      const message = "Informe a senha do certificado.";
+      setError(message);
+      setCertificateFeedback({ type: "error", message });
       return;
     }
 
     setUploadingCertificate(true);
     setError(null);
     setSavedMsg(null);
+    setCertificateFeedback(null);
 
     const form = new FormData();
     form.append("file", certificateFile);
@@ -223,27 +241,37 @@ export default function ErpDadosFiscaisPage() {
       form.append("email", certificateEmail.trim());
     }
 
-    const res = await erpFetch<{
-      ok: boolean;
-      certificateId: string;
-      emitenteSynced: boolean;
-      message: string;
-    }>("/api/v1/erp/fiscal/certificate", {
-      method: "POST",
-      body: form,
-    });
+    try {
+      const res = await erpFetch<{
+        ok: boolean;
+        certificateId: string;
+        emitenteSynced: boolean;
+        message: string;
+      }>("/api/v1/erp/fiscal/certificate", {
+        method: "POST",
+        body: form,
+      });
 
-    setUploadingCertificate(false);
-    if (!res.ok || !res.data) {
-      setError(res.error ?? "Falha ao enviar o certificado.");
-      return;
+      if (!res.ok || !res.data) {
+        const message = res.error ?? "Falha ao enviar o certificado.";
+        setError(message);
+        setCertificateFeedback({ type: "error", message });
+        return;
+      }
+
+      setSavedMsg(res.data.message);
+      setCertificateFeedback({ type: "success", message: res.data.message });
+      setCertificatePassword("");
+      setCertificateFile(null);
+      await loadBusiness();
+      await loadReadiness();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Falha inesperada ao enviar o certificado.";
+      setError(message);
+      setCertificateFeedback({ type: "error", message });
+    } finally {
+      setUploadingCertificate(false);
     }
-
-    setSavedMsg(res.data.message);
-    setCertificatePassword("");
-    setCertificateFile(null);
-    await loadBusiness();
-    await loadReadiness();
   }
 
   if (!businessId) {
@@ -552,6 +580,17 @@ export default function ErpDadosFiscaisPage() {
                 >
                   {uploadingCertificate ? "Enviando certificado..." : "Enviar certificado para o PlugNotas"}
                 </Button>
+                {certificateFeedback && (
+                  <div
+                    className={`mt-3 rounded-btn border px-3 py-2 text-sm ${
+                      certificateFeedback.type === "success"
+                        ? "border-green-200 bg-green-50 text-green-900"
+                        : "border-red-200 bg-red-50 text-red-800"
+                    }`}
+                  >
+                    {certificateFeedback.message}
+                  </div>
+                )}
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm font-medium text-marinha-700">
