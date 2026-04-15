@@ -308,8 +308,7 @@ function ErpPedidosCompraContent() {
         <Badge tone="accent" className="self-center">Suprimentos</Badge>
       </div>
       <div className="mb-4 rounded-btn border border-cerrado-500/25 bg-cerrado-500/10 px-4 py-3 text-sm text-marinha-700">
-        Ao marcar um pedido como <strong>recebido</strong>, o sistema lança a entrada no estoque e cria
-        automaticamente um título em <strong>Contas a pagar</strong>.
+        Ao marcar um pedido como <strong>recebido</strong>, a compra já segue para o estoque e para o financeiro.
       </div>
       {focusOrderId && (
         <div className="mb-4 rounded-btn border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
@@ -319,11 +318,12 @@ function ErpPedidosCompraContent() {
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-marinha-900">Pedidos a fornecedores</h2>
-            <p className="mt-1 text-sm text-marinha-500">Acompanhe a criação, confirmação e recebimento dos pedidos de compra.</p>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Pedidos de compra</h2>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe seus pedidos de compra.</p>
           </div>
           <Badge tone="neutral">Compras</Badge>
         </div>
+
         <ErpDataTable
           columns={columns}
           data={orders}
@@ -349,7 +349,7 @@ function ErpPedidosCompraContent() {
         submitLabel="Criar pedido"
       >
         <p className="mb-4 text-sm text-marinha-500">
-          Selecione o fornecedor e monte os itens para registrar a compra no ERP.
+          Selecione o fornecedor e adicione os itens para registrar a compra.
         </p>
         <p className="mb-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-3 py-2 text-xs text-marinha-600">
           Quando o pedido for recebido, o estoque e o financeiro serão atualizados automaticamente.

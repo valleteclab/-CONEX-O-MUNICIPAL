@@ -265,7 +265,7 @@ export default function ErpOrcamentosPage() {
     <>
       <PageIntro
         title="Orçamentos"
-        description="Formalize propostas comerciais, acompanhe aprovação e converta para venda ou ordem de serviço."
+        description="Monte propostas, acompanhe a aprovação e transforme o orçamento em venda ou atendimento."
         badge="Comercial"
       />
 
@@ -291,13 +291,13 @@ export default function ErpOrcamentosPage() {
         <Button variant="primary" onClick={openModal} disabled={noBusinessId}>
           Novo orçamento
         </Button>
-        <Badge tone="accent">Converte para venda ou OS</Badge>
+        <Badge tone="accent">Propostas</Badge>
       </div>
 
       <Card>
         <div className="mb-4">
           <h2 className="font-serif text-lg font-bold text-marinha-900">Propostas comerciais</h2>
-          <p className="mt-1 text-sm text-marinha-500">Use orçamentos como ponto de encontro entre a operação comercial e a execução do negócio.</p>
+          <p className="mt-1 text-sm text-marinha-500">Use esta área para acompanhar propostas desde a criação até o fechamento.</p>
         </div>
         <ErpDataTable
           columns={columns}

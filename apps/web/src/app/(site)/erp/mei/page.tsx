@@ -19,51 +19,51 @@ const officialLinks = [
   {
     href: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/servicos-para-mei/pagamento-de-contribuicao-mensal/como-pagar-o-das",
     title: "Como pagar o DAS",
-    desc: "Veja as formas oficiais de pagamento e orientacoes para manter o MEI em dia.",
+    desc: "Veja as formas oficiais de pagamento e orientações para manter o MEI em dia.",
     badge: "Guia",
   },
   {
     href: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/servicos-para-mei/declaracao-anual-de-faturamento",
-    title: "Declaracao anual DASN-SIMEI",
-    desc: "Abra o fluxo oficial da declaracao anual obrigatoria do MEI.",
+    title: "Declaração anual DASN-SIMEI",
+    desc: "Abra o fluxo oficial da declaração anual obrigatória do MEI.",
     badge: "Anual",
   },
   {
     href: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/servicos-para-mei/parcelamento-de-divida-do-mei",
     title: "Parcelamento",
-    desc: "Consulte a opcao oficial para parcelar debitos do MEI quando houver atraso.",
-    badge: "Regularizacao",
+    desc: "Consulte a opção oficial para parcelar débitos do MEI quando houver atraso.",
+    badge: "Regularização",
   },
 ];
 
 const reminders = [
   {
-    title: "Todo mes",
+    title: "Todo mês",
     headline: "DAS com vencimento no dia 20",
-    desc: "Revise a guia com antecedencia, gere o boleto no portal oficial e guarde o comprovante no seu fluxo interno.",
+    desc: "Revise a guia com antecedência, gere o boleto no portal oficial e guarde o comprovante.",
   },
   {
     title: "Ao longo do ano",
     headline: "Organize faturamento e comprovantes",
-    desc: "Mantenha notas, extratos e comprovantes de DAS em ordem para facilitar a declaracao anual e a regularidade fiscal.",
+    desc: "Mantenha notas, extratos e comprovantes de DAS em ordem para facilitar a declaração anual e manter a empresa regular.",
   },
   {
     title: "Todo ano",
     headline: "DASN-SIMEI ate 31 de maio",
-    desc: "Declare o faturamento do ano anterior no prazo para evitar multa e pendencias futuras.",
+    desc: "Declare o faturamento do ano anterior no prazo para evitar multa e pendências futuras.",
   },
 ];
 
 const antiFraudTips = [
-  "Use apenas links com dominio oficial gov.br ou receita.fazenda.gov.br para emitir o DAS.",
+  "Use apenas links com domínio oficial gov.br ou receita.fazenda.gov.br para emitir o DAS.",
   "Desconfie de boletos enviados por WhatsApp, e-mail ou links patrocinados fora do portal oficial.",
-  "Se houver duvida, confira a guia novamente no PGMEI antes de pagar.",
+  "Se houver dúvida, confira a guia novamente no PGMEI antes de pagar.",
 ];
 
 const nextPhase = [
-  "Historico interno de DAS emitido, pago e comprovado por competencia.",
-  "Alertas automaticos de vencimento para MEIs cadastrados.",
-  "Fluxo assistido para busca e conciliacao do DAS dentro do ERP.",
+  "Histórico interno de DAS emitido, pago e comprovado por competência.",
+  "Alertas automáticos de vencimento para MEIs cadastrados.",
+  "Fluxo guiado para busca e conciliação do DAS dentro do sistema.",
 ];
 
 function ExternalAction({
@@ -103,7 +103,7 @@ export default function ErpMeiPage() {
     <>
       <PageIntro
         title="Central MEI"
-        description="Um ponto unico para a rotina do MEI dentro do ERP: DAS mensal, declaracao anual, parcelamento e orientacoes oficiais."
+        description="Um ponto único para a rotina do MEI: DAS mensal, declaração anual, parcelamento e orientações oficiais."
         badge="MEI"
       >
         <div className="mt-4 flex flex-wrap gap-3">
@@ -132,12 +132,12 @@ export default function ErpMeiPage() {
                 Rotina recomendada
               </p>
               <h2 className="mt-2 font-serif text-2xl text-marinha-900">
-                Operacao simples, oficial e segura
+                Operação simples, oficial e segura
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-marinha-600">
-                Esta central organiza o que o MEI precisa fazer com frequencia sem
-                substituir o portal oficial. A ideia e reduzir atrito no dia a dia
-                e deixar o cliente sempre a um clique do canal correto.
+                Esta central organiza o que o MEI precisa fazer com frequência sem
+                substituir o portal oficial. A ideia é reduzir o esforço do dia a dia
+                e deixar você sempre a um clique do canal correto.
               </p>
             </div>
             <Badge tone="accent">Canal oficial primeiro</Badge>
@@ -168,11 +168,11 @@ export default function ErpMeiPage() {
             Cuidados
           </p>
           <h2 className="mt-2 font-serif text-xl text-marinha-900">
-            Protecao contra fraude
+            Proteção contra fraude
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-marinha-500">
-            O DAS deve ser emitido em canal oficial. Use esta central como guia de
-            operacao e mantenha o pagamento sempre validado antes de concluir.
+            O DAS deve ser emitido em canal oficial. Use esta central como guia e
+            confirme sempre os dados antes de pagar.
           </p>
           <ul className="mt-5 space-y-3">
             {antiFraudTips.map((tip) => (
@@ -191,7 +191,7 @@ export default function ErpMeiPage() {
               rel="noreferrer"
               className="text-sm font-semibold text-municipal-700 underline"
             >
-              Ler orientacoes oficiais sobre fraude
+              Ler orientações oficiais sobre fraude
             </a>
           </div>
         </Card>
@@ -228,10 +228,10 @@ export default function ErpMeiPage() {
           <div className="mt-4 space-y-3">
             <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
               <p className="text-sm font-semibold text-marinha-900">
-                1. Confirmar CNPJ e dados basicos
+                1. Confirmar CNPJ e dados básicos
               </p>
               <p className="mt-1 text-sm text-marinha-500">
-                Garanta que o cadastro do negocio esteja consistente antes da rotina mensal.
+                Garanta que o cadastro do negócio esteja consistente antes da rotina mensal.
               </p>
             </div>
             <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
@@ -239,7 +239,7 @@ export default function ErpMeiPage() {
                 2. Emitir DAS no canal oficial
               </p>
               <p className="mt-1 text-sm text-marinha-500">
-                Gere a guia, baixe o comprovante e mantenha registro interno do periodo.
+                Gere a guia, baixe o comprovante e mantenha registro do período.
               </p>
             </div>
             <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
@@ -252,7 +252,7 @@ export default function ErpMeiPage() {
             </div>
             <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
               <p className="text-sm font-semibold text-marinha-900">
-                4. Revisar declaracao anual
+                4. Revisar declaração anual
               </p>
               <p className="mt-1 text-sm text-marinha-500">
                 Consolide faturamento e tributos pagos para facilitar a DASN-SIMEI.
@@ -265,13 +265,13 @@ export default function ErpMeiPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">
-                Proxima fase
+                Próximos passos
               </p>
               <h2 className="mt-2 font-serif text-xl text-marinha-900">
-                Evolucao planejada da Central MEI
+                Evolução planejada da Central MEI
               </h2>
             </div>
-            <Badge tone="accent">Roadmap</Badge>
+            <Badge tone="accent">Planejamento</Badge>
           </div>
           <div className="mt-5 space-y-3">
             {nextPhase.map((item, index) => (
@@ -288,11 +288,10 @@ export default function ErpMeiPage() {
           </div>
           <div className="mt-6 rounded-btn border border-municipal-600/20 bg-municipal-600/5 px-4 py-4">
             <p className="text-sm font-semibold text-marinha-900">
-              Esta central foi desenhada para ser a base do futuro fluxo automatizado do DAS.
+              Esta central foi pensada para facilitar a rotina do MEI sem tirar você do canal oficial.
             </p>
             <p className="mt-2 text-sm text-marinha-500">
-              Quando a automacao entrar, a experiencia continua a mesma para o cliente:
-              visualizar status, abrir acao e registrar comprovantes.
+              Aos poucos, novas facilidades podem ser adicionadas para acompanhar status e guardar comprovantes no mesmo lugar.
             </p>
             <div className="mt-4">
               <Link href="/erp" className="text-sm font-semibold text-municipal-700 underline">

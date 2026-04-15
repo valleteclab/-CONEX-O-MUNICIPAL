@@ -456,7 +456,7 @@ export default function ErpFinanceiroPage() {
     <>
       <PageIntro
         title="Financeiro"
-        description="Acompanhe recebimentos, pagamentos e o movimento do caixa da empresa em um so lugar."
+        description="Acompanhe recebimentos, pagamentos e o movimento do caixa da empresa em um só lugar."
         badge="Financeiro"
       />
 
@@ -474,7 +474,7 @@ export default function ErpFinanceiroPage() {
               {fmt(summary.receivables.openAmount)}
             </p>
             <p className="mt-1 text-xs text-green-700">
-              {summary.receivables.openCount} titulo(s) em aberto
+              {summary.receivables.openCount} título(s) em aberto
             </p>
           </div>
           <div className="rounded-btn border border-red-200 bg-red-50 p-4">
@@ -483,14 +483,14 @@ export default function ErpFinanceiroPage() {
               {fmt(summary.payables.openAmount)}
             </p>
             <p className="mt-1 text-xs text-red-700">
-              {summary.payables.openCount} titulo(s) em aberto
+              {summary.payables.openCount} título(s) em aberto
             </p>
           </div>
           <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
             <p className="text-xs text-marinha-600">Saldo do caixa</p>
             <p className="mt-1 text-lg font-bold text-marinha-900">{fmt(summary.cash.balance)}</p>
             <p className="mt-1 text-xs text-marinha-500">
-              {summary.cash.entries} lancamento(s) no periodo
+              {summary.cash.entries} lançamento(s) no período
             </p>
           </div>
           <div className="rounded-btn border border-marinha-900/10 bg-surface-card p-4">
@@ -498,7 +498,7 @@ export default function ErpFinanceiroPage() {
             <p className="mt-1 text-lg font-bold text-marinha-900">
               {fmt(summary.cash.totalIn)} / {fmt(summary.cash.totalOut)}
             </p>
-            <p className="mt-1 text-xs text-marinha-500">Entradas / saidas do periodo</p>
+            <p className="mt-1 text-xs text-marinha-500">Entradas / saídas do período</p>
           </div>
         </div>
       )}
@@ -508,11 +508,11 @@ export default function ErpFinanceiroPage() {
           <div>
             <h2 className="font-serif text-lg text-marinha-900">Centro financeiro</h2>
             <p className="mt-1 text-sm text-marinha-500">
-              Lance recebimentos, despesas e movimentacoes conforme a rotina diaria da empresa.
+              Registre recebimentos, despesas e entradas ou saídas do caixa conforme a rotina da empresa.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Badge tone="accent">Lancamentos</Badge>
+            <Badge tone="accent">Lançamentos</Badge>
             <Button variant="primary" onClick={() => openFin("ar")} disabled={noBusinessId}>
               Novo recebimento
             </Button>
@@ -520,7 +520,7 @@ export default function ErpFinanceiroPage() {
               Nova conta a pagar
             </Button>
             <Button variant="secondary" onClick={openCash} disabled={noBusinessId}>
-              Lancar no caixa
+              Lançar no caixa
             </Button>
           </div>
         </div>
@@ -530,7 +530,7 @@ export default function ErpFinanceiroPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Contas a receber</h2>
-            <p className="mt-1 text-sm text-marinha-500">Valores previstos de entrada na empresa.</p>
+            <p className="mt-1 text-sm text-marinha-500">Valores que a empresa ainda tem para receber.</p>
           </div>
           <Badge tone="success">Recebimentos</Badge>
         </div>
@@ -568,7 +568,7 @@ export default function ErpFinanceiroPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Contas a pagar</h2>
-            <p className="mt-1 text-sm text-marinha-500">Compromissos financeiros e despesas pendentes.</p>
+            <p className="mt-1 text-sm text-marinha-500">Compromissos e despesas que ainda precisam ser pagos.</p>
           </div>
           <Badge tone="warning">Pagamentos</Badge>
         </div>
@@ -606,7 +606,7 @@ export default function ErpFinanceiroPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Fluxo de caixa</h2>
-            <p className="mt-1 text-sm text-marinha-500">Entradas e saídas registradas no dia a dia da operação.</p>
+            <p className="mt-1 text-sm text-marinha-500">Entradas e saídas de dinheiro registradas no dia a dia.</p>
           </div>
           <Badge tone="neutral">Caixa</Badge>
         </div>
@@ -615,7 +615,7 @@ export default function ErpFinanceiroPage() {
           data={cash}
           isLoading={cashLoading}
           error={cashError}
-          emptyMessage="Nenhum lancamento de caixa."
+          emptyMessage="Nenhum lançamento de caixa."
           onRetry={loadCash}
           keyExtractor={(r) => r.id}
         />
@@ -665,7 +665,7 @@ export default function ErpFinanceiroPage() {
             />,
           )}
           {field(
-            "Observacao",
+            "Observação",
             <input
               type="text"
               value={finForm.note}
@@ -678,12 +678,15 @@ export default function ErpFinanceiroPage() {
       </ErpFormModal>
 
       <ErpFormModal
-        title="Lancamento de caixa"
+        title="Lançamento de caixa"
         open={openModal === "cash"}
         onClose={() => setOpenModal(null)}
         onSubmit={handleCashSubmit}
         isSubmitting={isSubmitting}
       >
+        <p className="mb-4 text-sm text-marinha-500">
+          Registre uma entrada ou saída para manter o caixa atualizado.
+        </p>
         <div className="grid grid-cols-2 gap-4">
           {field(
             "Tipo *",
@@ -730,7 +733,7 @@ export default function ErpFinanceiroPage() {
           )}
           <div className="col-span-2">
             {field(
-              "Descricao",
+              "Descrição",
               <input
                 type="text"
                 value={cashForm.description}

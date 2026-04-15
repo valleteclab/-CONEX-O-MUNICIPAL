@@ -175,7 +175,7 @@ export default function ErpPartiesPage() {
     <>
       <PageIntro
         title="Clientes e fornecedores"
-        description="Mantenha seus contatos comerciais organizados para vendas, compras, financeiro e relacionamento com o cliente."
+        description="Organize os contatos usados em vendas, compras e financeiro em um só lugar."
         badge="Cadastros"
       />
 
@@ -212,7 +212,7 @@ export default function ErpPartiesPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Base de clientes e fornecedores</h2>
-            <p className="mt-1 text-sm text-marinha-500">Centralize aqui os contatos usados em vendas, compras e financeiro.</p>
+            <p className="mt-1 text-sm text-marinha-500">Centralize aqui os contatos que fazem parte da rotina da empresa.</p>
           </div>
           <Badge tone="neutral">Contatos</Badge>
         </div>
@@ -237,7 +237,7 @@ export default function ErpPartiesPage() {
         isSubmitting={isSubmitting}
       >
         <p className="mb-4 text-sm text-marinha-500">
-          Cadastre pessoas ou empresas para usar nos pedidos, no financeiro e nas rotinas de relacionamento.
+          Cadastre pessoas ou empresas para usar nos pedidos, no financeiro e no atendimento.
         </p>
         <div className="grid grid-cols-2 gap-4">
           {field(

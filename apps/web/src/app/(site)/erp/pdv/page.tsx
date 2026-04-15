@@ -13,7 +13,7 @@ export default function ErpPdvPage() {
     <>
       <PageIntro
         title="PDV — Ponto de venda"
-        description="Use o caixa para vendas rápidas no balcão, consulta de itens e fechamento simples do atendimento."
+        description="Use o caixa para vendas rápidas no balcão e finalize o atendimento com agilidade."
         badge="Operação"
       />
 
@@ -27,9 +27,9 @@ export default function ErpPdvPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Lançamento</p>
           <p className="mt-2 flex items-center gap-2 text-lg font-bold text-marinha-900">
             <Badge tone="accent">PDV</Badge>
-            Catálogo + cupom
+            Itens e venda
           </p>
-          <p className="mt-1 text-sm text-marinha-500">Busque itens pelo código, nome ou SKU e monte o cupom em poucos toques.</p>
+          <p className="mt-1 text-sm text-marinha-500">Busque itens pelo código ou nome e monte a venda em poucos toques.</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Fluxo</p>

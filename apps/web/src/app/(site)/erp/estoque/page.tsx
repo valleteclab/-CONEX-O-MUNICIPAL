@@ -594,30 +594,30 @@ export default function ErpEstoquePage() {
     <>
       <PageIntro
         title="Estoque"
-        description="Acompanhe saldos, movimentacoes e entradas de mercadoria sem perder o vinculo com produtos e fornecedores."
-        badge="Operacao"
+        description="Acompanhe saldos, movimentações e entradas de mercadoria com visão clara dos produtos e fornecedores."
+        badge="Operação"
       />
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card variant="featured">
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Saldos</p>
-          <p className="mt-2 text-lg font-bold text-marinha-900">{balances.length} posicoes</p>
+          <p className="mt-2 text-lg font-bold text-marinha-900">{balances.length} posições</p>
           <p className="mt-1 text-sm text-marinha-500">Itens com saldo registrado por local.</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Movimentacoes</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Movimentações</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{movements.length} registros</p>
-          <p className="mt-1 text-sm text-marinha-500">Historico recente de entradas, saidas e ajustes.</p>
+          <p className="mt-1 text-sm text-marinha-500">Histórico recente de entradas, saídas e ajustes.</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Locais</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{locations.length} locais cadastrados</p>
-          <p className="mt-1 text-sm text-marinha-500">Organize estoque por deposito, loja ou almoxarifado.</p>
+          <p className="mt-1 text-sm text-marinha-500">Organize o estoque por depósito, loja ou almoxarifado.</p>
         </Card>
       </div>
 
       <div className="mb-4 rounded-btn border border-cerrado-500/25 bg-cerrado-500/10 px-4 py-3 text-sm text-marinha-700">
-        A entrada por XML fica no estoque porque essa rotina pode atualizar cadastro de produto, cadastrar
-        fornecedor e, se voce quiser, <strong>lancar saldo imediatamente</strong> a partir da NF-e.
+        A entrada por XML fica no estoque porque essa rotina pode atualizar produtos, identificar o fornecedor e,
+        se você quiser, <strong>lançar o saldo imediatamente</strong> a partir da nota.
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -633,7 +633,7 @@ export default function ErpEstoquePage() {
           }}
           disabled={noBusinessId}
         >
-          Nova movimentacao
+          Nova movimentação
         </Button>
         <Button
           variant="secondary"
@@ -646,14 +646,14 @@ export default function ErpEstoquePage() {
         >
           Novo local
         </Button>
-        <Badge tone="accent" className="self-center">Operacao diaria</Badge>
+        <Badge tone="accent" className="self-center">Rotina diária</Badge>
       </div>
 
       <Card className="mb-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Saldos por produto</h2>
-            <p className="mt-1 text-sm text-marinha-500">Consulte rapidamente onde cada item esta armazenado e em qual quantidade.</p>
+            <p className="mt-1 text-sm text-marinha-500">Consulte rapidamente onde cada item está armazenado e em qual quantidade.</p>
           </div>
           <Badge tone="neutral">Saldo atual</Badge>
         </div>
@@ -671,17 +671,17 @@ export default function ErpEstoquePage() {
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-marinha-900">Movimentacoes</h2>
-            <p className="mt-1 text-sm text-marinha-500">Acompanhe entradas, saidas e ajustes registrados no estoque.</p>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Movimentações</h2>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe entradas, saídas e ajustes registrados no estoque.</p>
           </div>
-          <Badge tone="warning">Historico</Badge>
+          <Badge tone="warning">Histórico</Badge>
         </div>
         <ErpDataTable
           columns={movementColumns}
           data={movements}
           isLoading={movementsLoading}
           error={movementsError}
-          emptyMessage="Nenhuma movimentacao registrada ainda."
+          emptyMessage="Nenhuma movimentação registrada ainda."
           onRetry={() => loadMovements(true)}
           keyExtractor={(r) => r.id}
           hasMore={movHasMore}
@@ -701,8 +701,8 @@ export default function ErpEstoquePage() {
         {importStep === 1 ? (
           <>
             <p className="mb-4 text-sm text-marinha-500">
-              Envie o XML da NF-e de entrada. O sistema vai ler o fornecedor, os itens e sugerir
-              como conciliar com o catalogo existente antes de atualizar o estoque.
+              Envie o XML da nota de entrada. O sistema vai ler o fornecedor, os itens e sugerir
+              como aproveitar o cadastro já existente antes de atualizar o estoque.
             </p>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-medium text-marinha-700">Arquivo XML</label>
@@ -721,16 +721,16 @@ export default function ErpEstoquePage() {
           <div className="space-y-4">
             <div className="rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-4 py-3">
               <p className="text-sm font-semibold text-marinha-900">
-                NF-e {xmlImport.invoiceNumber ?? "-"} serie {xmlImport.invoiceSeries ?? "-"}
+                NF-e {xmlImport.invoiceNumber ?? "-"} série {xmlImport.invoiceSeries ?? "-"}
               </p>
               <p className="mt-1 text-xs text-marinha-600">Chave: {xmlImport.accessKey}</p>
               <p className="mt-1 text-xs text-marinha-600">
-                Emissao: {shortDate(xmlImport.issuedAt)} | Total: {fmtMoney(xmlImport.summary?.totalAmount ?? "0")}
+                Emissão: {shortDate(xmlImport.issuedAt)} | Total: {fmtMoney(xmlImport.summary?.totalAmount ?? "0")}
               </p>
             </div>
 
             <div className="rounded-btn border border-green-200 bg-green-50 px-4 py-3">
-              <p className="text-sm font-semibold text-green-900">Fornecedor conciliado automaticamente</p>
+              <p className="text-sm font-semibold text-green-900">Fornecedor identificado automaticamente</p>
               <p className="mt-1 text-sm text-green-800">{xmlImport.supplierParty?.name ?? "Fornecedor"}</p>
               <p className="mt-1 text-xs text-green-800">
                 Documento: {xmlImport.supplierParty?.document ?? "-"} | IE: {xmlImport.supplierParty?.stateRegistration ?? "-"}
@@ -745,7 +745,7 @@ export default function ErpEstoquePage() {
                   checked={launchStockFromImport}
                   onChange={(event) => setLaunchStockFromImport(event.target.checked)}
                 />
-                Lancar estoque agora a partir desta NF-e
+                Lançar estoque agora a partir desta NF-e
               </label>
               {launchStockFromImport ? (
                 <div className="mt-3">
@@ -755,24 +755,24 @@ export default function ErpEstoquePage() {
                     onChange={(event) => setImportStockLocationId(event.target.value)}
                     className="w-full rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
                   >
-                    <option value="">Usar local padrao</option>
+                    <option value="">Usar local padrão</option>
                     {locations.map((location) => (
                       <option key={location.id} value={location.id}>
                         {location.name}
-                        {location.isDefault ? " (padrao)" : ""}
+                        {location.isDefault ? " (padrão)" : ""}
                       </option>
                     ))}
                   </select>
                 </div>
               ) : (
                 <p className="mt-2 text-xs text-marinha-600">
-                  O XML vai atualizar o cadastro dos produtos agora, e voce podera gerar um pedido de compra depois.
+                  O XML vai atualizar o cadastro dos produtos agora, e você poderá gerar um pedido de compra depois.
                 </p>
               )}
             </div>
 
             <div className="rounded-btn border border-marinha-900/10 bg-white px-4 py-3">
-              <p className="text-sm font-semibold text-marinha-900">Resumo da revisao</p>
+              <p className="text-sm font-semibold text-marinha-900">Resumo da revisão</p>
               <p className="mt-2 text-xs text-marinha-600">
                 Vincular: {importSummary.link} | Criar: {importSummary.create} | Ignorar: {importSummary.ignore}
               </p>
@@ -789,7 +789,7 @@ export default function ErpEstoquePage() {
                           Item {item.lineNumber}: {item.name}
                         </p>
                         <p className="mt-1 text-xs text-marinha-500">
-                          Cod. fornecedor: {item.supplierCode ?? "-"} | EAN: {item.barcode ?? "-"} | Unidade: {item.unit ?? "-"}
+                          Cód. fornecedor: {item.supplierCode ?? "-"} | EAN: {item.barcode ?? "-"} | Unidade: {item.unit ?? "-"}
                         </p>
                         <p className="mt-1 text-xs text-marinha-500">
                           Qtd: {item.qty} | Custo unit.: {fmtMoney(item.unitPrice)} | Total: {fmtMoney(item.totalPrice)}
@@ -797,7 +797,7 @@ export default function ErpEstoquePage() {
                       </div>
                       {item.matchMeta?.reason ? (
                         <div className="rounded-full bg-cerrado-500/10 px-3 py-1 text-xs font-semibold text-marinha-700">
-                          Sugestao {Math.round((item.matchMeta.confidence ?? 0) * 100)}%
+                          Sugestão {Math.round((item.matchMeta.confidence ?? 0) * 100)}%
                         </div>
                       ) : null}
                     </div>
@@ -823,7 +823,7 @@ export default function ErpEstoquePage() {
 
                     {decision?.action === "link" ? (
                       <div className="mt-3">
-                        <label className="mb-1 block text-xs font-medium text-marinha-700">Produto do catalogo</label>
+                        <label className="mb-1 block text-xs font-medium text-marinha-700">Produto do catálogo</label>
                         <select
                           value={decision.selectedProductId}
                           onChange={(event) => setDecisionProduct(item.id, event.target.value)}

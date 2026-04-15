@@ -113,10 +113,10 @@ function CancelModal({
         <div className="border-b border-marinha-900/10 px-6 py-4">
           <h2 className="font-serif text-lg text-marinha-900">Cancelar nota fiscal</h2>
           <p className="mt-1 text-sm text-marinha-500">
-            Esta ação é irreversível e depende da confirmação da SEFAZ.{" "}
+            Esta ação é irreversível e depende da confirmação do órgão emissor.{" "}
             {doc.type === "nfe" || doc.type === "nfce"
-              ? "Notas NF-e e NFC-e só podem ser canceladas em até 24h após a autorização."
-              : "NFS-e pode ser cancelada conforme prazo do município."}
+              ? "Em geral, NF-e e NFC-e só podem ser canceladas até 24h após a autorização."
+              : "O prazo de cancelamento da NFS-e depende das regras do município."}
           </p>
         </div>
         <div className="px-6 py-4">
@@ -129,7 +129,7 @@ function CancelModal({
             onChange={(e) => setReason(e.target.value)}
             maxLength={500}
             rows={3}
-            placeholder="Descreva o motivo (obrigatório pela SEFAZ)"
+            placeholder="Descreva o motivo do cancelamento"
             className="mt-2 w-full rounded-input border border-marinha-900/20 bg-surface-input px-3 py-2 text-sm text-marinha-900 placeholder:text-marinha-400 focus:outline-none focus:ring-2 focus:ring-municipal-500"
           />
           <p className="mt-1 text-right text-xs text-marinha-400">{reason.length}/500</p>
@@ -198,26 +198,26 @@ function CceModal({
         <div className="border-b border-marinha-900/10 px-6 py-4">
           <h2 className="font-serif text-lg text-marinha-900">Carta de Correção Eletrônica (CC-e)</h2>
           <p className="mt-1 text-sm text-marinha-500">
-            Permite corrigir informações auxiliares de uma NF-e já autorizada. Exclusivo para NF-e.
+            Use esta opção para corrigir informações complementares de uma NF-e já autorizada.
           </p>
         </div>
 
         <div className="px-6 py-4">
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <p className="font-semibold">O que pode ser corrigido pela CC-e:</p>
+            <p className="font-semibold">Exemplos do que pode ser corrigido:</p>
             <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs">
               <li>Dados do emitente ou destinatário (exceto CNPJ/CPF e IE)</li>
               <li>Descrição complementar de itens</li>
               <li>Informações adicionais e observações</li>
             </ul>
-            <p className="mt-2 font-semibold">O que NÃO pode ser corrigido:</p>
+            <p className="mt-2 font-semibold">Exemplos do que não pode ser corrigido:</p>
             <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs">
               <li>Valores, quantidades ou base de cálculo</li>
               <li>CNPJ/CPF do emitente ou destinatário</li>
               <li>Data de emissão, natureza da operação, CFOP</li>
             </ul>
             <p className="mt-2 text-xs">
-              Se a correção envolver itens não permitidos, cancele e emita uma nota de substituição.
+              Se a correção envolver dados não permitidos, será necessário cancelar e emitir novamente.
             </p>
           </div>
 
@@ -378,7 +378,7 @@ export default function FiscalPage() {
           <div>
             <h2 className="font-serif text-lg text-marinha-900">Central de emissão</h2>
             <p className="mt-1 text-sm text-marinha-500">
-              Emita novas notas, acompanhe o processamento e consulte os documentos gerados.
+              Emita novas notas, acompanhe o andamento e consulte os documentos gerados.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -424,7 +424,7 @@ export default function FiscalPage() {
             <div>
               <h2 className="font-serif text-lg text-marinha-900">Histórico de notas</h2>
               <p className="mt-1 text-sm text-marinha-500">
-                Consulte status, número, emissão e arquivos de cada documento.
+                Consulte o status, o número, a data de emissão e os arquivos de cada documento.
               </p>
             </div>
             <Badge tone="neutral">Documentos</Badge>
@@ -590,7 +590,7 @@ function ActionMenu({
         <button
           onClick={onRefresh}
           disabled={refreshingId === doc.id}
-          title="Consultar status atual no PlugNotas"
+          title="Atualizar status do documento"
           className="focus-ring rounded px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10 disabled:opacity-50"
         >
           {refreshingId === doc.id ? "…" : "Atualizar"}
@@ -600,7 +600,7 @@ function ActionMenu({
       {canCce && (
         <button
           onClick={onCce}
-          title="Enviar Carta de Correção Eletrônica (CC-e) — apenas NF-e"
+          title="Enviar carta de correção"
           className="focus-ring rounded px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/8"
         >
           Carta de correção
@@ -610,7 +610,7 @@ function ActionMenu({
       {canReturn && (
         <Link
           href={`/erp/pedidos-venda?focus=${doc.salesOrder!.id}`}
-          title="Emitir nota de devolução para este pedido"
+          title="Abrir devolução deste pedido"
           className="focus-ring rounded px-2 py-1 text-xs font-semibold text-marinha-700 hover:bg-marinha-900/8"
         >
           Devolução
@@ -620,7 +620,7 @@ function ActionMenu({
       {canSubstitute && (
         <button
           onClick={onSubstitute}
-          title="Re-emitir nota para o mesmo pedido (substituição)"
+          title="Emitir novamente para o mesmo pedido"
           className="focus-ring rounded px-2 py-1 text-xs font-semibold text-municipal-700 hover:bg-municipal-600/10"
         >
           Substituir

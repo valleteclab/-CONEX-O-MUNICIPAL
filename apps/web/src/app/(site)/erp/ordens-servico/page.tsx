@@ -391,13 +391,13 @@ export default function ErpOrdensServicoPage() {
     <>
       <PageIntro
         title="Ordens de serviço"
-        description="Acompanhe abertura, agenda, execução e conclusão das ordens de serviço."
+        description="Acompanhe a abertura, o agendamento, a execução e a conclusão dos atendimentos."
         badge="Serviços"
       >
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/erp/ordens-servico/nova">
             <Button variant="primary" disabled={noBusinessId}>
-              Nova OS
+              Nova ordem
             </Button>
           </Link>
         </div>
@@ -431,11 +431,11 @@ export default function ErpOrdensServicoPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-serif text-lg font-bold text-marinha-900">Ordens prioritárias</h2>
-              <p className="mt-1 text-sm text-marinha-500">Ordens com maior urgência operacional.</p>
+              <p className="mt-1 text-sm text-marinha-500">Atendimentos que pedem atenção mais imediata da equipe.</p>
             </div>
             <Link href="/erp/ordens-servico/nova">
               <Button variant="primary" disabled={noBusinessId}>
-                Nova OS
+                Nova ordem
               </Button>
             </Link>
           </div>

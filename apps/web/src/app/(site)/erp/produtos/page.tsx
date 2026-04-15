@@ -208,13 +208,13 @@ export default function ErpProdutosPage() {
 
   const handleSubmit = async () => {
     if (!form.sku.trim() || !form.name.trim()) {
-      setFormError("SKU e nome sao obrigatorios.");
+      setFormError("Código e nome são obrigatórios.");
       return;
     }
     if (form.kind === "product") {
       const ncm = form.ncm.replace(/\D/g, "");
       if (ncm && ncm.length !== 8) {
-        setFormError("NCM deve ter 8 digitos ou ficar vazio para classificar depois.");
+        setFormError("O NCM deve ter 8 dígitos ou pode ser preenchido depois.");
         return;
       }
     }
@@ -284,7 +284,7 @@ export default function ErpProdutosPage() {
     if (res.ok && res.data) {
       setProducts((prev) => prev.map((item) => (item.id === product.id ? res.data! : item)));
     } else {
-      window.alert(res.error ?? "Nao foi possivel excluir o produto.");
+      window.alert(res.error ?? "Não foi possível desativar o item.");
     }
     setIsDeletingId(null);
   };
@@ -298,7 +298,7 @@ export default function ErpProdutosPage() {
     if (res.data.status === "done" || res.data.status === "failed") {
       setClassifyResult(res.data.result ?? null);
       if (res.data.status === "failed") {
-        setClassifyError(res.data.error ?? "Job falhou.");
+        setClassifyError(res.data.error ?? "A classificação não pôde ser concluída.");
       }
     }
   }, []);
@@ -332,7 +332,7 @@ export default function ErpProdutosPage() {
     });
     setIsClassifySubmitting(false);
     if (!res.ok || !res.data) {
-      setClassifyError(res.error ?? "Nao foi possivel iniciar a classificacao.");
+      setClassifyError(res.error ?? "Não foi possível iniciar a classificação.");
       return;
     }
     setClassifyJobId(res.data.id);
@@ -347,7 +347,7 @@ export default function ErpProdutosPage() {
     );
     setIsApplySubmitting(false);
     if (!res.ok || !res.data) {
-      setClassifyError(res.error ?? "Falha ao aplicar classificacoes.");
+      setClassifyError(res.error ?? "Não foi possível aplicar as sugestões.");
       return;
     }
     setClassifyOpen(false);
@@ -361,10 +361,10 @@ export default function ErpProdutosPage() {
   const columns: ErpColumn<Product>[] = [
     { key: "sku", label: "SKU", render: (r) => <span className="font-mono text-xs">{r.sku}</span> },
     { key: "name", label: "Nome", render: (r) => r.name },
-    { key: "kind", label: "Tipo", render: (r) => (r.kind === "service" ? "Servico" : "Produto") },
+    { key: "kind", label: "Tipo", render: (r) => (r.kind === "service" ? "Serviço" : "Produto") },
     { key: "unit", label: "Unidade", render: (r) => r.unit },
-    { key: "price", label: "Preco", render: (r) => fmt(r.price) },
-    { key: "minStock", label: "Est. min.", render: (r) => r.minStock },
+    { key: "price", label: "Preço", render: (r) => fmt(r.price) },
+    { key: "minStock", label: "Estoque mín.", render: (r) => r.minStock },
     {
       key: "status",
       label: "Status",
@@ -412,23 +412,23 @@ export default function ErpProdutosPage() {
     <>
       <PageIntro
         title="Produtos"
-        description="Organize seu catalogo de produtos e servicos com preco, unidade e estoque minimo para a operacao diaria."
+        description="Organize seu catálogo de produtos e serviços com preço, unidade e estoque mínimo para a rotina diária."
         badge="Cadastros"
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card variant="featured">
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Catalogo</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Catálogo</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">{products.length} itens carregados</p>
-          <p className="mt-1 text-sm text-marinha-500">Produtos e servicos disponiveis no ERP.</p>
+          <p className="mt-1 text-sm text-marinha-500">Produtos e serviços disponíveis no ERP.</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Mix de venda</p>
           <p className="mt-2 text-lg font-bold text-marinha-900">Produtos e servicos</p>
-          <p className="mt-1 text-sm text-marinha-500">Cadastre itens fisicos e tambem servicos prestados.</p>
+          <p className="mt-1 text-sm text-marinha-500">Cadastre itens físicos e também serviços prestados.</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Acao rapida</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-marinha-500">Ação rápida</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <Badge tone="accent">Cadastro</Badge>
             <Button variant="primary" onClick={openCreateModal} disabled={noBusinessId}>
@@ -441,24 +441,24 @@ export default function ErpProdutosPage() {
               Entrada por XML no estoque
             </Link>
             <Button variant="secondary" onClick={() => setClassifyOpen(true)} disabled={noBusinessId}>
-              Classificar com IA
+              Preencher dados fiscais
             </Button>
           </div>
         </Card>
       </div>
 
       <div className="mb-4 rounded-btn border border-cerrado-500/25 bg-cerrado-500/10 px-4 py-3 text-sm text-marinha-700">
-        Use esta tela para cuidar do catalogo. Entradas por NF-e XML e lancamentos de saldo ficam em
-        <strong> Estoque</strong>, onde tambem e possivel atualizar cadastro de produto durante a entrada.
+        Use esta tela para cuidar do catálogo. Entradas por XML e lançamentos de saldo ficam em
+        <strong> Estoque</strong>, onde também é possível atualizar o cadastro durante a entrada.
       </div>
 
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de produtos e servicos</h2>
-            <p className="mt-1 text-sm text-marinha-500">Use este cadastro como base para vendas, compras, estoque e fiscal.</p>
+            <h2 className="font-serif text-lg font-bold text-marinha-900">Lista de produtos e serviços</h2>
+            <p className="mt-1 text-sm text-marinha-500">Use este cadastro como base para vendas, compras, estoque e emissão de notas.</p>
           </div>
-          <Badge tone="neutral">Catalogo</Badge>
+          <Badge tone="neutral">Catálogo</Badge>
         </div>
         <ErpDataTable
           columns={columns}
@@ -485,8 +485,8 @@ export default function ErpProdutosPage() {
       >
         <p className="mb-4 text-sm text-marinha-500">
           {editingProductId
-            ? "Atualize os dados comerciais e fiscais do item cadastrado."
-            : "Preencha as informacoes principais do item para comecar a usar no catalogo e nas rotinas do ERP."}
+            ? "Atualize os dados do item cadastrado."
+            : "Preencha as informações principais do item para começar a usar no catálogo e nas rotinas do ERP."}
         </p>
         <div className="grid grid-cols-2 gap-4">
           {field(
@@ -503,7 +503,7 @@ export default function ErpProdutosPage() {
               className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500"
             >
               <option value="product">Produto</option>
-              <option value="service">Servico</option>
+              <option value="service">Serviço</option>
             </select>,
           )}
           {field(
@@ -525,9 +525,9 @@ export default function ErpProdutosPage() {
             )}
           </div>
           {field("Unidade", <input value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
-          {field("Preco de venda (R$)", <input type="number" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+          {field("Preço de venda (R$)", <input type="number" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
           {field("Custo (R$)", <input type="number" value={form.cost} onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
-          {field("Estoque minimo", <input type="number" value={form.minStock} onChange={(e) => setForm((f) => ({ ...f, minStock: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
+          {field("Estoque mínimo", <input type="number" value={form.minStock} onChange={(e) => setForm((f) => ({ ...f, minStock: e.target.value }))} className="rounded-btn border border-marinha-900/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-municipal-500" />)}
         </div>
 
         {!editingProductId && form.kind === "product" ? (

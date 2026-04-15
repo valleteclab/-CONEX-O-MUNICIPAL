@@ -474,8 +474,7 @@ function ErpPedidosVendaContent() {
           <p className="font-semibold">Não foi possível confirmar ou cancelar</p>
           <p className="mt-1">{statusPatchError}</p>
           <p className="mt-2 text-xs text-amber-800">
-            Dica: ao confirmar, o sistema baixa estoque dos itens tipo <strong>produto</strong>. Cadastre
-            entradas em Estoque ou use itens tipo <strong>serviço</strong> para não exigir saldo.
+            Dica: antes de confirmar, verifique se os itens físicos têm saldo disponível no estoque.
           </p>
         </div>
       )}
@@ -505,9 +504,7 @@ function ErpPedidosVendaContent() {
         <Badge tone="accent" className="self-center">Comercial</Badge>
       </div>
       <div className="mb-4 rounded-btn border border-municipal-600/20 bg-municipal-600/5 px-4 py-3 text-sm text-marinha-700">
-        Ao confirmar um pedido com cliente vinculado, o sistema baixa o estoque dos itens do tipo
-        <strong> produto</strong> e cria automaticamente um título em
-        <strong> Contas a receber</strong>.
+        Ao confirmar um pedido com cliente vinculado, a venda já segue com reflexo no estoque e no financeiro.
       </div>
       {focusOrderId && (
         <div className="mb-4 rounded-btn border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
@@ -518,7 +515,7 @@ function ErpPedidosVendaContent() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-lg font-bold text-marinha-900">Pedidos e oportunidades</h2>
-            <p className="mt-1 text-sm text-marinha-500">Veja a origem do pedido, acompanhe o status e avance até a emissão fiscal.</p>
+            <p className="mt-1 text-sm text-marinha-500">Acompanhe a origem do pedido, o andamento da venda e a emissão do documento.</p>
           </div>
           <Badge tone="neutral">Vendas</Badge>
         </div>
@@ -554,11 +551,10 @@ function ErpPedidosVendaContent() {
         submitLabel="Criar pedido"
       >
         <p className="mb-4 text-sm text-marinha-500">
-          Monte o pedido com cliente, itens e preços para registrar a negociação no ERP.
+          Monte o pedido com cliente, itens e preços para registrar a venda.
         </p>
         <p className="mb-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-3 py-2 text-xs text-marinha-600">
-          Se você selecionar um cliente, a confirmação do pedido poderá gerar automaticamente o título
-          financeiro correspondente.
+          Se você selecionar um cliente, a confirmação do pedido pode gerar a cobrança correspondente automaticamente.
         </p>
         <div className="mb-4 flex flex-col gap-1">
           <label className="text-xs font-medium text-marinha-700">Cliente (opcional)</label>
@@ -589,7 +585,7 @@ function ErpPedidosVendaContent() {
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.sku} — {p.name}
-                    {p.kind === "service" ? " (serviço — sem baixa de estoque)" : ""}
+                    {p.kind === "service" ? " (serviço)" : ""}
                   </option>
                 ))}
               </select>
@@ -646,14 +642,14 @@ function ErpPedidosVendaContent() {
         onClose={() => setReturnModalOpen(false)}
         onSubmit={() => void submitReturn()}
         isSubmitting={isSubmittingReturn}
-        submitLabel="Emitir devolucao"
+        submitLabel="Registrar devolução"
       >
         <p className="mb-4 text-sm text-marinha-500">
-          Informe as quantidades devolvidas. O ERP vai emitir a nota de devolucao referenciando a nota original.
+          Informe as quantidades devolvidas para registrar a devolução com base na venda original.
         </p>
         {returnOriginalDoc ? (
           <p className="mb-4 rounded-btn border border-marinha-900/10 bg-marinha-900/5 px-3 py-2 text-xs text-marinha-700">
-            Documento original: {returnOriginalDoc.type.toUpperCase()} autorizado.
+            Documento original localizado: {returnOriginalDoc.type.toUpperCase()}.
           </p>
         ) : null}
         <div className="space-y-3">
