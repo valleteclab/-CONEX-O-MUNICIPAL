@@ -34,7 +34,7 @@ export class ErpBusinessGuard implements CanActivate {
     const raw = req.headers['x-business-id'];
     const bid = Array.isArray(raw) ? raw[0] : raw;
     if (!bid || typeof bid !== 'string') {
-      throw new BadRequestException('Informe o header X-Business-Id (UUID do negócio)');
+      throw new BadRequestException('Selecione um estabelecimento antes de continuar.');
     }
     const business = await this.businesses.findOne({ where: { id: bid.trim() } });
     if (

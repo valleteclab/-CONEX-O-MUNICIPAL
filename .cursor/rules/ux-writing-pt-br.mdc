@@ -1,0 +1,28 @@
+---
+description: UX Writing PT-BR sem linguagem técnica na interface
+globs: apps/web/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# UX Writing PT-BR (Conexão Municipal)
+
+## Princípios
+
+- Escreva para usuários finais brasileiros: tom profissional, direto e acolhedor.
+- Não exponha caminhos internos como `/erp`, `/admin`, `/portal`, nomes de rotas, endpoints, headers, payloads ou variáveis de ambiente.
+- Troque termos técnicos por linguagem de produto:
+  - "destino padrão" -> "área aberta após o login"
+  - "rota" -> "área", "tela" ou "acesso"
+  - "parâmetro" -> "informação" ou "opção"
+  - "endpoint" -> "serviço" ou "integração"
+  - "payload" -> "dados enviados"
+  - "Provider" -> "Fornecedor"
+  - "Temperatura" -> "Criatividade da resposta"
+  - "Máx. itens por job" -> "Limite de itens por análise"
+- Se o texto parece comentário de desenvolvedor, remova da UI ou reescreva como orientação útil ao usuário.
+
+## Antes de entregar
+
+- Rode `npm run copy:check`.
+- Revise mensagens de erro vindas da API antes de exibi-las diretamente.
+- Mantenha detalhes técnicos em documentação, Swagger, logs, comentários de código e chamadas internas, nunca em texto renderizado.

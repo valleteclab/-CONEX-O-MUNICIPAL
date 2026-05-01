@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { AuthIntent } from "@/lib/auth-routes";
-import { buildEntrarHref, getAuthDestination, parseAuthIntent } from "@/lib/auth-routes";
+import { buildEntrarHref, parseAuthIntent } from "@/lib/auth-routes";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -25,27 +25,31 @@ const accessOptions: Array<{
   eyebrow: string;
   description: string;
   support: string;
+  destinationLabel: string;
 }> = [
   {
     intent: "empresa",
     title: "Sou empresa e quero gerir meu negócio",
     eyebrow: "Área da empresa",
     description: "Para quem está em fase de cadastro, liberação ou operação do ERP municipal.",
-    support: "Depois do login, o destino padrão é o ERP da empresa.",
+    support: "Depois do login, abriremos a área de operação da empresa.",
+    destinationLabel: "Área da empresa",
   },
   {
     intent: "portal",
     title: "Sou usuário do portal",
     eyebrow: "Portal",
     description: "Para acompanhar presença digital, oportunidades, formações e fluxos autenticados do ecossistema.",
-    support: "Depois do login, o destino padrão é a área da empresa no ERP.",
+    support: "Depois do login, abriremos a área principal da empresa.",
+    destinationLabel: "Área da empresa",
   },
   {
     intent: "platform",
     title: "Sou da equipe interna",
     eyebrow: "Equipe da plataforma",
     description: "Para moderação, aprovação de cadastros, operação interna e gestão global da plataforma.",
-    support: "Depois do login, o destino padrão é o painel administrativo.",
+    support: "Depois do login, abriremos o painel administrativo.",
+    destinationLabel: "Painel administrativo",
   },
 ];
 
@@ -65,9 +69,9 @@ function AccessSummary({ intent }: { intent: AuthIntent }) {
       </div>
 
       <div className="rounded-[20px] border border-municipal-600/15 bg-municipal-600/5 p-4 text-sm text-marinha-600">
-        <p className="font-semibold text-marinha-900">Destino padrão após o login</p>
+        <p className="font-semibold text-marinha-900">Área aberta após o login</p>
         <p className="mt-2">
-          {selected.support} <span className="font-medium text-municipal-800">{getAuthDestination(intent)}</span>
+          {selected.support} <span className="font-medium text-municipal-800">{selected.destinationLabel}</span>
         </p>
       </div>
     </div>
@@ -90,8 +94,7 @@ export default function EntrarPage({ searchParams }: EntrarPageProps) {
           </p>
           {redirect ? (
             <p className="mt-3 text-sm text-marinha-500">
-              Você estava tentando acessar <span className="font-semibold text-marinha-900">{redirect}</span>. Vamos
-              manter esse destino depois do login.
+              Você estava tentando abrir uma área protegida. Vamos continuar de onde você parou depois do login.
             </p>
           ) : null}
         </div>
@@ -160,7 +163,7 @@ export default function EntrarPage({ searchParams }: EntrarPageProps) {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-municipal-700">Passo 2</p>
               <h2 className="mt-4 text-3xl text-marinha-900">Escolha um perfil para continuar.</h2>
               <p className="mt-4 text-base leading-relaxed text-marinha-600">
-                Assim que você selecionar uma das opções ao lado, mostraremos o formulário certo e o destino padrão
+                Assim que você selecionar uma das opções ao lado, mostraremos o formulário certo e a área de continuidade
                 depois do login.
               </p>
             </div>

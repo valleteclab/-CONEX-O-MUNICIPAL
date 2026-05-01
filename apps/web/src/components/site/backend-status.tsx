@@ -7,11 +7,7 @@ export async function BackendStatus() {
   if (!base) {
     return (
       <p className="text-sm text-marinha-500">
-        <strong className="text-marinha-900">API:</strong> sem{" "}
-        <code className="rounded bg-marinha-900/5 px-1 font-mono text-xs">
-          NEXT_PUBLIC_API_BASE_URL
-        </code>{" "}
-        no build (Railway: variável no serviço do Next).
+        <strong className="text-marinha-900">Conexão do sistema:</strong> ainda não configurada para este ambiente.
       </p>
     );
   }
@@ -24,30 +20,26 @@ export async function BackendStatus() {
     if (!res.ok || !data?.status) {
       return (
         <p className="text-sm text-alerta-500">
-          <strong className="text-marinha-900">API:</strong> resposta inesperada (
-          {res.status}) em <span className="font-mono text-xs">{base}</span>
+          <strong className="text-marinha-900">Conexão do sistema:</strong> recebemos uma resposta inesperada. Tente novamente em instantes.
         </p>
       );
     }
     return (
       <p className="text-sm text-sucesso-600">
-        <strong className="text-marinha-900">API:</strong>{" "}
+        <strong className="text-marinha-900">Conexão do sistema:</strong>{" "}
         <span className="font-medium">{data.status}</span>
         {data.service ? (
           <>
             {" "}
-            · <span className="font-mono text-xs">{data.service}</span>
+            · <span>{data.service}</span>
           </>
-        ) : null}{" "}
-        · <span className="font-mono text-xs">{base}</span>
+        ) : null}
       </p>
     );
   } catch {
     return (
       <p className="text-sm text-alerta-500">
-        <strong className="text-marinha-900">API:</strong> não foi possível contactar{" "}
-        <span className="font-mono text-xs">{base}</span> (rede ou CORS no browser para
-        chamadas client-side).
+        <strong className="text-marinha-900">Conexão do sistema:</strong> não foi possível confirmar o funcionamento agora.
       </p>
     );
   }

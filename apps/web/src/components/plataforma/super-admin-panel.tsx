@@ -185,7 +185,7 @@ export function SuperAdminPanel() {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-marinha-700">Temperatura</span>
+            <span className="text-xs font-medium text-marinha-700">Criatividade da resposta</span>
             <input
               type="number"
               min={0}
@@ -199,7 +199,7 @@ export function SuperAdminPanel() {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-marinha-700">Máx. itens por job</span>
+            <span className="text-xs font-medium text-marinha-700">Limite de itens por análise</span>
             <input
               type="number"
               min={1}

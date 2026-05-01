@@ -560,7 +560,7 @@ export default function ErpDadosFiscaisPage() {
             </div>
 
             <div className="rounded-btn border border-marinha-900/8 bg-marinha-900/[0.03] p-4">
-            <h3 className="text-sm font-semibold text-marinha-800">Parâmetros de serviço</h3>
+            <h3 className="text-sm font-semibold text-marinha-800">Dados para emissão de serviço</h3>
             <p className="mt-1 text-xs text-marinha-500">
               Ajuste conforme o município; código de serviço, CNAE e alíquota influenciam a emissão.
             </p>
@@ -699,7 +699,7 @@ export default function ErpDadosFiscaisPage() {
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-marinha-900">Integração fiscal</h3>
               <span className="rounded-full bg-marinha-900/8 px-3 py-1 text-xs font-semibold text-marinha-700">
-                Provedor: {activeProvider === "spedy" ? "Spedy" : "PlugNotas"}
+                Fornecedor fiscal: {activeProvider === "spedy" ? "Spedy" : "PlugNotas"}
               </span>
             </div>
             <p className="mt-1 text-sm text-marinha-500">

@@ -93,9 +93,9 @@ export default function SupportDashboardPage() {
     setSavingProvider(false);
     if (res.ok && res.data) {
       setFiscalProvider((prev) => prev ? { ...prev, provider: res.data!.provider as "plugnotas" | "spedy" } : prev);
-      setProviderSaveMsg("Provedor fiscal atualizado com sucesso.");
+      setProviderSaveMsg("Fornecedor fiscal atualizado com sucesso.");
     } else {
-      setProviderSaveMsg(res.error ?? "Erro ao salvar o provedor.");
+      setProviderSaveMsg(res.error ?? "Erro ao salvar o fornecedor fiscal.");
     }
     setTimeout(() => setProviderSaveMsg(null), 4000);
   }
@@ -115,8 +115,8 @@ export default function SupportDashboardPage() {
           <Badge tone="accent">IA em uso</Badge>
           <h2 className="mt-4 text-4xl font-semibold">{data.ai.model}</h2>
           <p className="mt-3 max-w-2xl text-base text-marinha-600">
-            Provider {data.ai.provider}, temperatura {data.ai.temperature} e limite de{" "}
-            {data.ai.maxItemsPerJob} itens por job.
+            Fornecedor {data.ai.provider}, criatividade da resposta {data.ai.temperature} e limite de{" "}
+            {data.ai.maxItemsPerJob} itens por análise.
           </p>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {data.ai.usage.map((usage) => (
@@ -169,11 +169,11 @@ export default function SupportDashboardPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
-                Provedor Fiscal
+                Fornecedor fiscal
               </p>
               <h2 className="mt-2 text-2xl font-semibold">Emissão de NF-e e NFS-e</h2>
               <p className="mt-1 text-sm text-marinha-600">
-                Escolha qual provedor está ativo para emissão fiscal em todo o sistema.
+                Escolha qual fornecedor está ativo para emissão fiscal em todo o sistema.
               </p>
             </div>
             <Badge tone={fiscalProvider.provider === "spedy" ? "accent" : "success"}>

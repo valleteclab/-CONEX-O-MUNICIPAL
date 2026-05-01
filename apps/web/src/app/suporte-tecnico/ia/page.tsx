@@ -81,7 +81,7 @@ export default function SupportAiPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-marinha-500">
           IA operacional
         </p>
-        <h1 className="mt-2 text-3xl font-semibold text-marinha-900">Modelo e parâmetros ativos</h1>
+        <h1 className="mt-2 text-3xl font-semibold text-marinha-900">Configurações da IA</h1>
       </div>
 
       <Card className="rounded-[24px] border border-marinha-900/8 bg-white/92 p-6 text-marinha-900">
@@ -97,7 +97,7 @@ export default function SupportAiPage() {
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-marinha-800">Provider</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Fornecedor da IA</label>
                 <Input value={form.provider} disabled />
               </div>
               <div>
@@ -122,7 +122,7 @@ export default function SupportAiPage() {
                 </p>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-marinha-800">Temperatura</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Criatividade da resposta</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -133,7 +133,7 @@ export default function SupportAiPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-marinha-800">Máx. itens por job</label>
+                <label className="mb-2 block text-sm font-medium text-marinha-800">Limite de itens por análise</label>
                 <Input
                   type="number"
                   value={form.maxItemsPerJob}

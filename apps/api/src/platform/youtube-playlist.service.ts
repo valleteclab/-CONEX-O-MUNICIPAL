@@ -66,7 +66,7 @@ export class YoutubePlaylistService {
         durationMinutes: null,
         playlistTotalMinutes: null,
         playlistVideoCount: null,
-        hint: 'Defina YOUTUBE_API_KEY na API para calcular a duração automaticamente (YouTube Data API v3).',
+        hint: 'Não foi possível calcular a duração automaticamente agora.',
       };
     }
     const trimmed = url.trim();
@@ -114,13 +114,13 @@ export class YoutubePlaylistService {
     const playlistId = extractYoutubePlaylistId(url);
     if (!playlistId) {
       throw new BadRequestException(
-        'URL sem playlist. Use um link do YouTube com o parâmetro list= (ex.: watch?v=…&list=PL…).',
+        'Use um link de playlist do YouTube para importar uma trilha completa.',
       );
     }
     const items = await this.listPlaylistVideos(playlistId);
     if (!items.length) {
       throw new BadRequestException(
-        'Não foi possível obter vídeos desta playlist. Defina YOUTUBE_API_KEY na API para importação completa.',
+        'Não foi possível obter vídeos desta playlist. Verifique o link ou tente novamente mais tarde.',
       );
     }
     return { playlistId, items };
@@ -163,7 +163,7 @@ export class YoutubePlaylistService {
       if (!res.ok) {
         const msg = json.error?.message || res.statusText;
         throw new BadRequestException(
-          `YouTube Data API: ${msg}. Verifique YOUTUBE_API_KEY e o ID da playlist.`,
+          `Não foi possível ler a playlist no YouTube: ${msg}.`,
         );
       }
       const items = json.items ?? [];
@@ -259,7 +259,7 @@ export class YoutubePlaylistService {
     }
     if (!res.ok) {
       throw new BadRequestException(
-        'Playlist inacessível via RSS. Configure YOUTUBE_API_KEY na API para importar a trilha completa.',
+        'Não foi possível acessar esta playlist. Verifique se ela está pública e tente novamente.',
       );
     }
     const xml = await res.text();

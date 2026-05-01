@@ -126,7 +126,7 @@ export default function AdminAcademiaPage() {
         if (!res.ok || !res.data) {
           setYtErr(
             res.error ||
-              "Não foi possível ler a playlist. Em produção, defina YOUTUBE_API_KEY na API.",
+              "Não foi possível ler a playlist. Verifique o link ou acione a equipe responsável.",
           );
           setYtPreview(null);
           return;
@@ -360,11 +360,7 @@ export default function AdminAcademiaPage() {
                 Trilha — link do YouTube (opcional)
               </label>
               <p className="mt-0.5 text-xs text-gray-500">
-                Um vídeo isolado: pré-visualização com oEmbed e uma aula. Com{" "}
-                <strong className="font-medium text-gray-700">list=…</strong> na URL (playlist), o
-                sistema importa <strong className="font-medium text-gray-700">todas as aulas</strong>{" "}
-                na ordem da lista — em produção use <code className="text-xs">YOUTUBE_API_KEY</code>{" "}
-                na API para listas completas (YouTube Data API v3).
+                Cole o link de um vídeo para criar uma aula ou o link de uma playlist para importar a trilha completa.
               </p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
                 <Input
@@ -376,7 +372,7 @@ export default function AdminAcademiaPage() {
                     setYtErr(null);
                     setDurationHint(null);
                   }}
-                  placeholder="Vídeo ou playlist: …watch?v=…&list=PL…"
+                  placeholder="Cole aqui o link do vídeo ou da playlist"
                   className="min-w-0 flex-1"
                   type="url"
                 />
@@ -482,9 +478,7 @@ export default function AdminAcademiaPage() {
                   <p className="mt-1 text-xs text-amber-800">{durationHint}</p>
                 ) : (
                   <p className="mt-1 text-xs text-gray-500">
-                    Preenchido ao pré-visualizar o link, se{" "}
-                    <code className="text-[11px]">YOUTUBE_API_KEY</code> estiver na API (soma da
-                    trilha ou duração do vídeo).
+                    Preenchido automaticamente quando a duração estiver disponível.
                   </p>
                 )}
               </div>

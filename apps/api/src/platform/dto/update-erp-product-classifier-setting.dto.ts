@@ -16,7 +16,7 @@ export class UpdateErpProductClassifierSettingDto {
   @Max(1)
   temperature?: number;
 
-  @ApiPropertyOptional({ description: 'Máx. itens por job', default: 50 })
+  @ApiPropertyOptional({ description: 'Limite de itens por análise', default: 50 })
   @IsOptional()
   @IsInt()
   @Min(1)

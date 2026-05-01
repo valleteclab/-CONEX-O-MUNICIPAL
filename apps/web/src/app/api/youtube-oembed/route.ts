@@ -16,7 +16,7 @@ function isYoutubeUrl(raw: string): boolean {
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get("url");
   if (!url?.trim()) {
-    return NextResponse.json({ message: "Parâmetro url obrigatório" }, { status: 400 });
+    return NextResponse.json({ message: "Informe o link do YouTube." }, { status: 400 });
   }
   if (!isYoutubeUrl(url)) {
     return NextResponse.json({ message: "Apenas URLs do YouTube são aceitas" }, { status: 400 });

@@ -100,7 +100,7 @@ export default function AreaDaEmpresaPage() {
           <div className="mt-6 rounded-card border border-municipal-200 bg-municipal-50/70 p-4 text-sm text-municipal-900">
             <p className="font-semibold">Já possui cadastro e foi liberado?</p>
             <p className="mt-1">
-              Acesse o ERP diretamente pela <Link href="/erp" className="underline">área da empresa</Link>. Se sua empresa
+              Acesse as rotinas da empresa pela <Link href="/erp" className="underline">área da empresa</Link>. Se sua empresa
               ainda estiver em análise, mantenha os dados atualizados e aguarde o contato da prefeitura.
             </p>
           </div>

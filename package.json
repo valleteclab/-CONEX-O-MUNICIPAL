@@ -10,8 +10,9 @@
   "scripts": {
     "dev:web": "npm run dev -w web",
     "dev:api": "npm run start:dev -w api",
+    "copy:check": "node tools/check-ui-copy.cjs",
     "build": "node tools/railway-service-runner.cjs build",
-    "build:web": "npm run build -w web",
+    "build:web": "npm run copy:check && npm run build -w web",
     "build:all": "npm run build -w api && npm run build -w web",
     "start": "node tools/railway-service-runner.cjs start",
     "start:web": "npm run start -w web",

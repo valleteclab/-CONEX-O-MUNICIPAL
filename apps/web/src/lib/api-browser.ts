@@ -21,7 +21,7 @@ export async function apiFetch<T>(
 ): Promise<{ ok: boolean; data?: T; error?: string; status: number }> {
   const base = getPublicApiBaseUrl();
   if (!base) {
-    return { ok: false, status: 0, error: "NEXT_PUBLIC_API_BASE_URL não definido" };
+    return { ok: false, status: 0, error: "A conexão do sistema ainda não está configurada para este ambiente." };
   }
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
@@ -41,7 +41,7 @@ export async function apiFetch<T>(
       status: 0,
       error:
         msg === "Failed to fetch" ?
-          "Não foi possível contactar a API (rede ou CORS). Verifique NEXT_PUBLIC_API_BASE_URL e CORS_ORIGINS no servidor."
+          "Não foi possível conectar ao sistema agora. Tente novamente em instantes."
         : msg,
     };
   }

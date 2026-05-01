@@ -75,7 +75,7 @@ export class PlatformCoursesService {
         const items = await this.youtubePlaylist.listPlaylistVideos(playlistId);
         if (!items.length) {
           throw new BadRequestException(
-            'Playlist sem vídeos acessíveis. Configure YOUTUBE_API_KEY na API (Google Cloud, YouTube Data API v3) para importar a trilha completa.',
+            'Playlist sem vídeos acessíveis. Verifique se ela está pública e tente novamente.',
           );
         }
         let order = 0;

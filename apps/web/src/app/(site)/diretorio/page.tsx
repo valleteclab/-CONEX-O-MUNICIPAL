@@ -69,11 +69,11 @@ export default async function DiretorioPage({ searchParams }: DiretorioPageProps
           description={
             hasBase
               ? "Não foi possível carregar a lista agora."
-              : "Configure NEXT_PUBLIC_API_BASE_URL no serviço do Next."
+              : "A conexão do sistema ainda não está configurada para este ambiente."
           }
         />
         <p className="text-sm text-marinha-500">
-          {hasBase ? "Confirme tenant, API e seed da base." : "Variável de ambiente em falta no build."}
+          {hasBase ? "Tente novamente em instantes." : "Avise a equipe responsável para concluir a configuração."}
         </p>
       </>
     );
